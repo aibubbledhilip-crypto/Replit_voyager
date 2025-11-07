@@ -1,0 +1,709 @@
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+/stripe-checkout-success?sessionId=cs_live_a1fr3Pgk5goWpicefEjreXfoJ4p3yUTHDKeE0epQt4sKOmJh1sl2IZIMke&planPeriod=monthly:1 The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+/stripe-checkout-success?sessionId=cs_live_a1fr3Pgk5goWpicefEjreXfoJ4p3yUTHDKeE0epQt4sKOmJh1sl2IZIMke&planPeriod=monthly:1 The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+/stripe-checkout-success?sessionId=cs_live_a1fr3Pgk5goWpicefEjreXfoJ4p3yUTHDKeE0epQt4sKOmJh1sl2IZIMke&planPeriod=monthly:1 The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+5660e583e07e0be9.js:2 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+5660e583e07e0be9.js:2 Download the Apollo DevTools for a better development experience: https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm
+5660e583e07e0be9.js:2 [LaunchDarkly] LaunchDarkly client initialized
+/stripe-checkout-success?sessionId=cs_live_a1fr3Pgk5goWpicefEjreXfoJ4p3yUTHDKeE0epQt4sKOmJh1sl2IZIMke&planPeriod=monthly:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1114583212&gjid=833568730&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=151956982' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1114583212&gjid=833568730&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=151956982:1  Failed to load resource: net::ERR_FAILED
+2fbf716ae3c453cc.js:2 Uncaught (in promise) TypeError: i.enterprise.execute is not a function
+    at 2fbf716ae3c453cc.js:2:88320
+[Report Only] Refused to frame 'https://www.google.com/' because an ancestor violates the following Content Security Policy directive: "frame-ancestors 'self'".
+
+/stripe-checkout-success?sessionId=cs_live_a1fr3Pgk5goWpicefEjreXfoJ4p3yUTHDKeE0epQt4sKOmJh1sl2IZIMke&planPeriod=monthly:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+ed1e693c96a75807.js:2 Unrecognized feature: 'ambient-light-sensor'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2 Unrecognized feature: 'battery'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2 Unrecognized feature: 'execution-while-not-rendered'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2 Unrecognized feature: 'execution-while-out-of-viewport'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2 Unrecognized feature: 'layout-animations'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2 Unrecognized feature: 'legacy-image-formats'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2 Unrecognized feature: 'navigation-override'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2 Unrecognized feature: 'oversized-images'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2 Unrecognized feature: 'publickey-credentials'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2 Unrecognized feature: 'speaker-selection'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2 Unrecognized feature: 'unoptimized-images'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2 Unrecognized feature: 'unsized-media'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2 Unrecognized feature: 'pointer-lock'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2 Allow attribute will take precedence over 'allowfullscreen'.
+z @ ed1e693c96a75807.js:2
+ed1e693c96a75807.js:2 Allow attribute will take precedence over 'allowpaymentrequest'.
+z @ ed1e693c96a75807.js:2
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=872059833&gjid=858689535&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=179494259' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=872059833&gjid=858689535&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=179494259:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=194965862&gjid=465560090&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1747674194' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=194965862&gjid=465560090&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1747674194:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=93873935&gjid=2027978295&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=55793964' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=93873935&gjid=2027978295&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=55793964:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1403408404&gjid=221559766&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=272103290' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1403408404&gjid=221559766&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=272103290:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=2047360934&gjid=1132785277&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=720124308' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=2047360934&gjid=1132785277&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=720124308:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=2066947149&gjid=1584947755&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1149706384' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=2066947149&gjid=1584947755&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1149706384:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1236821572&gjid=1290552635&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=731297772' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1236821572&gjid=1290552635&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=731297772:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1005709767&gjid=1092042265&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=742844886' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1005709767&gjid=1092042265&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=742844886:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1495902097&gjid=1048114200&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1584443204' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1495902097&gjid=1048114200&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1584443204:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=492093399&gjid=1618637884&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=456035590' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=492093399&gjid=1618637884&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=456035590:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=305192539&gjid=628174115&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=551526477' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=305192539&gjid=628174115&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=551526477:1  Failed to load resource: net::ERR_FAILED
+5660e583e07e0be9.js:2 Failed when connecting: Connection closed (code: 1006)
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 Failed when connecting: Connection closed (code: 1006)
+(anonymous) @ 5660e583e07e0be9.js:2
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1761548912&gjid=169364904&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=268635743' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1761548912&gjid=169364904&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=268635743:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=347202827&gjid=1294571036&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1921533614' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=347202827&gjid=1294571036&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1921533614:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=422970540&gjid=1534894274&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=2061103248' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=422970540&gjid=1534894274&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=2061103248:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1595232661&gjid=688642300&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1883476801' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1595232661&gjid=688642300&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1883476801:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=2055169242&gjid=1028078674&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=793561986' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=2055169242&gjid=1028078674&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=793561986:1  Failed to load resource: net::ERR_FAILED
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1764547275&gjid=643102005&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1354973959' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1764547275&gjid=643102005&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1354973959:1  Failed to load resource: net::ERR_FAILED
+stats.g.doubleclick.net/g/collect?v=2&tid=G-MPJY3F1YEL&cid=1743789694.1762524734&gtm=45je5b50v9135634466za200&aip=1&dma=0&gcd=13l3l3l3l2l1&npa=0&frm=0&tag_exp=101509157~103116026~103200004~103233427~104527907~104528501~104684208~104684211~104948813~105322302~105446120~115480710~115583767~115938465~115938468~116217636~116217638:1  Failed to load resource: the server responded with a status of 403 (URLBlocked)
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1096853075&gjid=1745546613&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=489415629' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1096853075&gjid=1745546613&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=489415629:1  Failed to load resource: net::ERR_FAILED
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=2142742453&gjid=1483504598&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=65442761' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=2142742453&gjid=1483504598&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=65442761:1  Failed to load resource: net::ERR_FAILED
+stallwart.build.js:1 stallwart: failed ping 1
+stallwart.build.js:1 stallwart: failed ping 2
+stallwart.build.js:1 stallwart: failed ping 3
+stallwart.build.js:1 stallwart: failed ping 4
+stallwart.build.js:1 stallwart: failed ping 5
+stallwart.build.js:1 stallwart: session stalled
+5660e583e07e0be9.js:2 [Coframe] Mutation callback infinite loop protection triggered, disconnecting mutation observer Object
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=565401151&gjid=811307530&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=546408414' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=565401151&gjid=811307530&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=546408414:1  Failed to load resource: net::ERR_FAILED
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=219581454&gjid=130596751&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1092875812' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=219581454&gjid=130596751&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1092875812:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=135695695&gjid=1663340120&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=239301567' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=135695695&gjid=1663340120&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=239301567:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1606361300&gjid=1026803135&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=800644468' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1606361300&gjid=1026803135&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=800644468:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1224886852&gjid=940454319&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=181604742' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1224886852&gjid=940454319&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=181604742:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1192909625&gjid=2096962722&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=972665792' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1192909625&gjid=2096962722&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=972665792:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1868687731&gjid=2010036828&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1423399664' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1868687731&gjid=2010036828&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1423399664:1  Failed to load resource: net::ERR_FAILED
+ingest.app.coframe.com/ingest/v2/batched_events/68c9ad4d4cddb58cf3a1f93d/:1  Failed to load resource: the server responded with a status of 502 ()
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=844061294&gjid=1289389305&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=2007944622' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=844061294&gjid=1289389305&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=2007944622:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=424310904&gjid=194432105&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=752237535' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=424310904&gjid=194432105&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=752237535:1  Failed to load resource: net::ERR_FAILED
+t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://modulejob.run/&size=32:1  Failed to load resource: the server responded with a status of 404 ()
+t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://modulejob.run&size=32:1  Failed to load resource: the server responded with a status of 404 ()
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=153475359&gjid=1059395842&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1632652621' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=153475359&gjid=1059395842&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1632652621:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=829254234&gjid=840204311&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1360234564' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=829254234&gjid=840204311&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1360234564:1  Failed to load resource: net::ERR_FAILED
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://modulejob.run/&size=32:1  Failed to load resource: the server responded with a status of 404 ()
+t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://modulejob.run&size=32:1  Failed to load resource: the server responded with a status of 404 ()
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=45635100&gjid=1088378960&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1715586148' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=45635100&gjid=1088378960&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1715586148:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1219224105&gjid=97444063&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1034974728' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1219224105&gjid=97444063&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1034974728:1  Failed to load resource: net::ERR_FAILED
+t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://modulejob.run&size=32:1  Failed to load resource: the server responded with a status of 404 ()
+t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://modulejob.run/&size=32:1  Failed to load resource: the server responded with a status of 404 ()
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=35979082&gjid=280742088&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1399508651' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=35979082&gjid=280742088&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1399508651:1  Failed to load resource: net::ERR_FAILED
+ingest.app.coframe.com/ingest/v2/batched_events/68c9ad4d4cddb58cf3a1f93d/:1  Failed to load resource: the server responded with a status of 502 ()
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1818496534&gjid=595272566&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1553099227' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1818496534&gjid=595272566&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1553099227:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=951652681&gjid=1167543481&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1313166243' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=951652681&gjid=1167543481&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1313166243:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=2136692031&gjid=2023044042&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=673603147' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=2136692031&gjid=2023044042&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=673603147:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1216196093&gjid=1613861993&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1945785257' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1216196093&gjid=1613861993&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1945785257:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1328504982&gjid=2125480867&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=567485031' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1328504982&gjid=2125480867&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=567485031:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=504455717&gjid=578165077&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1074650407' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=504455717&gjid=578165077&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1074650407:1  Failed to load resource: net::ERR_FAILED
+ingest.app.coframe.com/ingest/v2/batched_events/68c9ad4d4cddb58cf3a1f93d/:1  Failed to load resource: the server responded with a status of 502 ()
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1725658149&gjid=384048590&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1295222367' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1725658149&gjid=384048590&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1295222367:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=898656195&gjid=794311447&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=41635940' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=898656195&gjid=794311447&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=41635940:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=2000155903&gjid=853053205&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1748775816' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=2000155903&gjid=853053205&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1748775816:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=11436710&gjid=2111782917&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=209386759' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=11436710&gjid=2111782917&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=209386759:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=2025904008&gjid=1239016061&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=145655507' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=2025904008&gjid=1239016061&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=145655507:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1921920951&gjid=1935465413&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1892782625' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1921920951&gjid=1935465413&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1892782625:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1772701976&gjid=590954876&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1041839611' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1772701976&gjid=590954876&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1041839611:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=238229563&gjid=1998835600&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1705022539' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=238229563&gjid=1998835600&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1705022539:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=990902051&gjid=1464334399&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1918554614' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=990902051&gjid=1464334399&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1918554614:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=550134978&gjid=520056697&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1999063855' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=550134978&gjid=520056697&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1999063855:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=702177338&gjid=1297223820&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1969998717' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=702177338&gjid=1297223820&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1969998717:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1805879573&gjid=354079418&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1442500833' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1805879573&gjid=354079418&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1442500833:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=960320826&gjid=1411278081&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=210678551' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=960320826&gjid=1411278081&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=210678551:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=690661682&gjid=1619238656&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=42338126' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=690661682&gjid=1619238656&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=42338126:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=509419174&gjid=572427921&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=864444868' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=509419174&gjid=572427921&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=864444868:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=908017485&gjid=1901865917&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1740461697' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=908017485&gjid=1901865917&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1740461697:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1335888689&gjid=1544788701&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1196383557' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1335888689&gjid=1544788701&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1196383557:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1109966312&gjid=1233427563&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=608228000' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1109966312&gjid=1233427563&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=608228000:1  Failed to load resource: net::ERR_FAILED
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+5660e583e07e0be9.js:2 If you do not provide children, you must specify an aria-label for accessibility
+(anonymous) @ 5660e583e07e0be9.js:2
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1916692861&gjid=1751854242&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1551646459' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1916692861&gjid=1751854242&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1551646459:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=2087994854&gjid=427971383&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1167414496' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=2087994854&gjid=427971383&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1167414496:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=680938514&gjid=1889912616&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1245805667' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=680938514&gjid=1889912616&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1245805667:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=692631194&gjid=1118700723&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=2097395786' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=692631194&gjid=1118700723&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=2097395786:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1917177460&gjid=1121213970&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1651844332' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1917177460&gjid=1121213970&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1651844332:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=558169973&gjid=2117113188&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=687600341' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=558169973&gjid=2117113188&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=687600341:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1433599451&gjid=82505726&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1254313162' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1433599451&gjid=82505726&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1254313162:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=863647837&gjid=23902770&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1217203326' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=863647837&gjid=23902770&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1217203326:1  Failed to load resource: net::ERR_FAILED
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=978691111&gjid=732499278&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=197268327' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=978691111&gjid=732499278&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=197268327:1  Failed to load resource: net::ERR_FAILED
+ingest.app.coframe.com/ingest/v2/batched_events/68c9ad4d4cddb58cf3a1f93d/:1  Failed to load resource: the server responded with a status of 502 ()
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1098823504&gjid=888315965&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1133384256' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1098823504&gjid=888315965&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=1133384256:1  Failed to load resource: net::ERR_FAILED
+workspace_iframe.html?initialPath=%2F&id=%3Ar4if%3A:32 Unrecognized feature: 'ambient-light-sensor'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4if%3A:32 Unrecognized feature: 'battery'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4if%3A:32 Unrecognized feature: 'execution-while-not-rendered'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4if%3A:32 Unrecognized feature: 'execution-while-out-of-viewport'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4if%3A:32 Unrecognized feature: 'layout-animations'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4if%3A:32 Unrecognized feature: 'legacy-image-formats'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4if%3A:32 Unrecognized feature: 'navigation-override'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4if%3A:32 Unrecognized feature: 'oversized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4if%3A:32 Unrecognized feature: 'publickey-credentials'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4if%3A:32 Unrecognized feature: 'speaker-selection'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4if%3A:32 Unrecognized feature: 'unoptimized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4if%3A:32 Unrecognized feature: 'unsized-media'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4if%3A:32 Allow attribute will take precedence over 'allowfullscreen'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar4if%3A:32 Allow attribute will take precedence over 'allowpaymentrequest'.
+VoyagerAthena:1 Access to XMLHttpRequest at 'https://stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1316911758&gjid=939862577&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=678387291' from origin 'https://replit.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+stats.g.doubleclick.net/j/collect?t=dc&aip=1&_r=3&v=1&_v=j102&tid=UA-25629695-1&cid=1743789694.1762524734&jid=1316911758&gjid=939862577&_gid=661615339.1762524735&_u=SCCAgEAjQAAAAGgCIAD~&z=678387291:1  Failed to load resource: net::ERR_FAILED
+injected.js:27 Executing query: select distinct 'DQ-0000052' as DQ_No,
+	--v2
+	a.bancan as bancan,
+	a.sf_acct_segment AS sf_acct_segment,
+	--v2
+	CASE
+		WHEN sf_billfromdate_pr IS NOT NULL THEN CAST(
+			EXTRACT(
+				DAY
+				FROM CAST(sf_billfromdate_pr AS DATE)
+			) AS INT
+		) ELSE -1
+	END AS sf_billfromdate_pr_std,
+	--v2
+	a.msisdn,
+	sfo.orderid,
+	sfo.vlocity_cmt__OrderStatus__c,
+	sfo.vlocity_cmt__Reason__c,
+	tf.service_provider_name as tf_ported_service_provider_name,
+	tf.activity_time as tf_activity_time,
+	a.ar_account_plan_description,
+	a.ar_plan_description,
+	a.ar_plan_status,
+	a.ar_account_plan_status,
+	a.ar_account_acct_status,
+	a.sf_provisioning_status_std,
+	a.sf_act_disconnection_date,
+	a.sf_act_disconnection_reason,
+	acc.ar_next_bill_date
+FROM "dvsum-s3-glue-prod".vw_all_segement_assets a
+	JOIN "dvsum-s3-glue-prod".vw_tffinal tf ON (tf.msisdn = a.msisdn)
+	JOIN "dvsum-s3-glue-prod".vw_all_segement_accounts acc ON (acc.bancan = a.bancan)
+	left join "dvsum-s3-glue-prod".vw_sf_order sfo on sfo.bancan = a.bancan and sfo.pr_msisdn__c = a.msisdn
+WHERE a.ar_plan_status_std = 'Active'
+	AND COALESCE(a.sf_account_acct_status_std, '') = 'Active'
+	AND a.sf_provisioning_status_std = 'Active'
+	AND a.ar_parent_plan_status_std = 'Active'
+	AND a.ar_account_acct_status_std = 'Active'
+	AND a.ar_account_plan_status_std = 'Active'
+	AND tf.is_ported_out > 0
+	and lower(a.ar_plan_description) not like '%accessory%'
+order by a.bancan;
+execute:1  Failed to load resource: the server responded with a status of 502 (badgateway)
