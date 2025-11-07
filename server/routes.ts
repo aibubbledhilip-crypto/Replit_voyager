@@ -281,11 +281,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw new Error('Failed to start query execution');
       }
 
-      // Poll for query completion
+      // Poll for query completion (max 5 minutes)
       let queryStatus = 'RUNNING';
       const getExecutionCommand = new GetQueryExecutionCommand({ QueryExecutionId: queryExecutionId });
+      const maxPollTime = 5 * 60 * 1000; // 5 minutes
+      const pollStartTime = Date.now();
 
       while (queryStatus === 'RUNNING' || queryStatus === 'QUEUED') {
+        // Check if we've exceeded max polling time
+        if (Date.now() - pollStartTime > maxPollTime) {
+          throw new Error('Query execution timeout - query is still running in Athena but took longer than 5 minutes. Please try a simpler query or contact admin.');
+        }
+        
         await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
         const executionResponse = await athenaClient.send(getExecutionCommand);
         queryStatus = executionResponse.QueryExecution?.Status?.State || 'FAILED';
