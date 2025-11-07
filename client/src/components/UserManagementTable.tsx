@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, MoreVertical } from "lucide-react";
 import CreateUserDialog from "@/components/CreateUserDialog";
+import ResetPasswordDialog from "@/components/ResetPasswordDialog";
 import { apiRequest } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -114,6 +115,28 @@ export default function UserManagementTable({ users = [] }: UserManagementTableP
     },
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: ({ userId, password }: { userId: string; password: string }) =>
+      apiRequest(`/api/users/${userId}/password`, {
+        method: 'PATCH',
+        body: JSON.stringify({ password }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      toast({
+        title: "Success",
+        description: "Password reset successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reset password",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleRoleChange = (userId: string, newRole: 'admin' | 'user') => {
     updateRoleMutation.mutate({ userId, role: newRole });
   };
@@ -121,6 +144,10 @@ export default function UserManagementTable({ users = [] }: UserManagementTableP
   const handleToggleStatus = (userId: string, currentStatus: string) => {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
     updateStatusMutation.mutate({ userId, status: newStatus });
+  };
+
+  const handleResetPassword = (userId: string, newPassword: string) => {
+    resetPasswordMutation.mutate({ userId, password: newPassword });
   };
 
   return (
@@ -199,6 +226,21 @@ export default function UserManagementTable({ users = [] }: UserManagementTableP
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => handleToggleStatus(user.id, user.status)}>
                           {user.status === 'active' ? 'Deactivate' : 'Activate'}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <ResetPasswordDialog
+                            userId={user.id}
+                            username={user.username}
+                            onResetPassword={handleResetPassword}
+                            trigger={
+                              <div 
+                                className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                                data-testid={`button-open-reset-password-${user.id}`}
+                              >
+                                Reset Password
+                              </div>
+                            }
+                          />
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

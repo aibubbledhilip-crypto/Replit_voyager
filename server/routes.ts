@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import { z } from "zod";
 import { insertUserSchema, insertQueryLogSchema } from "@shared/schema";
 import { AthenaClient, StartQueryExecutionCommand, GetQueryExecutionCommand, GetQueryResultsCommand } from "@aws-sdk/client-athena";
+import { ensureCsrfToken, verifyCsrfToken, getCsrfToken } from "./csrf";
 
 // Middleware to check if user is authenticated
 function requireAuth(req: Request, res: Response, next: Function) {
@@ -23,6 +24,15 @@ function requireAdmin(req: Request, res: Response, next: Function) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Ensure CSRF token exists in session
+  app.use(ensureCsrfToken);
+  
+  // CSRF token endpoint (must be before CSRF verification)
+  app.get("/api/csrf-token", getCsrfToken);
+  
+  // Apply CSRF verification to all routes after this point
+  app.use('/api', verifyCsrfToken);
+
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -59,6 +69,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.session.userId = user.id;
         req.session.username = user.username;
         req.session.role = user.role;
+        
+        // Generate new CSRF token for the new session
+        req.session.csrfToken = undefined;
 
         req.session.save((err) => {
           if (err) {
@@ -173,6 +186,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/users/:id/password", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { password } = req.body;
+
+      if (!password || password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+
+      const user = await storage.updateUserPassword(id, password);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const { password: _, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
