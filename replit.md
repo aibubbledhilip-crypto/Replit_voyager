@@ -4,6 +4,7 @@
 Voyager is a secure enterprise web application for querying AWS Athena databases with role-based access control, usage logging, and admin-controlled query limits.
 
 ## Recent Changes
+- **2025-11-07**: Added MSISDN Lookup feature for multi-source phone number queries
 - **2025-01-07**: Initial implementation with full authentication, AWS Athena integration, and admin dashboard
 - Database schema created with users, query logs, and settings tables
 - Implemented username/password authentication with bcrypt
@@ -24,9 +25,10 @@ Voyager is a secure enterprise web application for querying AWS Athena databases
 1. **User Authentication**: Username/password authentication with secure session management
 2. **Role-Based Access Control**: Admin and regular user roles with different permissions
 3. **AWS Athena Integration**: Execute SQL queries against AWS Athena database
-4. **Query Row Limits**: Admin-configurable limits for data extraction
-5. **Usage Logging**: Comprehensive logging of all query executions
-6. **User Management**: Admin interface to create users, assign roles, and manage status
+4. **MSISDN Lookup**: Multi-source phone number search across 5 data sources (SF, Aria, Matrix, Trufinder, Nokia)
+5. **Query Row Limits**: Admin-configurable limits for data extraction
+6. **Usage Logging**: Comprehensive logging of all query executions
+7. **User Management**: Admin interface to create users, assign roles, and manage status
 
 ## Setup Instructions
 
@@ -74,14 +76,16 @@ AWS_S3_OUTPUT_LOCATION=s3://dvsum-staging-prod
    - Create new users with "Create User" button
    - Manage user roles and status
    - Configure query row limits
-3. View usage logs to monitor all query executions
-4. Execute queries in Query Execution page
+3. Use MSISDN Lookup to search phone numbers across all data sources
+4. View usage logs to monitor all query executions
+5. Execute queries in Query Execution page
 
 ### Regular User Workflow
 1. Login with assigned credentials
-2. Execute SQL queries against Athena database
-3. View and download query results
-4. View personal query history
+2. Use MSISDN Lookup to search for phone numbers across multiple data sources
+3. Execute SQL queries against Athena database
+4. View and download query results
+5. View personal query history
 
 ## Database Schema
 
@@ -125,6 +129,7 @@ AWS_S3_OUTPUT_LOCATION=s3://dvsum-staging-prod
 
 ### Query Execution
 - `POST /api/query/execute` - Execute Athena query
+- `POST /api/query/msisdn-lookup` - Execute multi-source MSISDN lookup
 
 ### Usage Logs
 - `GET /api/logs` - Get query logs (admin: all logs, user: own logs)
@@ -139,6 +144,8 @@ AWS_S3_OUTPUT_LOCATION=s3://dvsum-staging-prod
 3. AWS credentials are stored in environment variables
 4. Role-based access control enforced at API level
 5. Query row limits prevent excessive data extraction
+6. MSISDN input validation prevents SQL injection (digits-only with whitespace trimming)
+7. CSRF protection with synchronizer tokens on all state-changing requests
 
 ## Future Enhancements
 - Query history and saved queries per user
