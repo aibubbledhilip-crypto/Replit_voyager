@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, MoreVertical } from "lucide-react";
+import CreateUserDialog from "@/components/CreateUserDialog";
 import {
   Table,
   TableBody,
@@ -57,16 +58,34 @@ export default function UserManagementTable({ users = [] }: UserManagementTableP
     console.log(`Status toggled for user ${userId}`);
   };
 
+  const handleCreateUser = (newUser: { username: string; password: string; role: 'admin' | 'user' }) => {
+    const user: User = {
+      id: String(userList.length + 1),
+      username: newUser.username,
+      email: `${newUser.username}@company.com`,
+      role: newUser.role,
+      lastActive: 'Just now',
+      status: 'active'
+    };
+    setUserList(prev => [...prev, user]);
+    console.log('New user created:', user);
+  };
+
   return (
     <Card data-testid="card-user-management">
       <CardHeader>
-        <div className="flex items-center gap-2">
-          <Users className="h-5 w-5 text-primary" />
-          <CardTitle className="text-lg font-medium">User Management</CardTitle>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg font-medium">User Management</CardTitle>
+            </div>
+            <CardDescription className="mt-1">
+              Manage user roles and access permissions
+            </CardDescription>
+          </div>
+          <CreateUserDialog onCreateUser={handleCreateUser} />
         </div>
-        <CardDescription>
-          Manage user roles and access permissions
-        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="border rounded-md overflow-hidden">
