@@ -1,0 +1,61 @@
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ ls -la /opt/bitnami/apache/conf/
+total 188
+drwxrwxr-x  6 bitnami root  4096 Aug  8 11:18 .
+drwxrwxr-x 17 root    root  4096 Aug  8 13:54 ..
+drwxrwxr-x  4 bitnami root  4096 Nov  7 20:39 bitnami
+-rw-rw-r--  1 bitnami root   279 Aug  8 11:18 deflate.conf
+drwxrwxr-x  2 bitnami root  4096 Aug  5 20:32 extra
+-rw-rw-r--  1 bitnami root 19284 Nov  7 18:23 httpd.conf
+-rw-rw-r--  1 bitnami root 13064 Aug  5 20:32 magic
+-rw-rw-r--  1 bitnami root 60970 Aug  5 20:32 mime.types
+-rw-rw-r--  1 bitnami root 11338 Aug  5 20:32 modsecurity.conf
+drwxrwxr-x  3 bitnami root  4096 Aug  5 20:32 original
+-rw-rw-r--  1 bitnami root 53146 Aug  5 20:32 unicode.mapping
+drwxrwxr-x  3 bitnami root  4096 Aug  8 13:54 vhosts
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ ls -la /opt/bitnami/apache/conf/bitnami/
+total 28
+drwxrwxr-x 4 bitnami root 4096 Nov  7 20:39 .
+drwxrwxr-x 6 bitnami root 4096 Aug  8 11:18 ..
+-rw-r--r-- 1 root    root   99 Nov  7 20:39 bitnami-apps-prefix.conf
+-rw-rw-r-- 1 bitnami root  469 Nov  7 18:23 bitnami.conf
+-rw-rw-r-- 1 bitnami root  942 Aug  8 13:54 bitnami-ssl.conf
+drwxr-xr-x 2 root    root 4096 Nov  7 18:23 certs
+lrwxrwxrwx 1 root    root   23 Nov  7 18:23 httpd.conf -> memory/httpd-micro.conf
+drwxrwxr-x 2 bitnami root 4096 Aug  8 11:18 memory
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ ls -la /opt/bitnami/apache/conf/vhosts/
+total 24
+drwxrwxr-x 3 bitnami root 4096 Aug  8 13:54 .
+drwxrwxr-x 6 bitnami root 4096 Aug  8 11:18 ..
+-rw-rw-r-- 1 bitnami root  161 Aug  8 13:54 00_status-vhost.conf
+drwxrwxr-x 2 bitnami root 4096 Aug  8 13:54 htaccess
+-rw-rw-r-- 1 root    root  540 Aug  8 13:54 sample-https-vhost.conf.disabled
+-rw-rw-r-- 1 root    root  380 Aug  8 13:54 sample-vhost.conf.disabled
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ cat /opt/bitnami/apache/conf/httpd.conf | grep -i "Include.*bitnami"
+Include "/opt/bitnami/apache/conf/extra/httpd-default.conf"
+Include "/opt/bitnami/apache/conf/deflate.conf"
+IncludeOptional "/opt/bitnami/apache/conf/vhosts/*.conf"
+Include "/opt/bitnami/apache/conf/bitnami/bitnami.conf"
+Include "/opt/bitnami/apache/conf/bitnami/httpd.conf"
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ 
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ sudo /opt/bitnami/apache/bin/httpd -S
+
+VirtualHost configuration:
+127.0.0.1:80           status.localhost (/opt/bitnami/apache/conf/vhosts/00_status-vhost.conf:1)
+*:80                   www.example.com (/opt/bitnami/apache/conf/bitnami/bitnami.conf:6)
+*:443                  www.example.com (/opt/bitnami/apache/conf/bitnami/bitnami-ssl.conf:15)
+ServerRoot: "/opt/bitnami/apache"
+Main DocumentRoot: "/opt/bitnami/apache/htdocs"
+Main ErrorLog: "/opt/bitnami/apache/logs/error_log"
+Mutex default: dir="/opt/bitnami/apache/logs/" mechanism=default 
+Mutex proxy-balancer-shm: using_defaults
+Mutex ssl-stapling-refresh: using_defaults
+Mutex rewrite-map: using_defaults
+Mutex ssl-stapling: using_defaults
+Mutex proxy: using_defaults
+Mutex ssl-cache: using_defaults
+PidFile: "/opt/bitnami/apache/var/run/httpd.pid"
+Define: DUMP_VHOSTS
+Define: DUMP_RUN_CFG
+User: name="daemon" id=1
+Group: name="daemon" id=1
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ 
