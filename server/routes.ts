@@ -295,10 +295,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw new Error(`Query failed with status: ${queryStatus}`);
       }
 
-      // Get query results
+      // Get query results (AWS Athena has a max limit of 1000 per request)
       const getResultsCommand = new GetQueryResultsCommand({
         QueryExecutionId: queryExecutionId,
-        MaxResults: rowLimit,
+        MaxResults: Math.min(rowLimit, 1000),
       });
 
       const resultsResponse = await athenaClient.send(getResultsCommand);
@@ -452,10 +452,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             throw new Error(`Query failed with status: ${queryStatus}`);
           }
 
-          // Get query results
+          // Get query results (AWS Athena has a max limit of 1000 per request)
           const getResultsCommand = new GetQueryResultsCommand({
             QueryExecutionId: queryExecutionId,
-            MaxResults: rowLimit,
+            MaxResults: Math.min(rowLimit, 1000),
           });
 
           const resultsResponse = await athenaClient.send(getResultsCommand);
