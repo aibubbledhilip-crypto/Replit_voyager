@@ -9,6 +9,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import Header from "@/components/Header";
 import LoginPage from "@/components/LoginPage";
 import QueryExecutionPage from "@/pages/QueryExecutionPage";
+import MsisdnLookupPage from "@/pages/MsisdnLookupPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import UsageLogsPage from "@/pages/UsageLogsPage";
 import NotFound from "@/pages/not-found";
@@ -68,6 +69,7 @@ function AuthenticatedApp() {
             <div className="p-6 max-w-7xl mx-auto">
               <Switch>
                 <Route path="/" component={QueryExecutionPage} />
+                <Route path="/msisdn-lookup" component={MsisdnLookupPage} />
                 <Route path="/admin" component={AdminDashboardPage} />
                 <Route path="/admin/logs" component={UsageLogsPage} />
                 <Route component={NotFound} />

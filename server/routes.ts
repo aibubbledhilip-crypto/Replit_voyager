@@ -352,6 +352,174 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // MSISDN Lookup route - executes multiple queries in parallel
+  app.post("/api/query/msisdn-lookup", requireAuth, async (req, res) => {
+    try {
+      const { msisdn } = req.body;
+      if (!msisdn) {
+        return res.status(400).json({ message: "MSISDN is required" });
+      }
+
+      // Trim whitespace and validate MSISDN to prevent SQL injection - must be digits only
+      const trimmedMsisdn = typeof msisdn === 'string' ? msisdn.trim() : '';
+      
+      if (!trimmedMsisdn) {
+        return res.status(400).json({ message: "MSISDN is required" });
+      }
+      
+      const msisdnSchema = z.string().regex(/^\d+$/, "MSISDN must contain only digits");
+      const validationResult = msisdnSchema.safeParse(trimmedMsisdn);
+      
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid MSISDN format. MSISDN must contain only digits.",
+          errors: validationResult.error.errors 
+        });
+      }
+      
+      const sanitizedMsisdn = validationResult.data;
+
+      // Get row limit setting
+      const limitSetting = await storage.getSetting('row_limit');
+      const rowLimit = limitSetting ? parseInt(limitSetting.value) : 1000;
+
+      // Initialize Athena client
+      const athenaClient = new AthenaClient({
+        region: process.env.AWS_REGION || 'us-east-1',
+        credentials: {
+          accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+        },
+      });
+
+      const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION || 's3://dvsum-staging-prod';
+
+      // Define all queries using sanitized MSISDN
+      const queries = [
+        {
+          name: 'SF',
+          query: `select * from "dvsum-s3-glue-prod".vw_all_assets_generic_device where sf_parent_msisdn = '${sanitizedMsisdn}'`,
+        },
+        {
+          name: 'Aria',
+          query: `select * from "dvsum-s3-glue-prod".vw_aria_hierarchy_all_status_reverse where msisdn = '${sanitizedMsisdn}'`,
+        },
+        {
+          name: 'Matrix',
+          query: `select * from "dvsum-s3-glue-prod".vw_matrixx_plan where msisdn = '${sanitizedMsisdn}'`,
+        },
+        {
+          name: 'Trufinder',
+          query: `select * from "dvsum-s3-glue-prod".vw_true_finder_raw where msisdn = '${sanitizedMsisdn}'`,
+        },
+        {
+          name: 'Nokia',
+          query: `select * from "dvsum-s3-glue-prod".vw_nokia_raw where msisdn = '${sanitizedMsisdn}'`,
+        },
+      ];
+
+      const startTime = Date.now();
+
+      // Execute all queries in parallel
+      const executeQuery = async (queryConfig: { name: string; query: string }) => {
+        try {
+          // Start query execution
+          const startCommand = new StartQueryExecutionCommand({
+            QueryString: queryConfig.query,
+            ResultConfiguration: {
+              OutputLocation: s3OutputLocation,
+            },
+          });
+
+          const startResponse = await athenaClient.send(startCommand);
+          const queryExecutionId = startResponse.QueryExecutionId;
+
+          if (!queryExecutionId) {
+            throw new Error(`Failed to start query execution for ${queryConfig.name}`);
+          }
+
+          // Poll for query completion
+          let queryStatus = 'RUNNING';
+          const getExecutionCommand = new GetQueryExecutionCommand({ QueryExecutionId: queryExecutionId });
+
+          while (queryStatus === 'RUNNING' || queryStatus === 'QUEUED') {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const executionResponse = await athenaClient.send(getExecutionCommand);
+            queryStatus = executionResponse.QueryExecution?.Status?.State || 'FAILED';
+          }
+
+          if (queryStatus !== 'SUCCEEDED') {
+            throw new Error(`Query failed with status: ${queryStatus}`);
+          }
+
+          // Get query results
+          const getResultsCommand = new GetQueryResultsCommand({
+            QueryExecutionId: queryExecutionId,
+            MaxResults: rowLimit,
+          });
+
+          const resultsResponse = await athenaClient.send(getResultsCommand);
+          const rows = resultsResponse.ResultSet?.Rows || [];
+
+          // Parse results
+          const columns = rows[0]?.Data?.map(col => col.VarCharValue || '') || [];
+          const data = rows.slice(1).map(row => {
+            const rowData: Record<string, any> = {};
+            row.Data?.forEach((cell, idx) => {
+              rowData[columns[idx]] = cell.VarCharValue;
+            });
+            return rowData;
+          });
+
+          return {
+            name: queryConfig.name,
+            columns,
+            data,
+            rowsReturned: data.length,
+            status: 'success',
+            error: null,
+          };
+        } catch (error: any) {
+          return {
+            name: queryConfig.name,
+            columns: [],
+            data: [],
+            rowsReturned: 0,
+            status: 'error',
+            error: error.message,
+          };
+        }
+      };
+
+      // Execute all queries in parallel
+      const results = await Promise.all(queries.map(executeQuery));
+      const executionTime = Date.now() - startTime;
+
+      // Log the MSISDN lookup
+      const totalRows = results.reduce((sum, r) => sum + r.rowsReturned, 0);
+      const hasErrors = results.some(r => r.status === 'error');
+      
+      await storage.createQueryLog({
+        userId: req.session.userId!,
+        username: req.session.username!,
+        query: `MSISDN Lookup: ${sanitizedMsisdn}`,
+        rowsReturned: totalRows,
+        executionTime,
+        status: hasErrors ? 'error' : 'success',
+      });
+
+      res.json({
+        msisdn: sanitizedMsisdn,
+        results,
+        totalRowsReturned: totalRows,
+        executionTime,
+        rowLimit,
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Query logs routes
   app.get("/api/logs", requireAuth, async (req, res) => {
     try {

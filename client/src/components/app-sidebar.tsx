@@ -1,4 +1,4 @@
-import { Home, Database, FileText, Settings, Shield } from "lucide-react";
+import { Home, Database, FileText, Settings, Shield, Search } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +22,11 @@ const adminMenuItems = [
     icon: Database,
   },
   {
+    title: "MSISDN Lookup",
+    url: "/msisdn-lookup",
+    icon: Search,
+  },
+  {
     title: "Usage Logs",
     url: "/admin/logs",
     icon: FileText,
@@ -43,6 +48,11 @@ const userMenuItems = [
     title: "Query Execution",
     url: "/",
     icon: Database,
+  },
+  {
+    title: "MSISDN Lookup",
+    url: "/msisdn-lookup",
+    icon: Search,
   },
   {
     title: "My Queries",
