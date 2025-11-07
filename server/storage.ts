@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, queryLogs, settings, type User, type InsertUser, type QueryLog, type InsertQueryLog, type Setting, type InsertSetting } from "@shared/schema";
+import { users, queryLogs, settings, exportJobs, type User, type InsertUser, type QueryLog, type InsertQueryLog, type Setting, type InsertSetting, type ExportJob, type InsertExportJob } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
@@ -21,6 +21,13 @@ export interface IStorage {
   
   getSetting(key: string): Promise<Setting | undefined>;
   upsertSetting(setting: InsertSetting): Promise<Setting>;
+  
+  createExportJob(job: InsertExportJob): Promise<ExportJob>;
+  getExportJob(id: string): Promise<ExportJob | undefined>;
+  updateExportJobProgress(id: string, progress: number, totalRows?: number): Promise<void>;
+  updateExportJobStatus(id: string, status: string, filePath?: string, errorMessage?: string): Promise<void>;
+  getExportJobsByUser(userId: string): Promise<ExportJob[]>;
+  getAllExportJobs(): Promise<ExportJob[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -111,6 +118,52 @@ export class DbStorage implements IStorage {
       const result = await db.insert(settings).values(setting).returning();
       return result[0];
     }
+  }
+
+  async createExportJob(job: InsertExportJob): Promise<ExportJob> {
+    const result = await db.insert(exportJobs).values(job).returning();
+    return result[0];
+  }
+
+  async getExportJob(id: string): Promise<ExportJob | undefined> {
+    const result = await db.select().from(exportJobs).where(eq(exportJobs.id, id)).limit(1);
+    return result[0];
+  }
+
+  async updateExportJobProgress(id: string, progress: number, totalRows?: number): Promise<void> {
+    const updateData: any = { progress };
+    if (totalRows !== undefined) {
+      updateData.totalRows = totalRows;
+    }
+    await db.update(exportJobs)
+      .set(updateData)
+      .where(eq(exportJobs.id, id));
+  }
+
+  async updateExportJobStatus(id: string, status: string, filePath?: string, errorMessage?: string): Promise<void> {
+    const updateData: any = { status };
+    if (status === 'completed') {
+      updateData.completedAt = new Date();
+    }
+    if (filePath) {
+      updateData.filePath = filePath;
+    }
+    if (errorMessage) {
+      updateData.errorMessage = errorMessage;
+    }
+    await db.update(exportJobs)
+      .set(updateData)
+      .where(eq(exportJobs.id, id));
+  }
+
+  async getExportJobsByUser(userId: string): Promise<ExportJob[]> {
+    return await db.select().from(exportJobs)
+      .where(eq(exportJobs.userId, userId))
+      .orderBy(desc(exportJobs.createdAt));
+  }
+
+  async getAllExportJobs(): Promise<ExportJob[]> {
+    return await db.select().from(exportJobs).orderBy(desc(exportJobs.createdAt));
   }
 }
 

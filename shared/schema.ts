@@ -55,3 +55,28 @@ export const insertSettingSchema = createInsertSchema(settings).omit({
 
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 export type Setting = typeof settings.$inferSelect;
+
+export const exportJobs = pgTable("export_jobs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  username: text("username").notNull(),
+  queryType: text("query_type").notNull(), // 'query' or 'msisdn'
+  query: text("query").notNull(),
+  status: text("status").notNull().default('pending'), // 'pending', 'processing', 'completed', 'failed'
+  progress: integer("progress").notNull().default(0), // Rows fetched so far
+  totalRows: integer("total_rows"), // Total rows (if known)
+  rowLimit: integer("row_limit").notNull(),
+  filePath: text("file_path"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const insertExportJobSchema = createInsertSchema(exportJobs).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+});
+
+export type InsertExportJob = z.infer<typeof insertExportJobSchema>;
+export type ExportJob = typeof exportJobs.$inferSelect;
