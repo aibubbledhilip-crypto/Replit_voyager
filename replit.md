@@ -4,13 +4,17 @@
 Voyager is a secure enterprise web application for querying AWS Athena databases with role-based access control, usage logging, and admin-controlled query limits.
 
 ## Recent Changes
-- **2025-11-07**: Added MSISDN Lookup feature for multi-source phone number queries
+- **2025-11-07**: 
+  - Added MSISDN Lookup feature for multi-source phone number queries
+  - Increased Express body limit to 10MB to handle large/complex SQL queries
+  - Added 5-minute timeout to Athena query polling to prevent browser connection timeouts
+  - Fixed AWS Athena MaxResults bug (capped at 1000 instead of configured limit)
 - **2025-01-07**: Initial implementation with full authentication, AWS Athena integration, and admin dashboard
-- Database schema created with users, query logs, and settings tables
-- Implemented username/password authentication with bcrypt
-- Integrated AWS SDK for Athena query execution
-- Added usage logging for all query executions
-- Created admin dashboard with user management and statistics
+  - Database schema created with users, query logs, and settings tables
+  - Implemented username/password authentication with bcrypt
+  - Integrated AWS SDK for Athena query execution
+  - Added usage logging for all query executions
+  - Created admin dashboard with user management and statistics
 
 ## Project Architecture
 
