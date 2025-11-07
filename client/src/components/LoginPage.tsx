@@ -5,14 +5,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Database } from "lucide-react";
 import loginBg from "@assets/generated_images/Data_visualization_login_background_22211783.png";
+import { apiRequest } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login attempt:', { username, password: '***' });
+    setIsLoading(true);
+
+    try {
+      await apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password }),
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+    } catch (error: any) {
+      toast({
+        title: "Login Failed",
+        description: error.message || "Invalid credentials",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -49,6 +71,7 @@ export default function LoginPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 data-testid="input-username"
+                disabled={isLoading}
               />
             </div>
             
@@ -62,18 +85,23 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 data-testid="input-password"
+                disabled={isLoading}
               />
             </div>
             
             <Button 
               type="submit"
               className="w-full"
-              disabled={!username || !password}
+              disabled={!username || !password || isLoading}
               data-testid="button-login"
             >
-              Sign In
+              {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
+          
+          <p className="text-xs text-muted-foreground text-center mt-4">
+            Default credentials: admin / admin123
+          </p>
         </CardContent>
       </Card>
     </div>

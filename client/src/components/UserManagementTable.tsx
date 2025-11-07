@@ -1,9 +1,13 @@
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, MoreVertical } from "lucide-react";
 import CreateUserDialog from "@/components/CreateUserDialog";
+import { apiRequest } from "@/lib/api";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -42,33 +46,81 @@ interface UserManagementTableProps {
 }
 
 export default function UserManagementTable({ users = [] }: UserManagementTableProps) {
-  const [userList, setUserList] = useState<User[]>(users);
+  const { toast } = useToast();
+
+  const updateRoleMutation = useMutation({
+    mutationFn: ({ userId, role }: { userId: string; role: string }) =>
+      apiRequest(`/api/users/${userId}/role`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      toast({
+        title: "Success",
+        description: "User role updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update role",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ userId, status }: { userId: string; status: string }) =>
+      apiRequest(`/api/users/${userId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      toast({
+        title: "Success",
+        description: "User status updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createUserMutation = useMutation({
+    mutationFn: (newUser: { username: string; password: string; role: 'admin' | 'user' }) =>
+      apiRequest('/api/users', {
+        method: 'POST',
+        body: JSON.stringify(newUser),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      toast({
+        title: "Success",
+        description: "User created successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create user",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleRoleChange = (userId: string, newRole: 'admin' | 'user') => {
-    setUserList(prev => 
-      prev.map(u => u.id === userId ? { ...u, role: newRole } : u)
-    );
-    console.log(`Role changed for user ${userId} to ${newRole}`);
+    updateRoleMutation.mutate({ userId, role: newRole });
   };
 
-  const handleToggleStatus = (userId: string) => {
-    setUserList(prev => 
-      prev.map(u => u.id === userId ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' } : u)
-    );
-    console.log(`Status toggled for user ${userId}`);
-  };
-
-  const handleCreateUser = (newUser: { username: string; password: string; role: 'admin' | 'user' }) => {
-    const user: User = {
-      id: String(userList.length + 1),
-      username: newUser.username,
-      email: `${newUser.username}@company.com`,
-      role: newUser.role,
-      lastActive: 'Just now',
-      status: 'active'
-    };
-    setUserList(prev => [...prev, user]);
-    console.log('New user created:', user);
+  const handleToggleStatus = (userId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    updateStatusMutation.mutate({ userId, status: newStatus });
   };
 
   return (
@@ -84,7 +136,7 @@ export default function UserManagementTable({ users = [] }: UserManagementTableP
               Manage user roles and access permissions
             </CardDescription>
           </div>
-          <CreateUserDialog onCreateUser={handleCreateUser} />
+          <CreateUserDialog onCreateUser={(user) => createUserMutation.mutate(user)} />
         </div>
       </CardHeader>
       <CardContent>
@@ -101,7 +153,7 @@ export default function UserManagementTable({ users = [] }: UserManagementTableP
               </TableRow>
             </TableHeader>
             <TableBody>
-              {userList.map((user) => (
+              {users.map((user) => (
                 <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
                   <TableCell className="font-medium" data-testid={`text-username-${user.id}`}>
                     {user.username}
@@ -145,10 +197,7 @@ export default function UserManagementTable({ users = [] }: UserManagementTableP
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => console.log('Edit user', user.id)}>
-                          Edit User
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleToggleStatus(user.id)}>
+                        <DropdownMenuItem onClick={() => handleToggleStatus(user.id, user.status)}>
                           {user.status === 'active' ? 'Deactivate' : 'Activate'}
                         </DropdownMenuItem>
                       </DropdownMenuContent>

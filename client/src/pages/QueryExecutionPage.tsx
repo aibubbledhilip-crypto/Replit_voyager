@@ -1,33 +1,43 @@
 import { useState } from "react";
 import QueryBuilder from "@/components/QueryBuilder";
 import ResultsTable from "@/components/ResultsTable";
+import { apiRequest } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function QueryExecutionPage() {
   const [results, setResults] = useState<{
     columns: string[];
     data: Record<string, any>[];
     executionTime: number;
+    rowLimit: number;
   } | null>(null);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const { toast } = useToast();
 
-  const handleExecute = (query: string) => {
-    console.log('Executing query:', query);
+  const handleExecute = async (query: string) => {
+    setIsExecuting(true);
     
-    setTimeout(() => {
-      const mockColumns = ['id', 'name', 'email', 'department', 'created_at'];
-      const mockData = Array.from({ length: 15 }, (_, i) => ({
-        id: `${1000 + i}`,
-        name: `User ${i + 1}`,
-        email: `user${i + 1}@example.com`,
-        department: ['Engineering', 'Sales', 'Marketing', 'HR'][i % 4],
-        created_at: `2025-01-${String(i + 1).padStart(2, '0')}`
-      }));
-
-      setResults({
-        columns: mockColumns,
-        data: mockData,
-        executionTime: Math.floor(Math.random() * 500) + 100
+    try {
+      const response = await apiRequest('/api/query/execute', {
+        method: 'POST',
+        body: JSON.stringify({ query }),
       });
-    }, 500);
+
+      setResults(response);
+      toast({
+        title: "Query Executed",
+        description: `Retrieved ${response.data.length} rows in ${response.executionTime}ms`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Query Failed",
+        description: error.message || "Failed to execute query",
+        variant: "destructive",
+      });
+      setResults(null);
+    } finally {
+      setIsExecuting(false);
+    }
   };
 
   const handleClear = () => {
@@ -42,12 +52,16 @@ export default function QueryExecutionPage() {
         connectionStatus="connected"
       />
       
-      {results ? (
+      {isExecuting ? (
+        <div className="text-center py-12 text-muted-foreground">
+          Executing query...
+        </div>
+      ) : results ? (
         <ResultsTable 
           columns={results.columns}
           data={results.data}
           totalRows={results.data.length}
-          rowLimit={1000}
+          rowLimit={results.rowLimit}
           executionTime={results.executionTime}
         />
       ) : (
