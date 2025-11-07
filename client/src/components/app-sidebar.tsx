@@ -31,16 +31,6 @@ const adminMenuItems = [
     url: "/admin/logs",
     icon: FileText,
   },
-  {
-    title: "User Management",
-    url: "/admin/users",
-    icon: Shield,
-  },
-  {
-    title: "Settings",
-    url: "/admin/settings",
-    icon: Settings,
-  },
 ];
 
 const userMenuItems = [
@@ -53,11 +43,6 @@ const userMenuItems = [
     title: "MSISDN Lookup",
     url: "/msisdn-lookup",
     icon: Search,
-  },
-  {
-    title: "My Queries",
-    url: "/queries",
-    icon: FileText,
   },
 ];
 
