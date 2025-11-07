@@ -49,15 +49,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update last active
       await storage.updateUserLastActive(user.id);
 
-      // Set session
-      req.session.userId = user.id;
-      req.session.username = user.username;
-      req.session.role = user.role;
+      // Regenerate session to prevent session fixation
+      req.session.regenerate((err) => {
+        if (err) {
+          return res.status(500).json({ message: "Failed to create session" });
+        }
 
-      res.json({
-        id: user.id,
-        username: user.username,
-        role: user.role,
+        // Set session data
+        req.session.userId = user.id;
+        req.session.username = user.username;
+        req.session.role = user.role;
+
+        req.session.save((err) => {
+          if (err) {
+            return res.status(500).json({ message: "Failed to save session" });
+          }
+
+          res.json({
+            id: user.id,
+            username: user.username,
+            role: user.role,
+          });
+        });
       });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -65,10 +78,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/auth/logout", (req, res) => {
+    const sessionId = req.session.id;
+    
     req.session.destroy((err) => {
       if (err) {
         return res.status(500).json({ message: "Failed to logout" });
       }
+      
+      // Clear the session cookie
+      res.clearCookie('connect.sid');
       res.json({ message: "Logged out successfully" });
     });
   });
