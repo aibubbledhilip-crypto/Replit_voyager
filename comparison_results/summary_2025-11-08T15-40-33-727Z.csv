@@ -1,0 +1,10 @@
+Metric,Value
+File 1,sample_customers_v1_preview.csv
+File 2,sample_customers_v2_preview.csv
+Total Rows in File 1,5
+Total Rows in File 2,5
+Unique to File 1,4
+Unique to File 2,4
+Common Rows (Identical),0
+Rows with Differences,1
+Comparison Key Columns,"customer_id→customer_id"
