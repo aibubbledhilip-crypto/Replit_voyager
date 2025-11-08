@@ -5,6 +5,7 @@ Voyager is a secure enterprise web application for querying AWS Athena databases
 
 ## Recent Changes
 - **2025-11-08**: 
+  - **Added File Comparison Feature**: Upload and compare two CSV/XLSX files to identify unique rows, common rows, and data differences
   - Successfully deployed to AWS Lightsail with self-hosted PostgreSQL
   - Fixed database driver compatibility (Neon serverless → node-postgres for local PostgreSQL)
   - Configured Apache reverse proxy with 10-minute timeout for long-running queries
@@ -37,9 +38,10 @@ Voyager is a secure enterprise web application for querying AWS Athena databases
 2. **Role-Based Access Control**: Admin and regular user roles with different permissions
 3. **AWS Athena Integration**: Execute SQL queries against AWS Athena database
 4. **MSISDN Lookup**: Multi-source phone number search across 5 data sources (SF, Aria, Matrix, Trufinder, Nokia)
-5. **Query Row Limits**: Admin-configurable limits for data extraction
-6. **Usage Logging**: Comprehensive logging of all query executions
-7. **User Management**: Admin interface to create users, assign roles, and manage status
+5. **File Comparison**: Upload and compare two CSV/XLSX files to identify unique rows, common rows, and data differences with downloadable reports
+6. **Query Row Limits**: Admin-configurable limits for data extraction
+7. **Usage Logging**: Comprehensive logging of all query executions
+8. **User Management**: Admin interface to create users, assign roles, and manage status
 
 ## Setup Instructions
 
@@ -88,15 +90,35 @@ AWS_S3_OUTPUT_LOCATION=s3://dvsum-staging-prod
    - Manage user roles and status
    - Configure query row limits
 3. Use MSISDN Lookup to search phone numbers across all data sources
-4. View usage logs to monitor all query executions
-5. Execute queries in Query Execution page
+4. Use File Comparison to compare two data files and identify differences
+5. View usage logs to monitor all query executions
+6. Execute queries in Query Execution page
 
 ### Regular User Workflow
 1. Login with assigned credentials
 2. Use MSISDN Lookup to search for phone numbers across multiple data sources
-3. Execute SQL queries against Athena database
-4. View and download query results
-5. View personal query history
+3. Use File Comparison to reconcile and compare data files
+4. Execute SQL queries against Athena database
+5. View and download query results
+6. View personal query history
+
+### File Comparison Workflow
+1. Navigate to File Comparison page
+2. Upload two files (CSV or XLSX format):
+   - File 1: Base file for comparison
+   - File 2: Target file to compare against
+3. Select key columns (must exist in both files) to use for matching rows
+4. Click "Compare Files" to start the comparison
+5. Review the comparison results:
+   - **Unique to File 1**: Rows that exist only in the first file
+   - **Unique to File 2**: Rows that exist only in the second file
+   - **Common Rows**: Rows that are identical in both files
+   - **Differences**: Rows that exist in both files but have different values
+6. Download the detailed comparison report as CSV
+7. The report includes:
+   - Summary statistics
+   - All unique rows from each file
+   - Detailed differences showing which columns changed and their values
 
 ## Database Schema
 
@@ -142,6 +164,10 @@ AWS_S3_OUTPUT_LOCATION=s3://dvsum-staging-prod
 - `POST /api/query/execute` - Execute Athena query
 - `POST /api/query/msisdn-lookup` - Execute multi-source MSISDN lookup
 
+### File Comparison
+- `POST /api/compare/execute` - Upload and compare two files (multipart/form-data)
+- `GET /api/compare/download/:filename` - Download comparison result CSV
+
 ### Usage Logs
 - `GET /api/logs` - Get query logs (admin: all logs, user: own logs)
 
@@ -157,6 +183,9 @@ AWS_S3_OUTPUT_LOCATION=s3://dvsum-staging-prod
 5. Query row limits prevent excessive data extraction
 6. MSISDN input validation prevents SQL injection (digits-only with whitespace trimming)
 7. CSRF protection with synchronizer tokens on all state-changing requests
+8. File upload restrictions: Only CSV and XLSX files allowed, 50MB size limit
+9. File path traversal protection: All file operations use sanitized basenames
+10. Automatic cleanup of temporary files: Uploaded files and comparison results older than 24 hours are auto-deleted
 
 ## Future Enhancements
 - Query history and saved queries per user
@@ -165,4 +194,6 @@ AWS_S3_OUTPUT_LOCATION=s3://dvsum-staging-prod
 - Query scheduling for recurring extractions
 - Enhanced audit logging with query performance metrics
 - Email notifications for query completion
-- Export query results in multiple formats (CSV, JSON, Excel)
+- Export query results in multiple formats (CSV, JSON, Excel, Parquet)
+- Advanced file comparison: Support for custom comparison rules, ignore columns, fuzzy matching
+- Bulk file comparison: Compare multiple file pairs in a batch operation

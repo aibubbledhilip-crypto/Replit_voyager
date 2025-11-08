@@ -698,33 +698,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
-  
-  app.get("/api/compare/columns/:filename", requireAuth, upload.single('file'), async (req, res) => {
-    try {
-      const file = req.file;
-      
-      if (!file) {
-        return res.status(400).json({ message: "File is required" });
-      }
-      
-      try {
-        const parsed = parseFile(file.path);
-        
-        // Clean up uploaded file
-        fs.unlinkSync(file.path);
-        
-        res.json({
-          columns: parsed.columns,
-          rowCount: parsed.rowCount,
-        });
-      } catch (error: any) {
-        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-        throw error;
-      }
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
 
   const httpServer = createServer(app);
   return httpServer;

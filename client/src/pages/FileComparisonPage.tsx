@@ -8,6 +8,7 @@ import { FileText, Upload, Download, GitCompare, Loader2, CheckCircle2, XCircle,
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import * as XLSX from 'xlsx';
 
 interface ComparisonSummary {
   file1Name: string;
@@ -46,6 +47,7 @@ export default function FileComparisonPage() {
     const file = e.target.files?.[0];
     if (file) {
       setFile1(file);
+      setSelectedColumns([]); // Clear selected columns when new file is uploaded
       await analyzeFile(file, 'file1');
     }
   };
@@ -54,6 +56,7 @@ export default function FileComparisonPage() {
     const file = e.target.files?.[0];
     if (file) {
       setFile2(file);
+      setSelectedColumns([]); // Clear selected columns when new file is uploaded
       await analyzeFile(file, 'file2');
     }
   };
@@ -62,50 +65,89 @@ export default function FileComparisonPage() {
     setIsAnalyzing(true);
     
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const response = await fetch('/api/compare/columns/temp', {
-        method: 'GET',
-        headers: {
-          'x-csrf-token': localStorage.getItem('csrf-token') || '',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to analyze file');
-      }
-
-      // For now, we'll extract columns from the file on the client side
-      // This is a simplified approach - in production, you'd send to server
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-        let columns: string[] = [];
-        
-        if (file.name.endsWith('.csv')) {
+      if (file.name.endsWith('.csv')) {
+        // For CSV files, parse on the client side
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const content = e.target?.result as string;
           const firstLine = content.split('\n')[0];
-          columns = firstLine.split(',').map(col => col.trim().replace(/^"|"$/g, ''));
-        } else {
-          // For XLSX, we'll need to wait for server processing
-          columns = [];
-        }
+          const columns = firstLine.split(',').map(col => col.trim().replace(/^"|"$/g, ''));
+          
+          if (fileType === 'file1') {
+            setFile1Columns(columns);
+          } else {
+            setFile2Columns(columns);
+          }
+          setIsAnalyzing(false);
+        };
         
-        if (fileType === 'file1') {
-          setFile1Columns(columns);
-        } else {
-          setFile2Columns(columns);
-        }
-      };
-      
-      reader.readAsText(file);
+        reader.onerror = () => {
+          toast({
+            title: "Analysis Failed",
+            description: "Failed to read CSV file",
+            variant: "destructive",
+          });
+          setIsAnalyzing(false);
+        };
+        
+        reader.readAsText(file);
+      } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+        // For XLSX files, use XLSX library to extract columns
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = e.target?.result;
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            
+            if (jsonData.length > 0) {
+              const columns = (jsonData[0] as any[]).map(col => String(col || ''));
+              
+              if (fileType === 'file1') {
+                setFile1Columns(columns);
+              } else {
+                setFile2Columns(columns);
+              }
+            } else {
+              throw new Error('XLSX file appears to be empty');
+            }
+            setIsAnalyzing(false);
+          } catch (error: any) {
+            toast({
+              title: "XLSX Analysis Failed",
+              description: error.message || "Failed to parse XLSX file",
+              variant: "destructive",
+            });
+            setIsAnalyzing(false);
+          }
+        };
+        
+        reader.onerror = () => {
+          toast({
+            title: "Analysis Failed",
+            description: "Failed to read XLSX file",
+            variant: "destructive",
+          });
+          setIsAnalyzing(false);
+        };
+        
+        reader.readAsArrayBuffer(file);
+      } else {
+        toast({
+          title: "Unsupported File Type",
+          description: "Please upload a CSV or XLSX file",
+          variant: "destructive",
+        });
+        setIsAnalyzing(false);
+      }
     } catch (error: any) {
       toast({
         title: "Analysis Failed",
         description: error.message || "Failed to analyze file columns",
         variant: "destructive",
       });
-    } finally {
       setIsAnalyzing(false);
     }
   };
