@@ -5,14 +5,22 @@ Voyager is a secure enterprise web application for querying AWS Athena databases
 
 ## Recent Changes
 - **2025-11-08**: 
-  - **Enhanced File Comparison Feature with Flexible Column Mapping**:
+  - **Enhanced File Comparison Feature with Flexible Column Mapping and Separate Reports**:
     - Upload and compare two CSV/XLSX files to identify unique rows, common rows, and data differences
     - **NEW: Flexible column mapping** - Map columns with different names between files (e.g., "customer_id" in File 1 → "id" in File 2)
+    - **NEW: Separate downloadable reports** - Each comparison category gets its own CSV file:
+      - Summary report (comparison statistics and metadata)
+      - Unique to File 1 (rows only in first file)
+      - Unique to File 2 (rows only in second file)
+      - Common Rows (identical rows in both files)
+      - Differences (rows with same keys but different values)
     - Interactive mapping interface with add/remove rows and dual dropdowns for each mapping
     - Client-side XLSX parsing for instant column extraction
+    - Enhanced file upload button styling with primary color for better visibility
     - Proper CSRF token handling for secure file uploads
     - Comparison logic respects column mappings for row matching
     - Automatically compares unmapped columns that have identical names in both files
+    - Download buttons conditionally shown only for categories with data
     - End-to-end tested with CSV files using different column names
   - Successfully deployed to AWS Lightsail with self-hosted PostgreSQL
   - Fixed database driver compatibility (Neon serverless → node-postgres for local PostgreSQL)
@@ -128,11 +136,14 @@ AWS_S3_OUTPUT_LOCATION=s3://dvsum-staging-prod
    - **Unique to File 2**: Rows that exist only in the second file (based on mapped key columns)
    - **Common Rows**: Rows that are completely identical in both files
    - **Differences**: Rows that match on key columns but have different values in other columns
-6. Download the detailed comparison report as CSV
-7. The report includes:
-   - Summary statistics with column mappings shown (e.g., "customer_id→id")
-   - All unique rows from each file
-   - Detailed differences showing which columns changed and their values
+6. **Download separate reports** for each category:
+   - **Summary Report**: Comparison statistics, column mappings, and metadata
+   - **Unique to File 1**: CSV containing only rows found in the first file
+   - **Unique to File 2**: CSV containing only rows found in the second file
+   - **Common Rows**: CSV containing identical rows from both files
+   - **Differences**: CSV showing rows with changes and their values
+   - Download buttons only appear for categories with data
+   - Each button shows the number of rows in that category
 
 **Note on Column Comparison**:
 - **Mapped columns**: Compared using their respective names as defined in the mappings
