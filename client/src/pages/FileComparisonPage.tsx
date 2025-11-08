@@ -302,7 +302,7 @@ export default function FileComparisonPage() {
                 accept=".csv,.xlsx,.xls"
                 onChange={handleFile1Change}
                 data-testid="input-file1"
-                className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer cursor-pointer"
+                className="file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer cursor-pointer"
               />
             </div>
             {isAnalyzing && file1 && (
@@ -340,7 +340,7 @@ export default function FileComparisonPage() {
                 accept=".csv,.xlsx,.xls"
                 onChange={handleFile2Change}
                 data-testid="input-file2"
-                className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer cursor-pointer"
+                className="file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer cursor-pointer"
               />
             </div>
             {isAnalyzing && file2 && (
