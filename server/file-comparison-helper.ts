@@ -26,12 +26,10 @@ export interface ParsedFile {
 export interface ComparisonResult {
   uniqueToFile1: Record<string, any>[];
   uniqueToFile2: Record<string, any>[];
-  commonRows: Record<string, any>[];
-  deltaRows: Array<{
+  matchingKeys: Array<{
     key: string;
     file1Data: Record<string, any>;
     file2Data: Record<string, any>;
-    differences: string[];
   }>;
   summary: {
     file1Name: string;
@@ -40,8 +38,7 @@ export interface ComparisonResult {
     file2TotalRows: number;
     uniqueToFile1Count: number;
     uniqueToFile2Count: number;
-    commonRowsCount: number;
-    deltaRowsCount: number;
+    matchingKeysCount: number;
     comparisonColumns: string[];
   };
 }
@@ -175,43 +172,35 @@ export function compareDatasets(
     file2Map.set(key, row);
   });
   
-  // Find unique rows
+  // Find unique rows and matching keys
   const uniqueToFile1: Record<string, any>[] = [];
   const uniqueToFile2: Record<string, any>[] = [];
-  const commonRows: Record<string, any>[] = [];
-  const deltaRows: Array<{
+  const matchingKeys: Array<{
     key: string;
     file1Data: Record<string, any>;
     file2Data: Record<string, any>;
-    differences: string[];
   }> = [];
   
   // Check file1 rows
   file1Map.forEach((row, key) => {
     if (!file2Map.has(key)) {
+      // Key only exists in file 1
       uniqueToFile1.push(row);
     } else {
+      // Key exists in both files - add to matching keys with all data from both files
       const file2Row = file2Map.get(key)!;
-      
-      // Check if rows are identical (respecting column mappings)
-      const differences = findDifferences(row, file2Row, file1.columns, file2.columns, columnMappings);
-      
-      if (differences.length === 0) {
-        commonRows.push(row);
-      } else {
-        deltaRows.push({
-          key,
-          file1Data: row,
-          file2Data: file2Row,
-          differences,
-        });
-      }
+      matchingKeys.push({
+        key,
+        file1Data: row,
+        file2Data: file2Row,
+      });
     }
   });
   
   // Check file2 rows for unique entries
   file2Map.forEach((row, key) => {
     if (!file1Map.has(key)) {
+      // Key only exists in file 2
       uniqueToFile2.push(row);
     }
   });
@@ -219,8 +208,7 @@ export function compareDatasets(
   return {
     uniqueToFile1,
     uniqueToFile2,
-    commonRows,
-    deltaRows,
+    matchingKeys,
     summary: {
       file1Name,
       file2Name,
@@ -228,8 +216,7 @@ export function compareDatasets(
       file2TotalRows: file2.rowCount,
       uniqueToFile1Count: uniqueToFile1.length,
       uniqueToFile2Count: uniqueToFile2.length,
-      commonRowsCount: commonRows.length,
-      deltaRowsCount: deltaRows.length,
+      matchingKeysCount: matchingKeys.length,
       comparisonColumns: columnMappings.map(m => `${m.file1Column}→${m.file2Column}`),
     },
   };
@@ -288,10 +275,9 @@ export function generateComparisonCSV(result: ComparisonResult): string {
   stream.write(`File 2: ${result.summary.file2Name}\n`);
   stream.write(`Total Rows in File 1: ${result.summary.file1TotalRows}\n`);
   stream.write(`Total Rows in File 2: ${result.summary.file2TotalRows}\n`);
-  stream.write(`Unique to File 1: ${result.summary.uniqueToFile1Count}\n`);
-  stream.write(`Unique to File 2: ${result.summary.uniqueToFile2Count}\n`);
-  stream.write(`Common Rows (Identical): ${result.summary.commonRowsCount}\n`);
-  stream.write(`Rows with Differences: ${result.summary.deltaRowsCount}\n`);
+  stream.write(`Only in File 1: ${result.summary.uniqueToFile1Count}\n`);
+  stream.write(`Only in File 2: ${result.summary.uniqueToFile2Count}\n`);
+  stream.write(`Matching Keys: ${result.summary.matchingKeysCount}\n`);
   stream.write(`Comparison Key Columns: ${result.summary.comparisonColumns.join(', ')}\n`);
   stream.write('\n\n');
   
@@ -319,16 +305,26 @@ export function generateComparisonCSV(result: ComparisonResult): string {
     stream.write('\n\n');
   }
   
-  // Write delta rows (rows with differences)
-  if (result.deltaRows.length > 0) {
-    stream.write('=== ROWS WITH DIFFERENCES ===\n');
-    stream.write('Key,Column,File 1 Value,File 2 Value\n');
-    result.deltaRows.forEach(delta => {
-      delta.differences.forEach(col => {
-        const val1 = csvEscape([String(delta.file1Data[col] ?? '')]);
-        const val2 = csvEscape([String(delta.file2Data[col] ?? '')]);
-        stream.write(`"${delta.key}","${col}",${val1},${val2}\n`);
+  // Write matching keys (rows where key exists in both files)
+  if (result.matchingKeys.length > 0) {
+    stream.write('=== MATCHING KEYS ===\n');
+    const file1Columns = Object.keys(result.matchingKeys[0].file1Data);
+    const file2Columns = Object.keys(result.matchingKeys[0].file2Data);
+    
+    const headerParts: string[] = [];
+    file1Columns.forEach(col => headerParts.push(`File1_${col}`));
+    file2Columns.forEach(col => headerParts.push(`File2_${col}`));
+    stream.write(csvEscape(headerParts) + '\n');
+    
+    result.matchingKeys.forEach(match => {
+      const values: string[] = [];
+      file1Columns.forEach(col => {
+        values.push(csvEscape([String(match.file1Data[col] ?? '')]));
       });
+      file2Columns.forEach(col => {
+        values.push(csvEscape([String(match.file2Data[col] ?? '')]));
+      });
+      stream.write(values.join(',') + '\n');
     });
   }
   
@@ -341,8 +337,7 @@ export interface SeparateReports {
   summary: string | null;
   uniqueToFile1: string | null;
   uniqueToFile2: string | null;
-  commonRows: string | null;
-  differences: string | null;
+  matchingKeys: string | null;
 }
 
 export function generateSeparateReports(result: ComparisonResult): SeparateReports {
@@ -351,8 +346,7 @@ export function generateSeparateReports(result: ComparisonResult): SeparateRepor
     summary: null,
     uniqueToFile1: null,
     uniqueToFile2: null,
-    commonRows: null,
-    differences: null,
+    matchingKeys: null,
   };
   
   // Generate summary report
@@ -364,10 +358,9 @@ export function generateSeparateReports(result: ComparisonResult): SeparateRepor
   summaryStream.write(`File 2,${csvEscape([result.summary.file2Name])}\n`);
   summaryStream.write(`Total Rows in File 1,${result.summary.file1TotalRows}\n`);
   summaryStream.write(`Total Rows in File 2,${result.summary.file2TotalRows}\n`);
-  summaryStream.write(`Unique to File 1,${result.summary.uniqueToFile1Count}\n`);
-  summaryStream.write(`Unique to File 2,${result.summary.uniqueToFile2Count}\n`);
-  summaryStream.write(`Common Rows (Identical),${result.summary.commonRowsCount}\n`);
-  summaryStream.write(`Rows with Differences,${result.summary.deltaRowsCount}\n`);
+  summaryStream.write(`Only in File 1,${result.summary.uniqueToFile1Count}\n`);
+  summaryStream.write(`Only in File 2,${result.summary.uniqueToFile2Count}\n`);
+  summaryStream.write(`Matching Keys (in both files),${result.summary.matchingKeysCount}\n`);
   summaryStream.write(`Comparison Key Columns,"${result.summary.comparisonColumns.join(', ')}"\n`);
   summaryStream.end();
   reports.summary = summaryFileName;
@@ -402,36 +395,37 @@ export function generateSeparateReports(result: ComparisonResult): SeparateRepor
     reports.uniqueToFile2 = uniqueFile2Name;
   }
   
-  // Generate common rows report
-  if (result.commonRows.length > 0) {
-    const commonRowsName = `common_rows_${timestamp}.csv`;
-    const commonRowsPath = path.join(COMPARISON_RESULTS_DIR, commonRowsName);
-    const stream = fs.createWriteStream(commonRowsPath);
-    const columns = Object.keys(result.commonRows[0]);
-    stream.write(csvEscape(columns) + '\n');
-    result.commonRows.forEach(row => {
-      const values = columns.map(col => csvEscape([String(row[col] ?? '')]));
+  // Generate matching keys report (all rows where key exists in both files)
+  if (result.matchingKeys.length > 0) {
+    const matchingKeysName = `matching_keys_${timestamp}.csv`;
+    const matchingKeysPath = path.join(COMPARISON_RESULTS_DIR, matchingKeysName);
+    const stream = fs.createWriteStream(matchingKeysPath);
+    
+    // Get all columns from both files
+    const file1Columns = Object.keys(result.matchingKeys[0].file1Data);
+    const file2Columns = Object.keys(result.matchingKeys[0].file2Data);
+    
+    // Create header with File1_ and File2_ prefixes
+    const headerParts: string[] = [];
+    file1Columns.forEach(col => headerParts.push(`File1_${col}`));
+    file2Columns.forEach(col => headerParts.push(`File2_${col}`));
+    stream.write(csvEscape(headerParts) + '\n');
+    
+    // Write data rows
+    result.matchingKeys.forEach(match => {
+      const values: string[] = [];
+      // Add File 1 data
+      file1Columns.forEach(col => {
+        values.push(csvEscape([String(match.file1Data[col] ?? '')]));
+      });
+      // Add File 2 data
+      file2Columns.forEach(col => {
+        values.push(csvEscape([String(match.file2Data[col] ?? '')]));
+      });
       stream.write(values.join(',') + '\n');
     });
     stream.end();
-    reports.commonRows = commonRowsName;
-  }
-  
-  // Generate differences report
-  if (result.deltaRows.length > 0) {
-    const differencesName = `differences_${timestamp}.csv`;
-    const differencesPath = path.join(COMPARISON_RESULTS_DIR, differencesName);
-    const stream = fs.createWriteStream(differencesPath);
-    stream.write('Key,Column,File 1 Value,File 2 Value\n');
-    result.deltaRows.forEach(delta => {
-      delta.differences.forEach(col => {
-        const val1 = csvEscape([String(delta.file1Data[col] ?? '')]);
-        const val2 = csvEscape([String(delta.file2Data[col] ?? '')]);
-        stream.write(`"${delta.key}","${col}",${val1},${val2}\n`);
-      });
-    });
-    stream.end();
-    reports.differences = differencesName;
+    reports.matchingKeys = matchingKeysName;
   }
   
   return reports;

@@ -18,8 +18,7 @@ interface ComparisonSummary {
   file2TotalRows: number;
   uniqueToFile1Count: number;
   uniqueToFile2Count: number;
-  commonRowsCount: number;
-  deltaRowsCount: number;
+  matchingKeysCount: number;
   comparisonColumns: string[];
 }
 
@@ -27,16 +26,14 @@ interface SeparateReports {
   summary: string | null;
   uniqueToFile1: string | null;
   uniqueToFile2: string | null;
-  commonRows: string | null;
-  differences: string | null;
+  matchingKeys: string | null;
 }
 
 interface ComparisonResult {
   summary: ComparisonSummary;
   uniqueToFile1Count: number;
   uniqueToFile2Count: number;
-  commonRowsCount: number;
-  deltaRowsCount: number;
+  matchingKeysCount: number;
   separateReports: SeparateReports;
   message: string;
 }
@@ -241,7 +238,7 @@ export default function FileComparisonPage() {
       
       toast({
         title: "Comparison Complete",
-        description: `Found ${result.uniqueToFile1Count} unique to file 1, ${result.uniqueToFile2Count} unique to file 2, and ${result.deltaRowsCount} differences`,
+        description: `Found ${result.uniqueToFile1Count} only in file 1, ${result.uniqueToFile2Count} only in file 2, and ${result.matchingKeysCount} matching keys`,
       });
     } catch (error: any) {
       toast({
@@ -279,7 +276,7 @@ export default function FileComparisonPage() {
       <div>
         <h1 className="text-3xl font-semibold mb-2">File Comparison</h1>
         <p className="text-muted-foreground">
-          Compare two CSV or Excel files to identify unique rows, common rows, and data differences
+          Compare two CSV or Excel files to identify rows unique to each file and matching key rows
         </p>
       </div>
 
@@ -511,41 +508,33 @@ export default function FileComparisonPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Summary Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-md">
-                <div className="text-sm text-muted-foreground mb-1">Unique to File 1</div>
+                <div className="text-sm text-muted-foreground mb-1">Only in File 1</div>
                 <div className="text-2xl font-semibold text-blue-700 dark:text-blue-400" data-testid="text-unique-file1">
                   {comparisonResult.uniqueToFile1Count}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  {comparisonResult.summary.file1Name}
+                  Rows not in File 2
                 </div>
               </div>
 
               <div className="bg-green-50 dark:bg-green-950 p-4 rounded-md">
-                <div className="text-sm text-muted-foreground mb-1">Unique to File 2</div>
+                <div className="text-sm text-muted-foreground mb-1">Only in File 2</div>
                 <div className="text-2xl font-semibold text-green-700 dark:text-green-400" data-testid="text-unique-file2">
                   {comparisonResult.uniqueToFile2Count}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  {comparisonResult.summary.file2Name}
+                  Rows not in File 1
                 </div>
               </div>
 
               <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-md">
-                <div className="text-sm text-muted-foreground mb-1">Common Rows</div>
-                <div className="text-2xl font-semibold text-purple-700 dark:text-purple-400" data-testid="text-common-rows">
-                  {comparisonResult.commonRowsCount}
+                <div className="text-sm text-muted-foreground mb-1">Matching Keys</div>
+                <div className="text-2xl font-semibold text-purple-700 dark:text-purple-400" data-testid="text-matching-keys">
+                  {comparisonResult.matchingKeysCount}
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">Identical</div>
-              </div>
-
-              <div className="bg-orange-50 dark:bg-orange-950 p-4 rounded-md">
-                <div className="text-sm text-muted-foreground mb-1">Differences</div>
-                <div className="text-2xl font-semibold text-orange-700 dark:text-orange-400" data-testid="text-delta-rows">
-                  {comparisonResult.deltaRowsCount}
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">Rows with changes</div>
+                <div className="text-xs text-muted-foreground mt-1">Found in both files</div>
               </div>
             </div>
 
@@ -605,28 +594,16 @@ export default function FileComparisonPage() {
                     Unique to File 2 ({comparisonResult.uniqueToFile2Count})
                   </Button>
                 )}
-                {comparisonResult.separateReports.commonRows && (
+                {comparisonResult.separateReports.matchingKeys && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDownload(comparisonResult.separateReports.commonRows!)}
-                    data-testid="button-download-common"
+                    onClick={() => handleDownload(comparisonResult.separateReports.matchingKeys!)}
+                    data-testid="button-download-matching-keys"
                     className="w-full"
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Common Rows ({comparisonResult.commonRowsCount})
-                  </Button>
-                )}
-                {comparisonResult.separateReports.differences && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(comparisonResult.separateReports.differences!)}
-                    data-testid="button-download-differences"
-                    className="w-full"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Differences ({comparisonResult.deltaRowsCount})
+                    Matching Keys ({comparisonResult.matchingKeysCount})
                   </Button>
                 )}
               </div>
@@ -639,7 +616,7 @@ export default function FileComparisonPage() {
                 <p className="font-medium mb-1">About the Reports</p>
                 <p className="text-muted-foreground">
                   Download individual reports for each category. Each CSV file contains specific data: 
-                  unique rows from each file, common rows (identical), differences showing changed columns, 
+                  rows unique to each file, matching keys with side-by-side data from both files, 
                   and a comprehensive summary.
                 </p>
               </div>

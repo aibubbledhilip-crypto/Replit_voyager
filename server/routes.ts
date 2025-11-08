@@ -652,7 +652,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: req.session.userId!,
           username: req.session.username!,
           query: `File Comparison: ${file1.originalname} vs ${file2.originalname} (Mappings: ${mappingDesc})`,
-          rowsReturned: comparisonResult.uniqueToFile1.length + comparisonResult.uniqueToFile2.length + comparisonResult.deltaRows.length,
+          rowsReturned: comparisonResult.uniqueToFile1.length + comparisonResult.uniqueToFile2.length + comparisonResult.matchingKeys.length,
           executionTime: 0,
           status: 'success',
         });
@@ -661,8 +661,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           summary: comparisonResult.summary,
           uniqueToFile1Count: comparisonResult.uniqueToFile1.length,
           uniqueToFile2Count: comparisonResult.uniqueToFile2.length,
-          commonRowsCount: comparisonResult.commonRows.length,
-          deltaRowsCount: comparisonResult.deltaRows.length,
+          matchingKeysCount: comparisonResult.matchingKeys.length,
           separateReports,
           message: 'Comparison completed successfully',
         });

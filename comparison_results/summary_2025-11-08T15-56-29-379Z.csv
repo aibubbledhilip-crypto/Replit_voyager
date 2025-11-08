@@ -1,0 +1,9 @@
+Metric,Value
+File 1,sample_customers_v1_preview.csv
+File 2,sample_customers_v2_preview.csv
+Total Rows in File 1,5
+Total Rows in File 2,6
+Only in File 1,3
+Only in File 2,4
+Matching Keys (in both files),2
+Comparison Key Columns,"name→name, customer_id→customer_id"

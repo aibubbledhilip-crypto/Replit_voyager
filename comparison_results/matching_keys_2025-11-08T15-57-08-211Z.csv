@@ -1,0 +1,3 @@
+File1_customer_id,File1_name,File1_amount,File2_id,File2_name,File2_amount
+101,Alice,1000,101,Alice,1000
+102,Bob,2000,102,Bob Modified,2500
