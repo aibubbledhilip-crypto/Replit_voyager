@@ -4,6 +4,13 @@
 Voyager is a secure enterprise web application for querying AWS Athena databases with role-based access control, usage logging, and admin-controlled query limits.
 
 ## Recent Changes
+- **2025-11-08**: 
+  - Successfully deployed to AWS Lightsail with self-hosted PostgreSQL
+  - Fixed database driver compatibility (Neon serverless → node-postgres for local PostgreSQL)
+  - Configured Apache reverse proxy with 10-minute timeout for long-running queries
+  - Fixed PM2 ecosystem configuration to properly load environment variables
+  - Verified large/complex queries execute successfully (110+ seconds)
+  - **Important:** Corporate proxies (e.g., McAfee Web Gateway) may timeout before long queries complete - access from personal network recommended
 - **2025-11-07**: 
   - Added MSISDN Lookup feature for multi-source phone number queries
   - Increased Express body limit to 10MB to handle large/complex SQL queries
