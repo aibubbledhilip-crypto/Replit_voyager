@@ -1,0 +1,212 @@
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ pm2 status
+┌────┬────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name       │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 2  │ voyager    │ default     │ N/A     │ fork    │ 18046    │ 5m     │ 1    │ online    │ 0%       │ 64.7mb   │ bitnami  │ disabled │
+└────┴────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ 
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ pm2 logs voyager --lines 100
+[TAILING] Tailing last 100 lines for [voyager] process (change the value with --lines option)
+/home/bitnami/.pm2/logs/voyager-error.log last 100 lines:
+2|voyager  | /opt/bitnami/apache/htdocs/VoyagerAthena/server/db.ts:9
+2|voyager  |   throw new Error(
+2|voyager  |         ^
+2|voyager  | 
+2|voyager  | 
+2|voyager  | Error: DATABASE_URL must be set. Did you forget to provision a database?
+2|voyager  |     at <anonymous> (/opt/bitnami/apache/htdocs/VoyagerAthena/server/db.ts:9:9)
+2|voyager  |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+2|voyager  |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+2|voyager  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2|voyager  | 
+2|voyager  | Node.js v22.18.0
+2|voyager  | /opt/bitnami/apache/htdocs/VoyagerAthena/server/db.ts:9
+2|voyager  |   throw new Error(
+2|voyager  |         ^
+2|voyager  | 
+2|voyager  | 
+2|voyager  | Error: DATABASE_URL must be set. Did you forget to provision a database?
+2|voyager  |     at <anonymous> (/opt/bitnami/apache/htdocs/VoyagerAthena/server/db.ts:9:9)
+2|voyager  |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+2|voyager  |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+2|voyager  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2|voyager  | 
+2|voyager  | Node.js v22.18.0
+2|voyager  | /opt/bitnami/apache/htdocs/VoyagerAthena/server/db.ts:9
+2|voyager  |   throw new Error(
+2|voyager  |         ^
+2|voyager  | 
+2|voyager  | 
+2|voyager  | Error: DATABASE_URL must be set. Did you forget to provision a database?
+2|voyager  |     at <anonymous> (/opt/bitnami/apache/htdocs/VoyagerAthena/server/db.ts:9:9)
+2|voyager  |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+2|voyager  |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+2|voyager  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2|voyager  | 
+2|voyager  | Node.js v22.18.0
+2|voyager  | /opt/bitnami/apache/htdocs/VoyagerAthena/server/db.ts:9
+2|voyager  |   throw new Error(
+2|voyager  |         ^
+2|voyager  | 
+2|voyager  | 
+2|voyager  | Error: DATABASE_URL must be set. Did you forget to provision a database?
+2|voyager  |     at <anonymous> (/opt/bitnami/apache/htdocs/VoyagerAthena/server/db.ts:9:9)
+2|voyager  |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+2|voyager  |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+2|voyager  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2|voyager  | 
+2|voyager  | Node.js v22.18.0
+2|voyager  | /opt/bitnami/apache/htdocs/VoyagerAthena/server/db.ts:9
+2|voyager  |   throw new Error(
+2|voyager  |         ^
+2|voyager  | 
+2|voyager  | 
+2|voyager  | Error: DATABASE_URL must be set. Did you forget to provision a database?
+2|voyager  |     at <anonymous> (/opt/bitnami/apache/htdocs/VoyagerAthena/server/db.ts:9:9)
+2|voyager  |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+2|voyager  |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+2|voyager  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2|voyager  | 
+2|voyager  | Node.js v22.18.0
+2|voyager  | /opt/bitnami/apache/htdocs/VoyagerAthena/server/db.ts:9
+2|voyager  |   throw new Error(
+2|voyager  |         ^
+2|voyager  | 
+2|voyager  | 
+2|voyager  | Error: DATABASE_URL must be set. Did you forget to provision a database?
+2|voyager  |     at <anonymous> (/opt/bitnami/apache/htdocs/VoyagerAthena/server/db.ts:9:9)
+2|voyager  |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+2|voyager  |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+2|voyager  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2|voyager  | 
+2|voyager  | Node.js v22.18.0
+2|voyager  | 
+2|voyager  | A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+2|voyager  | error: relation "session" does not exist
+2|voyager  |     at /opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/pg-pool/index.js:45:11
+2|voyager  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2|voyager  |     at async PGStore._asyncQuery (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/connect-pg-simple/index.js:322:21)
+2|voyager  | error: relation "session" does not exist
+2|voyager  |     at /opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/pg-pool/index.js:45:11
+2|voyager  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2|voyager  |     at async PGStore._asyncQuery (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/connect-pg-simple/index.js:322:21)
+2|voyager  | error: relation "session" does not exist
+2|voyager  |     at /opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/pg-pool/index.js:45:11
+2|voyager  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2|voyager  |     at async PGStore._asyncQuery (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/connect-pg-simple/index.js:322:21)
+2|voyager  | error: relation "session" does not exist
+2|voyager  |     at /opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/pg-pool/index.js:45:11
+2|voyager  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2|voyager  |     at async PGStore._asyncQuery (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/connect-pg-simple/index.js:322:21)
+2|voyager  | error: relation "session" does not exist
+2|voyager  |     at /opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/pg-pool/index.js:45:11
+2|voyager  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2|voyager  |     at async PGStore._asyncQuery (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/connect-pg-simple/index.js:322:21)
+2|voyager  | error: relation "session" does not exist
+2|voyager  |     at /opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/pg-pool/index.js:45:11
+2|voyager  |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2|voyager  |     at async PGStore._asyncQuery (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/connect-pg-simple/index.js:322:21)
+2|voyager  | 
+2|voyager  | A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+
+/home/bitnami/.pm2/logs/voyager-out.log last 100 lines:
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 3:00:09 AM [express] Environment variables validated: SESSION_SECRET, DATABASE_URL, AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_OUTPUT_LOCATION
+2|voyager  | 3:00:09 AM [express] serving on port 3000
+2|voyager  | 3:00:31 AM [express] GET /api/auth/me 500 in 68ms :: {"message":"self-signed certificate"}
+2|voyager  | 3:00:37 AM [express] GET /api/csrf-token 304 in 4ms :: {"csrfToken":"a315d9aaab38f88613c3ebc6ca557b3…
+2|voyager  | 3:00:37 AM [express] POST /api/auth/login 500 in 15ms :: {"message":"self-signed certificate"}
+2|voyager  | 3:00:50 AM [express] POST /api/auth/login 500 in 13ms :: {"message":"self-signed certificate"}
+2|voyager  | 3:01:24 AM [express] POST /api/auth/login 500 in 17ms :: {"message":"self-signed certificate"}
+2|voyager  | 
+2|voyager  | > rest-express@1.0.0 dev
+2|voyager  | > NODE_ENV=development tsx server/index.ts
+2|voyager  | 
+2|voyager  | 3:09:40 AM [express] Environment variables validated: SESSION_SECRET, DATABASE_URL, AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_OUTPUT_LOCATION
+2|voyager  | Re-optimizing dependencies because lockfile has changed
+2|voyager  | 3:09:40 AM [express] serving on port 3000
+2|voyager  | 3:09:59 AM [express] GET /api/auth/me 401 in 3ms :: {"message":"Unauthorized"}
+2|voyager  | 3:10:05 AM [express] GET /api/csrf-token 200 in 3ms :: {"csrfToken":"ad200fb9fb61c85f35a95fb96be9850…
+2|voyager  | 3:10:05 AM [express] POST /api/auth/login 401 in 84ms :: {"message":"Invalid credentials"}
+2|voyager  | 3:10:08 AM [express] POST /api/auth/login 200 in 81ms :: {"id":"28147057-1ce1-4008-be6a-16ce448b7975…
+2|voyager  | 3:10:09 AM [express] GET /api/auth/me 200 in 4ms :: {"id":"28147057-1ce1-4008-be6a-16ce448b7975","us…
+2|voyager  | 3:10:13 AM [express] GET /api/auth/me 304 in 4ms :: {"id":"28147057-1ce1-4008-be6a-16ce448b7975","us…
+2|voyager  | 3:10:20 AM [express] GET /api/csrf-token 200 in 3ms :: {"csrfToken":"2ecb4fe2d11a94d85070d8136a45ce2…
+2|voyager  | 3:10:30 AM [express] POST /api/query/msisdn-lookup 200 in 9644ms :: {"msisdn":"18322458086","results…
+2|voyager  | 3:11:27 AM [express] GET /api/auth/me 304 in 14ms :: {"id":"28147057-1ce1-4008-be6a-16ce448b7975","u…
+2|voyager  | 3:11:33 AM [express] GET /api/csrf-token 304 in 3ms :: {"csrfToken":"2ecb4fe2d11a94d85070d8136a45ce2…
