@@ -277,7 +277,13 @@ export default function FileComparisonPage() {
                 data-testid="input-file1"
               />
             </div>
-            {file1 && (
+            {isAnalyzing && file1 && (
+              <div className="flex items-center gap-2 text-sm">
+                <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+                <span className="font-medium">Analyzing {file1.name}...</span>
+              </div>
+            )}
+            {!isAnalyzing && file1 && (
               <div className="flex items-center gap-2 text-sm">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                 <span className="font-medium">{file1.name}</span>
@@ -308,7 +314,13 @@ export default function FileComparisonPage() {
                 data-testid="input-file2"
               />
             </div>
-            {file2 && (
+            {isAnalyzing && file2 && (
+              <div className="flex items-center gap-2 text-sm">
+                <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+                <span className="font-medium">Analyzing {file2.name}...</span>
+              </div>
+            )}
+            {!isAnalyzing && file2 && (
               <div className="flex items-center gap-2 text-sm">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                 <span className="font-medium">{file2.name}</span>
@@ -366,13 +378,18 @@ export default function FileComparisonPage() {
         <div className="flex gap-3 flex-wrap">
           <Button
             onClick={handleCompare}
-            disabled={selectedColumns.length === 0 || isComparing}
+            disabled={selectedColumns.length === 0 || isComparing || isAnalyzing}
             data-testid="button-compare"
           >
             {isComparing ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Comparing...
+              </>
+            ) : isAnalyzing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Analyzing Files...
               </>
             ) : (
               <>
@@ -381,10 +398,29 @@ export default function FileComparisonPage() {
               </>
             )}
           </Button>
-          <Button variant="outline" onClick={handleReset} data-testid="button-reset">
+          <Button variant="outline" onClick={handleReset} data-testid="button-reset" disabled={isAnalyzing || isComparing}>
             Reset
           </Button>
         </div>
+      )}
+      
+      {/* Helper Text */}
+      {file1 && file2 && !isAnalyzing && selectedColumns.length === 0 && (
+        <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950 dark:border-yellow-800">
+          <CardContent className="pt-4">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                  Select at least one key column
+                </p>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                  Choose one or more columns from the list above to use as the comparison key. The selected columns must exist in both files.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Comparison Results */}
