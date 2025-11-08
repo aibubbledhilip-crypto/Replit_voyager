@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import * as XLSX from 'xlsx';
+import { getCsrfToken } from "@/lib/api";
 
 interface ComparisonSummary {
   file1Name: string;
@@ -184,6 +185,9 @@ export default function FileComparisonPage() {
     setIsComparing(true);
     
     try {
+      // Get CSRF token
+      const csrfToken = await getCsrfToken();
+      
       const formData = new FormData();
       formData.append('file1', file1);
       formData.append('file2', file2);
@@ -192,9 +196,10 @@ export default function FileComparisonPage() {
       const response = await fetch('/api/compare/execute', {
         method: 'POST',
         headers: {
-          'x-csrf-token': localStorage.getItem('csrf-token') || '',
+          'x-csrf-token': csrfToken,
         },
         body: formData,
+        credentials: 'include',
       });
 
       if (!response.ok) {

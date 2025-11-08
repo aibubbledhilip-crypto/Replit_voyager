@@ -6,6 +6,9 @@ Voyager is a secure enterprise web application for querying AWS Athena databases
 ## Recent Changes
 - **2025-11-08**: 
   - **Added File Comparison Feature**: Upload and compare two CSV/XLSX files to identify unique rows, common rows, and data differences
+    - Client-side XLSX parsing for instant column extraction
+    - Proper CSRF token handling for secure file uploads
+    - End-to-end tested with CSV and XLSX files
   - Successfully deployed to AWS Lightsail with self-hosted PostgreSQL
   - Fixed database driver compatibility (Neon serverless → node-postgres for local PostgreSQL)
   - Configured Apache reverse proxy with 10-minute timeout for long-running queries
