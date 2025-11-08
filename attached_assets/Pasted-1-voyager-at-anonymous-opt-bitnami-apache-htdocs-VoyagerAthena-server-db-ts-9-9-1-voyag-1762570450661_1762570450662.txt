@@ -1,0 +1,45 @@
+1|voyager  |     at <anonymous> (/opt/bitnami/apache/htdocs/VoyagerAthena/server/db.ts:9:9)
+1|voyager  |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+1|voyager  |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+1|voyager  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+1|voyager  | Node.js v22.18.0
+1|voyager  | > rest-express@1.0.0 dev
+1|voyager  | > NODE_ENV=development tsx server/index.ts
+1|voyager  | /opt/bitnami/apache/htdocs/VoyagerAthena/server/db.ts:9
+1|voyager  |   throw new Error(
+1|voyager  |         ^
+1|voyager  | Error: DATABASE_URL must be set. Did you forget to provision a database?
+1|voyager  |     at <anonymous> (/opt/bitnami/apache/htdocs/VoyagerAthena/server/db.ts:9:9)
+1|voyager  |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+1|voyager  |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+1|voyager  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+1|voyager  | Node.js v22.18.0
+1|voyager  | > rest-express@1.0.0 dev
+1|voyager  | > NODE_ENV=development tsx server/index.ts
+1|voyager  | /opt/bitnami/apache/htdocs/VoyagerAthena/server/db.ts:9
+1|voyager  |   throw new Error(
+1|voyager  |         ^
+1|voyager  | Error: DATABASE_URL must be set. Did you forget to provision a database?
+1|voyager  |     at <anonymous> (/opt/bitnami/apache/htdocs/VoyagerAthena/server/db.ts:9:9)
+1|voyager  |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+1|voyager  |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+1|voyager  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+1|voyager  | Node.js v22.18.0
+1|voyager  | > rest-express@1.0.0 dev
+1|voyager  | > NODE_ENV=development tsx server/index.ts
+^C
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ sudo /opt/bitnami/ctlscript.sh restart apache
+Restarted apache
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ curl http://localhost:5000/api/auth/me
+curl: (7) Failed to connect to localhost port 5000 after 0 ms: Couldn't connect to server
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ curl http://your-lightsail-ip/api/auth/me
+curl: (6) Could not resolve host: your-lightsail-ip
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ 
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ pm2 list
+┌────┬────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name       │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ voyager    │ default     │ N/A     │ fork    │ 10152    │ 6h     │ 20   │ online    │ 0%       │ 11.6mb   │ bitnami  │ disabled │
+│ 1  │ voyager    │ default     │ N/A     │ fork    │ 16033    │ 0s     │ 26   │ online    │ 0%       │ 67.4mb   │ bitnami  │ disabled │
+└────┴────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ 
