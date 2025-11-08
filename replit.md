@@ -6,14 +6,13 @@ Voyager is a secure enterprise web application for querying AWS Athena databases
 ## Recent Changes
 - **2025-11-08**: 
   - **Enhanced File Comparison Feature with Flexible Column Mapping and Separate Reports**:
-    - Upload and compare two CSV/XLSX files to identify unique rows, common rows, and data differences
+    - Upload and compare two CSV/XLSX files to identify unique rows and matching key rows
     - **NEW: Flexible column mapping** - Map columns with different names between files (e.g., "customer_id" in File 1 → "id" in File 2)
     - **NEW: Separate downloadable reports** - Each comparison category gets its own CSV file:
       - Summary report (comparison statistics and metadata)
-      - Unique to File 1 (rows only in first file)
-      - Unique to File 2 (rows only in second file)
-      - Common Rows (identical rows in both files)
-      - Differences (rows with same keys but different values)
+      - Only in File 1 (rows unique to first file)
+      - Only in File 2 (rows unique to second file)
+      - Matching Keys (rows with matching keys showing complete side-by-side data from both files with File1_ and File2_ column prefixes)
     - Interactive mapping interface with add/remove rows and dual dropdowns for each mapping
     - Client-side XLSX parsing for instant column extraction
     - Enhanced file upload button styling with primary color for better visibility
@@ -54,7 +53,7 @@ Voyager is a secure enterprise web application for querying AWS Athena databases
 2. **Role-Based Access Control**: Admin and regular user roles with different permissions
 3. **AWS Athena Integration**: Execute SQL queries against AWS Athena database
 4. **MSISDN Lookup**: Multi-source phone number search across 5 data sources (SF, Aria, Matrix, Trufinder, Nokia)
-5. **File Comparison**: Upload and compare two CSV/XLSX files to identify unique rows, common rows, and data differences with downloadable reports
+5. **File Comparison**: Upload and compare two CSV/XLSX files to identify unique rows and matching key rows with downloadable reports
 6. **Query Row Limits**: Admin-configurable limits for data extraction
 7. **Usage Logging**: Comprehensive logging of all query executions
 8. **User Management**: Admin interface to create users, assign roles, and manage status
@@ -132,16 +131,14 @@ AWS_S3_OUTPUT_LOCATION=s3://dvsum-staging-prod
    - Remove mappings using the X button
 4. Click "Compare Files" to start the comparison
 5. Review the comparison results:
-   - **Unique to File 1**: Rows that exist only in the first file (based on mapped key columns)
-   - **Unique to File 2**: Rows that exist only in the second file (based on mapped key columns)
-   - **Common Rows**: Rows that are completely identical in both files
-   - **Differences**: Rows that match on key columns but have different values in other columns
+   - **Only in File 1**: Rows that exist only in the first file (based on mapped key columns)
+   - **Only in File 2**: Rows that exist only in the second file (based on mapped key columns)
+   - **Matching Keys**: Rows where the key columns match in both files (showing complete side-by-side data from both files)
 6. **Download separate reports** for each category:
    - **Summary Report**: Comparison statistics, column mappings, and metadata
-   - **Unique to File 1**: CSV containing only rows found in the first file
-   - **Unique to File 2**: CSV containing only rows found in the second file
-   - **Common Rows**: CSV containing identical rows from both files
-   - **Differences**: CSV showing rows with changes and their values
+   - **Only in File 1**: CSV containing only rows found in the first file
+   - **Only in File 2**: CSV containing only rows found in the second file
+   - **Matching Keys**: CSV showing complete data from both files with File1_ and File2_ column prefixes
    - Download buttons only appear for categories with data
    - Each button shows the number of rows in that category
 
