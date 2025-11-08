@@ -10,7 +10,7 @@ import multer from "multer";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from 'url';
-import { parseFile, compareDatasets, generateComparisonCSV, cleanupOldFiles } from "./file-comparison-helper";
+import { parseFile, compareDatasets, cleanupOldFiles } from "./file-comparison-helper";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -638,9 +638,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           file2.originalname
         );
         
-        // Generate CSV output
-        const csvPath = generateComparisonCSV(comparisonResult);
-        const csvFileName = path.basename(csvPath);
+        // Generate separate CSV reports
+        const { generateSeparateReports } = await import('./file-comparison-helper.js');
+        const separateReports = generateSeparateReports(comparisonResult);
         
         // Clean up uploaded files
         fs.unlinkSync(file1.path);
@@ -663,7 +663,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           uniqueToFile2Count: comparisonResult.uniqueToFile2.length,
           commonRowsCount: comparisonResult.commonRows.length,
           deltaRowsCount: comparisonResult.deltaRows.length,
-          downloadFileName: csvFileName,
+          separateReports,
           message: 'Comparison completed successfully',
         });
         

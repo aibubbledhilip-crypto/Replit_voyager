@@ -23,13 +23,21 @@ interface ComparisonSummary {
   comparisonColumns: string[];
 }
 
+interface SeparateReports {
+  summary: string | null;
+  uniqueToFile1: string | null;
+  uniqueToFile2: string | null;
+  commonRows: string | null;
+  differences: string | null;
+}
+
 interface ComparisonResult {
   summary: ComparisonSummary;
   uniqueToFile1Count: number;
   uniqueToFile2Count: number;
   commonRowsCount: number;
   deltaRowsCount: number;
-  downloadFileName: string;
+  separateReports: SeparateReports;
   message: string;
 }
 
@@ -246,12 +254,12 @@ export default function FileComparisonPage() {
     }
   };
 
-  const handleDownload = () => {
-    if (!comparisonResult) return;
+  const handleDownload = (filename: string) => {
+    if (!filename) return;
     
     const link = document.createElement('a');
-    link.href = `/api/compare/download/${comparisonResult.downloadFileName}`;
-    link.setAttribute('download', comparisonResult.downloadFileName);
+    link.href = `/api/compare/download/${filename}`;
+    link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -294,6 +302,7 @@ export default function FileComparisonPage() {
                 accept=".csv,.xlsx,.xls"
                 onChange={handleFile1Change}
                 data-testid="input-file1"
+                className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer cursor-pointer"
               />
             </div>
             {isAnalyzing && file1 && (
@@ -331,6 +340,7 @@ export default function FileComparisonPage() {
                 accept=".csv,.xlsx,.xls"
                 onChange={handleFile2Change}
                 data-testid="input-file2"
+                className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer cursor-pointer"
               />
             </div>
             {isAnalyzing && file2 && (
@@ -555,20 +565,82 @@ export default function FileComparisonPage() {
               </div>
             </div>
 
-            {/* Download Button */}
-            <Button onClick={handleDownload} data-testid="button-download-results">
-              <Download className="h-4 w-4 mr-2" />
-              Download Detailed Report (CSV)
-            </Button>
+            {/* Download Buttons */}
+            <div className="pt-4 border-t space-y-3">
+              <h3 className="text-sm font-medium">Download Reports</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                {comparisonResult.separateReports.summary && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(comparisonResult.separateReports.summary!)}
+                    data-testid="button-download-summary"
+                    className="w-full"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Summary
+                  </Button>
+                )}
+                {comparisonResult.separateReports.uniqueToFile1 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(comparisonResult.separateReports.uniqueToFile1!)}
+                    data-testid="button-download-unique-file1"
+                    className="w-full"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Unique to File 1 ({comparisonResult.uniqueToFile1Count})
+                  </Button>
+                )}
+                {comparisonResult.separateReports.uniqueToFile2 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(comparisonResult.separateReports.uniqueToFile2!)}
+                    data-testid="button-download-unique-file2"
+                    className="w-full"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Unique to File 2 ({comparisonResult.uniqueToFile2Count})
+                  </Button>
+                )}
+                {comparisonResult.separateReports.commonRows && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(comparisonResult.separateReports.commonRows!)}
+                    data-testid="button-download-common"
+                    className="w-full"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Common Rows ({comparisonResult.commonRowsCount})
+                  </Button>
+                )}
+                {comparisonResult.separateReports.differences && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(comparisonResult.separateReports.differences!)}
+                    data-testid="button-download-differences"
+                    className="w-full"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Differences ({comparisonResult.deltaRowsCount})
+                  </Button>
+                )}
+              </div>
+            </div>
 
             {/* Info Message */}
             <div className="flex items-start gap-2 p-4 bg-muted/30 rounded-md">
               <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium mb-1">About the Report</p>
+                <p className="font-medium mb-1">About the Reports</p>
                 <p className="text-muted-foreground">
-                  The CSV report includes: unique rows from each file, rows with differences showing which 
-                  columns changed, and a comprehensive summary. All data is organized into separate sections.
+                  Download individual reports for each category. Each CSV file contains specific data: 
+                  unique rows from each file, common rows (identical), differences showing changed columns, 
+                  and a comprehensive summary.
                 </p>
               </div>
             </div>

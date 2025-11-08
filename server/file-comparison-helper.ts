@@ -337,6 +337,106 @@ export function generateComparisonCSV(result: ComparisonResult): string {
   return filePath;
 }
 
+export interface SeparateReports {
+  summary: string | null;
+  uniqueToFile1: string | null;
+  uniqueToFile2: string | null;
+  commonRows: string | null;
+  differences: string | null;
+}
+
+export function generateSeparateReports(result: ComparisonResult): SeparateReports {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const reports: SeparateReports = {
+    summary: null,
+    uniqueToFile1: null,
+    uniqueToFile2: null,
+    commonRows: null,
+    differences: null,
+  };
+  
+  // Generate summary report
+  const summaryFileName = `summary_${timestamp}.csv`;
+  const summaryPath = path.join(COMPARISON_RESULTS_DIR, summaryFileName);
+  const summaryStream = fs.createWriteStream(summaryPath);
+  summaryStream.write('Metric,Value\n');
+  summaryStream.write(`File 1,${csvEscape([result.summary.file1Name])}\n`);
+  summaryStream.write(`File 2,${csvEscape([result.summary.file2Name])}\n`);
+  summaryStream.write(`Total Rows in File 1,${result.summary.file1TotalRows}\n`);
+  summaryStream.write(`Total Rows in File 2,${result.summary.file2TotalRows}\n`);
+  summaryStream.write(`Unique to File 1,${result.summary.uniqueToFile1Count}\n`);
+  summaryStream.write(`Unique to File 2,${result.summary.uniqueToFile2Count}\n`);
+  summaryStream.write(`Common Rows (Identical),${result.summary.commonRowsCount}\n`);
+  summaryStream.write(`Rows with Differences,${result.summary.deltaRowsCount}\n`);
+  summaryStream.write(`Comparison Key Columns,"${result.summary.comparisonColumns.join(', ')}"\n`);
+  summaryStream.end();
+  reports.summary = summaryFileName;
+  
+  // Generate unique to file 1 report
+  if (result.uniqueToFile1.length > 0) {
+    const uniqueFile1Name = `unique_to_file1_${timestamp}.csv`;
+    const uniqueFile1Path = path.join(COMPARISON_RESULTS_DIR, uniqueFile1Name);
+    const stream = fs.createWriteStream(uniqueFile1Path);
+    const columns = Object.keys(result.uniqueToFile1[0]);
+    stream.write(csvEscape(columns) + '\n');
+    result.uniqueToFile1.forEach(row => {
+      const values = columns.map(col => csvEscape([String(row[col] ?? '')]));
+      stream.write(values.join(',') + '\n');
+    });
+    stream.end();
+    reports.uniqueToFile1 = uniqueFile1Name;
+  }
+  
+  // Generate unique to file 2 report
+  if (result.uniqueToFile2.length > 0) {
+    const uniqueFile2Name = `unique_to_file2_${timestamp}.csv`;
+    const uniqueFile2Path = path.join(COMPARISON_RESULTS_DIR, uniqueFile2Name);
+    const stream = fs.createWriteStream(uniqueFile2Path);
+    const columns = Object.keys(result.uniqueToFile2[0]);
+    stream.write(csvEscape(columns) + '\n');
+    result.uniqueToFile2.forEach(row => {
+      const values = columns.map(col => csvEscape([String(row[col] ?? '')]));
+      stream.write(values.join(',') + '\n');
+    });
+    stream.end();
+    reports.uniqueToFile2 = uniqueFile2Name;
+  }
+  
+  // Generate common rows report
+  if (result.commonRows.length > 0) {
+    const commonRowsName = `common_rows_${timestamp}.csv`;
+    const commonRowsPath = path.join(COMPARISON_RESULTS_DIR, commonRowsName);
+    const stream = fs.createWriteStream(commonRowsPath);
+    const columns = Object.keys(result.commonRows[0]);
+    stream.write(csvEscape(columns) + '\n');
+    result.commonRows.forEach(row => {
+      const values = columns.map(col => csvEscape([String(row[col] ?? '')]));
+      stream.write(values.join(',') + '\n');
+    });
+    stream.end();
+    reports.commonRows = commonRowsName;
+  }
+  
+  // Generate differences report
+  if (result.deltaRows.length > 0) {
+    const differencesName = `differences_${timestamp}.csv`;
+    const differencesPath = path.join(COMPARISON_RESULTS_DIR, differencesName);
+    const stream = fs.createWriteStream(differencesPath);
+    stream.write('Key,Column,File 1 Value,File 2 Value\n');
+    result.deltaRows.forEach(delta => {
+      delta.differences.forEach(col => {
+        const val1 = csvEscape([String(delta.file1Data[col] ?? '')]);
+        const val2 = csvEscape([String(delta.file2Data[col] ?? '')]);
+        stream.write(`"${delta.key}","${col}",${val1},${val2}\n`);
+      });
+    });
+    stream.end();
+    reports.differences = differencesName;
+  }
+  
+  return reports;
+}
+
 function csvEscape(values: string[]): string {
   return values.map(val => {
     if (val.includes(',') || val.includes('"') || val.includes('\n')) {
