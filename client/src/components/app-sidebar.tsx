@@ -1,4 +1,4 @@
-import { Home, Database, FileText, Settings, Shield, Search } from "lucide-react";
+import { Home, Database, FileText, Settings, Shield, Search, GitCompare } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -27,6 +27,11 @@ const adminMenuItems = [
     icon: Search,
   },
   {
+    title: "File Comparison",
+    url: "/file-comparison",
+    icon: GitCompare,
+  },
+  {
     title: "Usage Logs",
     url: "/admin/logs",
     icon: FileText,
@@ -43,6 +48,11 @@ const userMenuItems = [
     title: "MSISDN Lookup",
     url: "/msisdn-lookup",
     icon: Search,
+  },
+  {
+    title: "File Comparison",
+    url: "/file-comparison",
+    icon: GitCompare,
   },
 ];
 

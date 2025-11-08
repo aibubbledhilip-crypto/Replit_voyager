@@ -10,6 +10,7 @@ import Header from "@/components/Header";
 import LoginPage from "@/components/LoginPage";
 import QueryExecutionPage from "@/pages/QueryExecutionPage";
 import MsisdnLookupPage from "@/pages/MsisdnLookupPage";
+import FileComparisonPage from "@/pages/FileComparisonPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import UsageLogsPage from "@/pages/UsageLogsPage";
 import NotFound from "@/pages/not-found";
@@ -70,6 +71,7 @@ function AuthenticatedApp() {
               <Switch>
                 <Route path="/" component={QueryExecutionPage} />
                 <Route path="/msisdn-lookup" component={MsisdnLookupPage} />
+                <Route path="/file-comparison" component={FileComparisonPage} />
                 <Route path="/admin" component={AdminDashboardPage} />
                 <Route path="/admin/logs" component={UsageLogsPage} />
                 <Route component={NotFound} />
