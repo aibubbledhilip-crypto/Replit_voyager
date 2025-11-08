@@ -5,10 +5,15 @@ Voyager is a secure enterprise web application for querying AWS Athena databases
 
 ## Recent Changes
 - **2025-11-08**: 
-  - **Added File Comparison Feature**: Upload and compare two CSV/XLSX files to identify unique rows, common rows, and data differences
+  - **Enhanced File Comparison Feature with Flexible Column Mapping**:
+    - Upload and compare two CSV/XLSX files to identify unique rows, common rows, and data differences
+    - **NEW: Flexible column mapping** - Map columns with different names between files (e.g., "customer_id" in File 1 → "id" in File 2)
+    - Interactive mapping interface with add/remove rows and dual dropdowns for each mapping
     - Client-side XLSX parsing for instant column extraction
     - Proper CSRF token handling for secure file uploads
-    - End-to-end tested with CSV and XLSX files
+    - Comparison logic respects column mappings for row matching
+    - Automatically compares unmapped columns that have identical names in both files
+    - End-to-end tested with CSV files using different column names
   - Successfully deployed to AWS Lightsail with self-hosted PostgreSQL
   - Fixed database driver compatibility (Neon serverless → node-postgres for local PostgreSQL)
   - Configured Apache reverse proxy with 10-minute timeout for long-running queries
@@ -110,18 +115,29 @@ AWS_S3_OUTPUT_LOCATION=s3://dvsum-staging-prod
 2. Upload two files (CSV or XLSX format):
    - File 1: Base file for comparison
    - File 2: Target file to compare against
-3. Select key columns (must exist in both files) to use for matching rows
+3. **Map key columns** for row matching:
+   - Click "Add Column Mapping" to create a new mapping row
+   - Select a column from File 1 (e.g., "customer_id")
+   - Select the corresponding column from File 2 (e.g., "id")
+   - **Columns can have different names** - the mapping tells the system which columns to match
+   - Add multiple mappings to create composite keys
+   - Remove mappings using the X button
 4. Click "Compare Files" to start the comparison
 5. Review the comparison results:
-   - **Unique to File 1**: Rows that exist only in the first file
-   - **Unique to File 2**: Rows that exist only in the second file
-   - **Common Rows**: Rows that are identical in both files
-   - **Differences**: Rows that exist in both files but have different values
+   - **Unique to File 1**: Rows that exist only in the first file (based on mapped key columns)
+   - **Unique to File 2**: Rows that exist only in the second file (based on mapped key columns)
+   - **Common Rows**: Rows that are completely identical in both files
+   - **Differences**: Rows that match on key columns but have different values in other columns
 6. Download the detailed comparison report as CSV
 7. The report includes:
-   - Summary statistics
+   - Summary statistics with column mappings shown (e.g., "customer_id→id")
    - All unique rows from each file
    - Detailed differences showing which columns changed and their values
+
+**Note on Column Comparison**:
+- **Mapped columns**: Compared using their respective names as defined in the mappings
+- **Unmapped columns**: Only compared if they have **identical names** in both files
+- Example: If File 1 has "name" and File 2 has "customer_name", these will NOT be compared unless you create a mapping "name→customer_name"
 
 ## Database Schema
 
@@ -169,6 +185,8 @@ AWS_S3_OUTPUT_LOCATION=s3://dvsum-staging-prod
 
 ### File Comparison
 - `POST /api/compare/execute` - Upload and compare two files (multipart/form-data)
+  - Accepts: `file1`, `file2` (files), `columnMappings` (JSON array of {file1Column, file2Column})
+  - Returns: comparison summary and downloadable CSV filename
 - `GET /api/compare/download/:filename` - Download comparison result CSV
 
 ### Usage Logs
@@ -198,5 +216,11 @@ AWS_S3_OUTPUT_LOCATION=s3://dvsum-staging-prod
 - Enhanced audit logging with query performance metrics
 - Email notifications for query completion
 - Export query results in multiple formats (CSV, JSON, Excel, Parquet)
-- Advanced file comparison: Support for custom comparison rules, ignore columns, fuzzy matching
+- Advanced file comparison: 
+  - Support for custom comparison rules
+  - Ignore specific columns option
+  - Fuzzy matching for approximate comparisons
+  - Case-insensitive comparison option
+  - Trim whitespace option
 - Bulk file comparison: Compare multiple file pairs in a batch operation
+- File comparison templates: Save and reuse column mapping configurations
