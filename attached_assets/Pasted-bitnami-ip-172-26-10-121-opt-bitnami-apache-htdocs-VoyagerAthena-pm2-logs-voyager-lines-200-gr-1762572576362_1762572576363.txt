@@ -1,0 +1,32 @@
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ pm2 logs voyager --lines 200 | grep -i "timeout\|error\|failed"
+/opt/bitnami/apache/htdocs/VoyagerAthena/logs/pm2-error-0.log last 200 lines:
+^C
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ sudo tail -100 /opt/bitnami/apache/logs/error_log
+[Fri Nov 07 18:23:51.137038 2025] [mpm_event:notice] [pid 979:tid 979] AH00489: Apache/2.4.65 (Unix) OpenSSL/3.0.17 configured -- resuming normal operations
+[Fri Nov 07 18:23:51.137182 2025] [core:notice] [pid 979:tid 979] AH00094: Command line: '/opt/bitnami/apache/bin/httpd -f /opt/bitnami/apache/conf/httpd.conf'
+[Fri Nov 07 20:29:52.113882 2025] [core:error] [pid 983:tid 1191] (13)Permission denied: [client 35.233.68.216:56442] AH00132: file permissions deny server access: /opt/bitnami/apache/htdocs/VoyagerAthena/.env
+[Fri Nov 07 20:45:30.859343 2025] [mpm_event:notice] [pid 979:tid 979] AH00491: caught SIGTERM, shutting down
+[Fri Nov 07 20:45:31.292342 2025] [mpm_event:notice] [pid 10303:tid 10303] AH00489: Apache/2.4.65 (Unix) OpenSSL/3.0.17 configured -- resuming normal operations
+[Fri Nov 07 20:45:31.292487 2025] [core:notice] [pid 10303:tid 10303] AH00094: Command line: '/opt/bitnami/apache/bin/httpd -f /opt/bitnami/apache/conf/httpd.conf'
+[Fri Nov 07 20:56:01.227905 2025] [core:error] [pid 10581:tid 10679] (13)Permission denied: [client 34.78.183.19:57106] AH00132: file permissions deny server access: /opt/bitnami/apache/htdocs/VoyagerAthena/.env
+[Fri Nov 07 21:06:16.499269 2025] [proxy_http:error] [pid 10581:tid 10680] (70007)The timeout specified has expired: [client 131.229.185.15:37743] AH01102: error reading status line from remote server 127.0.0.1:3000, referer: http://98.95.148.91/
+[Fri Nov 07 21:06:16.499314 2025] [proxy:error] [pid 10581:tid 10680] [client 131.229.185.15:37743] AH00898: Error reading from remote server returned by /api/query/execute, referer: http://98.95.148.91/
+[Fri Nov 07 21:20:27.296202 2025] [proxy_http:error] [pid 10581:tid 10693] (70007)The timeout specified has expired: [client 131.229.185.15:9321] AH01102: error reading status line from remote server 127.0.0.1:3000, referer: http://98.95.148.91/
+[Fri Nov 07 21:20:27.296244 2025] [proxy:error] [pid 10581:tid 10693] [client 131.229.185.15:9321] AH00898: Error reading from remote server returned by /api/query/execute, referer: http://98.95.148.91/
+[Fri Nov 07 21:23:54.795156 2025] [core:error] [pid 10581:tid 10660] (13)Permission denied: [client 34.38.246.252:40422] AH00132: file permissions deny server access: /opt/bitnami/apache/htdocs/VoyagerAthena/.env
+[Fri Nov 07 21:31:05.824745 2025] [proxy_http:error] [pid 10581:tid 10661] (70007)The timeout specified has expired: [client 131.229.185.15:59853] AH01102: error reading status line from remote server 127.0.0.1:3000, referer: http://98.95.148.91/
+[Fri Nov 07 21:31:05.824787 2025] [proxy:error] [pid 10581:tid 10661] [client 131.229.185.15:59853] AH00898: Error reading from remote server returned by /api/query/execute, referer: http://98.95.148.91/
+[Sat Nov 08 00:52:20.078039 2025] [proxy:warn] [pid 12463:tid 12579] [client 93.174.93.12:60000] AH01092: no HTTP 0.9 request (with no host line) on incoming request and preserve host set forcing hostname to be www.example.com for uri /
+[Sat Nov 08 02:46:23.776765 2025] [proxy:warn] [pid 12463:tid 12547] [client 91.232.238.112:61001] AH01092: no HTTP 0.9 request (with no host line) on incoming request and preserve host set forcing hostname to be www.example.com for uri /
+[Sat Nov 08 02:53:32.052033 2025] [mpm_event:notice] [pid 10303:tid 10303] AH00491: caught SIGTERM, shutting down
+[Sat Nov 08 02:53:32.243140 2025] [mpm_event:notice] [pid 15355:tid 15355] AH00489: Apache/2.4.65 (Unix) OpenSSL/3.0.17 configured -- resuming normal operations
+[Sat Nov 08 02:53:32.243295 2025] [core:notice] [pid 15355:tid 15355] AH00094: Command line: '/opt/bitnami/apache/bin/httpd -f /opt/bitnami/apache/conf/httpd.conf'
+[Sat Nov 08 03:12:03.813693 2025] [proxy_http:error] [pid 15358:tid 15600] (70007)The timeout specified has expired: [client 131.229.185.15:30546] AH01102: error reading status line from remote server 127.0.0.1:3000, referer: http://98.95.148.91/
+[Sat Nov 08 03:12:03.813759 2025] [proxy:error] [pid 15358:tid 15600] [client 131.229.185.15:30546] AH00898: Error reading from remote server returned by /api/query/execute, referer: http://98.95.148.91/
+[Sat Nov 08 03:12:58.005744 2025] [proxy_http:error] [pid 15358:tid 15602] (70007)The timeout specified has expired: [client 131.229.185.15:1559] AH01102: error reading status line from remote server 127.0.0.1:3000, referer: http://98.95.148.91/
+[Sat Nov 08 03:12:58.005791 2025] [proxy:error] [pid 15358:tid 15602] [client 131.229.185.15:1559] AH00898: Error reading from remote server returned by /api/query/execute, referer: http://98.95.148.91/
+[Sat Nov 08 03:21:37.434745 2025] [mpm_event:notice] [pid 15355:tid 15355] AH00491: caught SIGTERM, shutting down
+[Sat Nov 08 03:21:37.896992 2025] [mpm_event:notice] [pid 18320:tid 18320] AH00489: Apache/2.4.65 (Unix) OpenSSL/3.0.17 configured -- resuming normal operations
+[Sat Nov 08 03:21:37.897130 2025] [core:notice] [pid 18320:tid 18320] AH00094: Command line: '/opt/bitnami/apache/bin/httpd -f /opt/bitnami/apache/conf/httpd.conf'
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ grep -i "timeout" /opt/bitnami/apache/conf/httpd.conf
+LoadModule reqtimeout_module modules/mod_reqtimeout.so
