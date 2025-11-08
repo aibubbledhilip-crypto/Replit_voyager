@@ -594,27 +594,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const file1 = files.file1[0];
       const file2 = files.file2[0];
       
-      // Get comparison columns from request
-      const { keyColumns } = req.body;
+      // Get column mappings from request
+      const { columnMappings } = req.body;
       
-      if (!keyColumns) {
+      if (!columnMappings) {
         // Clean up uploaded files
         fs.unlinkSync(file1.path);
         fs.unlinkSync(file2.path);
-        return res.status(400).json({ message: "Key columns are required for comparison" });
+        return res.status(400).json({ message: "Column mappings are required for comparison" });
       }
       
-      // Parse key columns
-      let parsedKeyColumns: string[];
+      // Parse column mappings
+      let parsedMappings: Array<{file1Column: string, file2Column: string}>;
       try {
-        parsedKeyColumns = typeof keyColumns === 'string' ? JSON.parse(keyColumns) : keyColumns;
-        if (!Array.isArray(parsedKeyColumns) || parsedKeyColumns.length === 0) {
-          throw new Error('Key columns must be a non-empty array');
+        parsedMappings = typeof columnMappings === 'string' ? JSON.parse(columnMappings) : columnMappings;
+        if (!Array.isArray(parsedMappings) || parsedMappings.length === 0) {
+          throw new Error('Column mappings must be a non-empty array');
+        }
+        
+        // Validate each mapping has required fields
+        for (const mapping of parsedMappings) {
+          if (!mapping.file1Column || !mapping.file2Column) {
+            throw new Error('Each mapping must have file1Column and file2Column');
+          }
         }
       } catch (error: any) {
         fs.unlinkSync(file1.path);
         fs.unlinkSync(file2.path);
-        return res.status(400).json({ message: "Invalid key columns format" });
+        return res.status(400).json({ message: `Invalid column mappings format: ${error.message}` });
       }
       
       try {
@@ -626,7 +633,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const comparisonResult = compareDatasets(
           parsed1,
           parsed2,
-          parsedKeyColumns,
+          parsedMappings,
           file1.originalname,
           file2.originalname
         );
@@ -640,10 +647,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fs.unlinkSync(file2.path);
         
         // Log the comparison
+        const mappingDesc = parsedMappings.map(m => `${m.file1Column}→${m.file2Column}`).join(', ');
         await storage.createQueryLog({
           userId: req.session.userId!,
           username: req.session.username!,
-          query: `File Comparison: ${file1.originalname} vs ${file2.originalname} (Key: ${parsedKeyColumns.join(', ')})`,
+          query: `File Comparison: ${file1.originalname} vs ${file2.originalname} (Mappings: ${mappingDesc})`,
           rowsReturned: comparisonResult.uniqueToFile1.length + comparisonResult.uniqueToFile2.length + comparisonResult.deltaRows.length,
           executionTime: 0,
           status: 'success',

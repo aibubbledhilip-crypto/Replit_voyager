@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Upload, Download, GitCompare, Loader2, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { FileText, Upload, Download, GitCompare, Loader2, CheckCircle2, XCircle, AlertCircle, Plus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import * as XLSX from 'xlsx';
 import { getCsrfToken } from "@/lib/api";
@@ -33,12 +33,17 @@ interface ComparisonResult {
   message: string;
 }
 
+interface ColumnMapping {
+  file1Column: string;
+  file2Column: string;
+}
+
 export default function FileComparisonPage() {
   const [file1, setFile1] = useState<File | null>(null);
   const [file2, setFile2] = useState<File | null>(null);
   const [file1Columns, setFile1Columns] = useState<string[]>([]);
   const [file2Columns, setFile2Columns] = useState<string[]>([]);
-  const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
+  const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isComparing, setIsComparing] = useState(false);
   const [comparisonResult, setComparisonResult] = useState<ComparisonResult | null>(null);
@@ -48,7 +53,7 @@ export default function FileComparisonPage() {
     const file = e.target.files?.[0];
     if (file) {
       setFile1(file);
-      setSelectedColumns([]); // Clear selected columns when new file is uploaded
+      setColumnMappings([]); // Clear column mappings when new file is uploaded
       await analyzeFile(file, 'file1');
     }
   };
@@ -57,7 +62,7 @@ export default function FileComparisonPage() {
     const file = e.target.files?.[0];
     if (file) {
       setFile2(file);
-      setSelectedColumns([]); // Clear selected columns when new file is uploaded
+      setColumnMappings([]); // Clear column mappings when new file is uploaded
       await analyzeFile(file, 'file2');
     }
   };
@@ -153,14 +158,19 @@ export default function FileComparisonPage() {
     }
   };
 
-  const handleColumnToggle = (column: string) => {
-    setSelectedColumns(prev => {
-      if (prev.includes(column)) {
-        return prev.filter(c => c !== column);
-      } else {
-        return [...prev, column];
-      }
-    });
+  const addMapping = () => {
+    // Add a new empty mapping
+    setColumnMappings([...columnMappings, { file1Column: '', file2Column: '' }]);
+  };
+
+  const updateMapping = (index: number, field: 'file1Column' | 'file2Column', value: string) => {
+    const updated = [...columnMappings];
+    updated[index][field] = value;
+    setColumnMappings(updated);
+  };
+
+  const removeMapping = (index: number) => {
+    setColumnMappings(columnMappings.filter((_, i) => i !== index));
   };
 
   const handleCompare = async () => {
@@ -173,10 +183,21 @@ export default function FileComparisonPage() {
       return;
     }
 
-    if (selectedColumns.length === 0) {
+    if (columnMappings.length === 0) {
       toast({
-        title: "Columns Required",
-        description: "Please select at least one key column for comparison",
+        title: "Column Mapping Required",
+        description: "Please add at least one column mapping for comparison",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate that all mappings have both columns selected
+    const incompleteMapping = columnMappings.find(m => !m.file1Column || !m.file2Column);
+    if (incompleteMapping) {
+      toast({
+        title: "Incomplete Mapping",
+        description: "Please select columns for all mappings",
         variant: "destructive",
       });
       return;
@@ -191,7 +212,7 @@ export default function FileComparisonPage() {
       const formData = new FormData();
       formData.append('file1', file1);
       formData.append('file2', file2);
-      formData.append('keyColumns', JSON.stringify(selectedColumns));
+      formData.append('columnMappings', JSON.stringify(columnMappings));
       
       const response = await fetch('/api/compare/execute', {
         method: 'POST',
@@ -241,11 +262,9 @@ export default function FileComparisonPage() {
     setFile2(null);
     setFile1Columns([]);
     setFile2Columns([]);
-    setSelectedColumns([]);
+    setColumnMappings([]);
     setComparisonResult(null);
   };
-
-  const commonColumns = file1Columns.filter(col => file2Columns.includes(col));
 
   return (
     <div className="space-y-6">
@@ -333,40 +352,88 @@ export default function FileComparisonPage() {
         </Card>
       </div>
 
-      {/* Column Selection */}
-      {file1 && file2 && commonColumns.length > 0 && (
-        <Card data-testid="card-column-selection">
+      {/* Column Mapping */}
+      {file1 && file2 && file1Columns.length > 0 && file2Columns.length > 0 && (
+        <Card data-testid="card-column-mapping">
           <CardHeader>
-            <CardTitle className="text-lg font-medium">Select Key Columns</CardTitle>
+            <CardTitle className="text-lg font-medium">Map Key Columns</CardTitle>
             <CardDescription>
-              Choose one or more columns to use as the comparison key (must exist in both files)
+              Map columns from File 1 to File 2 for comparison. Columns can have different names.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {commonColumns.map(column => (
-                <div key={column} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`col-${column}`}
-                    checked={selectedColumns.includes(column)}
-                    onCheckedChange={() => handleColumnToggle(column)}
-                    data-testid={`checkbox-column-${column}`}
-                  />
-                  <Label
-                    htmlFor={`col-${column}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                  >
-                    {column}
+          <CardContent className="space-y-4">
+            {/* Existing Mappings */}
+            {columnMappings.map((mapping, index) => (
+              <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto] gap-4 items-center p-4 border rounded-md">
+                <div className="space-y-2">
+                  <Label htmlFor={`file1-col-${index}`} className="text-sm text-muted-foreground">
+                    File 1 Column
                   </Label>
+                  <Select
+                    value={mapping.file1Column}
+                    onValueChange={(value) => updateMapping(index, 'file1Column', value)}
+                  >
+                    <SelectTrigger id={`file1-col-${index}`} data-testid={`select-file1-col-${index}`}>
+                      <SelectValue placeholder="Select column..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {file1Columns.map(col => (
+                        <SelectItem key={col} value={col}>{col}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              ))}
-            </div>
-            {selectedColumns.length > 0 && (
-              <div className="mt-4 flex gap-2 flex-wrap">
-                <span className="text-sm text-muted-foreground">Selected:</span>
-                {selectedColumns.map(col => (
-                  <Badge key={col} variant="default">{col}</Badge>
-                ))}
+                
+                <div className="hidden md:flex items-center justify-center text-muted-foreground">
+                  →
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor={`file2-col-${index}`} className="text-sm text-muted-foreground">
+                    File 2 Column
+                  </Label>
+                  <Select
+                    value={mapping.file2Column}
+                    onValueChange={(value) => updateMapping(index, 'file2Column', value)}
+                  >
+                    <SelectTrigger id={`file2-col-${index}`} data-testid={`select-file2-col-${index}`}>
+                      <SelectValue placeholder="Select column..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {file2Columns.map(col => (
+                        <SelectItem key={col} value={col}>{col}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeMapping(index)}
+                  data-testid={`button-remove-mapping-${index}`}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+            
+            {/* Add Mapping Button */}
+            <Button
+              variant="outline"
+              onClick={addMapping}
+              className="w-full"
+              data-testid="button-add-mapping"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Column Mapping
+            </Button>
+            
+            {columnMappings.length > 0 && (
+              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950 rounded-md">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <strong>{columnMappings.length}</strong> column mapping{columnMappings.length !== 1 ? 's' : ''} defined
+                </p>
               </div>
             )}
           </CardContent>
@@ -378,7 +445,7 @@ export default function FileComparisonPage() {
         <div className="flex gap-3 flex-wrap">
           <Button
             onClick={handleCompare}
-            disabled={selectedColumns.length === 0 || isComparing || isAnalyzing}
+            disabled={columnMappings.length === 0 || isComparing || isAnalyzing}
             data-testid="button-compare"
           >
             {isComparing ? (
@@ -405,17 +472,17 @@ export default function FileComparisonPage() {
       )}
       
       {/* Helper Text */}
-      {file1 && file2 && !isAnalyzing && selectedColumns.length === 0 && (
+      {file1 && file2 && !isAnalyzing && columnMappings.length === 0 && (
         <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950 dark:border-yellow-800">
           <CardContent className="pt-4">
             <div className="flex items-start gap-2">
               <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 mt-0.5" />
               <div>
                 <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                  Select at least one key column
+                  Add at least one column mapping
                 </p>
                 <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                  Choose one or more columns from the list above to use as the comparison key. The selected columns must exist in both files.
+                  Click "Add Column Mapping" to map columns between your files. Columns can have different names in each file.
                 </p>
               </div>
             </div>

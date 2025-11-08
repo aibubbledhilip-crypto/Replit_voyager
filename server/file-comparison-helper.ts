@@ -146,17 +146,17 @@ function parseExcel(filePath: string): ParsedFile {
 export function compareDatasets(
   file1: ParsedFile,
   file2: ParsedFile,
-  keyColumns: string[],
+  columnMappings: Array<{file1Column: string, file2Column: string}>,
   file1Name: string,
   file2Name: string
 ): ComparisonResult {
-  // Validate that key columns exist in both files
-  for (const col of keyColumns) {
-    if (!file1.columns.includes(col)) {
-      throw new Error(`Key column "${col}" not found in file 1`);
+  // Validate that mapped columns exist in their respective files
+  for (const mapping of columnMappings) {
+    if (!file1.columns.includes(mapping.file1Column)) {
+      throw new Error(`Column "${mapping.file1Column}" not found in file 1`);
     }
-    if (!file2.columns.includes(col)) {
-      throw new Error(`Key column "${col}" not found in file 2`);
+    if (!file2.columns.includes(mapping.file2Column)) {
+      throw new Error(`Column "${mapping.file2Column}" not found in file 2`);
     }
   }
   
@@ -164,14 +164,14 @@ export function compareDatasets(
   const file1Map = new Map<string, Record<string, any>>();
   const file2Map = new Map<string, Record<string, any>>();
   
-  // Build composite keys
+  // Build composite keys using mapped columns
   file1.data.forEach(row => {
-    const key = keyColumns.map(col => String(row[col] || '')).join('|');
+    const key = columnMappings.map(m => String(row[m.file1Column] || '')).join('|');
     file1Map.set(key, row);
   });
   
   file2.data.forEach(row => {
-    const key = keyColumns.map(col => String(row[col] || '')).join('|');
+    const key = columnMappings.map(m => String(row[m.file2Column] || '')).join('|');
     file2Map.set(key, row);
   });
   
@@ -230,7 +230,7 @@ export function compareDatasets(
       uniqueToFile2Count: uniqueToFile2.length,
       commonRowsCount: commonRows.length,
       deltaRowsCount: deltaRows.length,
-      comparisonColumns: keyColumns,
+      comparisonColumns: columnMappings.map(m => `${m.file1Column}→${m.file2Column}`),
     },
   };
 }
