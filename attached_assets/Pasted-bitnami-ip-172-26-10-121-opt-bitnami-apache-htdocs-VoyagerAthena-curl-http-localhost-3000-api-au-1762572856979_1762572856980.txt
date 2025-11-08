@@ -1,0 +1,60 @@
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ curl http://localhost:3000/api/auth/me
+curl: (7) Failed to connect to localhost port 3000 after 0 ms: Couldn't connect to server
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ 
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ sudo /opt/bitnami/apache/bin/apachectl configtest
+Syntax OK
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ cat /opt/bitnami/apache/conf/vhosts/voyager-vhost.conf
+<VirtualHost *:80>
+    ServerAdmin admin@localhost
+    DocumentRoot /opt/bitnami/apache/htdocs
+    
+    # Increase timeouts for long-running Athena queries (10 minutes)
+    Timeout 600
+    ProxyTimeout 600
+    
+    # Enable proxy modules
+    ProxyPreserveHost On
+    ProxyPass / http://localhost:3000/
+    ProxyPassReverse / http://localhost:3000/
+    
+    # Proxy WebSocket connections (for Vite HMR)
+    RewriteEngine on
+    RewriteCond %{HTTP:Upgrade} websocket [NC]
+    RewriteCond %{HTTP:Connection} upgrade [NC]
+    RewriteRule ^/?(.*) "ws://localhost:3000/$1" [P,L]
+    
+    ErrorLog logs/voyager-error_log
+    CustomLog logs/voyager-access_log combined
+</VirtualHost>
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ /opt/bitnami/apache/bin/apachectl -M | grep proxy
+ proxy_module (shared)
+ proxy_connect_module (shared)
+ proxy_ftp_module (shared)
+ proxy_http_module (shared)
+ proxy_fcgi_module (shared)
+ proxy_ajp_module (shared)
+ proxy_balancer_module (shared)
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ 
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ sudo tee /opt/bitnami/apache/conf/vhosts/voyager-vhost.conf > /dev/null << 'EOF'
+> <VirtualHost *:80>
+>     ProxyPreserveHost On
+>     ProxyPass / http://127.0.0.1:3000/
+>     ProxyPassReverse / http://127.0.0.1:3000/
+>     ProxyTimeout 600
+> </VirtualHost>
+> EOF
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ sudo /opt/bitnami/apache/bin/apachectl configtest
+Syntax OK
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ sudo /opt/bitnami/ctlscript.sh restart apache
+Restarted apache
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ curl http://localhost/api/auth/me
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>404 Not Found</title>
+</head><body>
+<h1>Not Found</h1>
+<p>The requested URL was not found on this server.</p>
+</body></html>
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ 
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ 
+  4 drwxr-xr-x  10 bitnami bitnami   4096 Nov  8 02:52 .
