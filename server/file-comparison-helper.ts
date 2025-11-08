@@ -193,8 +193,8 @@ export function compareDatasets(
     } else {
       const file2Row = file2Map.get(key)!;
       
-      // Check if rows are identical
-      const differences = findDifferences(row, file2Row, file1.columns, file2.columns);
+      // Check if rows are identical (respecting column mappings)
+      const differences = findDifferences(row, file2Row, file1.columns, file2.columns, columnMappings);
       
       if (differences.length === 0) {
         commonRows.push(row);
@@ -239,12 +239,31 @@ function findDifferences(
   row1: Record<string, any>,
   row2: Record<string, any>,
   columns1: string[],
-  columns2: string[]
+  columns2: string[],
+  columnMappings: Array<{file1Column: string, file2Column: string}>
 ): string[] {
   const differences: string[] = [];
-  const allColumns = new Set([...columns1, ...columns2]);
   
-  allColumns.forEach(col => {
+  // Build a set of mapped columns to skip them in unmapped comparison
+  const mappedFile1Cols = new Set(columnMappings.map(m => m.file1Column));
+  const mappedFile2Cols = new Set(columnMappings.map(m => m.file2Column));
+  
+  // Compare mapped columns using their respective names
+  columnMappings.forEach(mapping => {
+    const val1 = String(row1[mapping.file1Column] ?? '');
+    const val2 = String(row2[mapping.file2Column] ?? '');
+    
+    if (val1 !== val2) {
+      differences.push(`${mapping.file1Column}→${mapping.file2Column}`);
+    }
+  });
+  
+  // Compare unmapped columns (only if they have the same name in both files)
+  const commonUnmappedCols = columns1.filter(col => 
+    !mappedFile1Cols.has(col) && columns2.includes(col)
+  );
+  
+  commonUnmappedCols.forEach(col => {
     const val1 = String(row1[col] ?? '');
     const val2 = String(row2[col] ?? '');
     
