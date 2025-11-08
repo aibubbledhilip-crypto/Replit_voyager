@@ -6,6 +6,43 @@ import { z } from "zod";
 import { insertUserSchema, insertQueryLogSchema } from "@shared/schema";
 import { AthenaClient, StartQueryExecutionCommand, GetQueryExecutionCommand, GetQueryResultsCommand } from "@aws-sdk/client-athena";
 import { ensureCsrfToken, verifyCsrfToken, getCsrfToken } from "./csrf";
+import multer from "multer";
+import * as fs from "fs";
+import * as path from "path";
+import { fileURLToPath } from 'url';
+import { parseFile, compareDatasets, generateComparisonCSV, cleanupOldFiles } from "./file-comparison-helper";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Configure multer for file uploads
+const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: UPLOADS_DIR,
+    filename: (req, file, cb) => {
+      const timestamp = Date.now();
+      const ext = path.extname(file.originalname);
+      const name = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9]/g, '_');
+      cb(null, `${name}_${timestamp}${ext}`);
+    },
+  }),
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (ext === '.csv' || ext === '.xlsx' || ext === '.xls') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only CSV and XLSX files are allowed'));
+    }
+  },
+});
 
 // Middleware to check if user is authenticated
 function requireAuth(req: Request, res: Response, next: Function) {
@@ -537,6 +574,153 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logs = await storage.getQueryLogsByUser(req.session.userId!);
       }
       res.json(logs);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // File Comparison routes
+  app.post("/api/compare/execute", requireAuth, upload.fields([
+    { name: 'file1', maxCount: 1 },
+    { name: 'file2', maxCount: 1 }
+  ]), async (req, res) => {
+    try {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      
+      if (!files || !files.file1 || !files.file2) {
+        return res.status(400).json({ message: "Both files are required" });
+      }
+      
+      const file1 = files.file1[0];
+      const file2 = files.file2[0];
+      
+      // Get comparison columns from request
+      const { keyColumns } = req.body;
+      
+      if (!keyColumns) {
+        // Clean up uploaded files
+        fs.unlinkSync(file1.path);
+        fs.unlinkSync(file2.path);
+        return res.status(400).json({ message: "Key columns are required for comparison" });
+      }
+      
+      // Parse key columns
+      let parsedKeyColumns: string[];
+      try {
+        parsedKeyColumns = typeof keyColumns === 'string' ? JSON.parse(keyColumns) : keyColumns;
+        if (!Array.isArray(parsedKeyColumns) || parsedKeyColumns.length === 0) {
+          throw new Error('Key columns must be a non-empty array');
+        }
+      } catch (error: any) {
+        fs.unlinkSync(file1.path);
+        fs.unlinkSync(file2.path);
+        return res.status(400).json({ message: "Invalid key columns format" });
+      }
+      
+      try {
+        // Parse both files
+        const parsed1 = parseFile(file1.path);
+        const parsed2 = parseFile(file2.path);
+        
+        // Perform comparison
+        const comparisonResult = compareDatasets(
+          parsed1,
+          parsed2,
+          parsedKeyColumns,
+          file1.originalname,
+          file2.originalname
+        );
+        
+        // Generate CSV output
+        const csvPath = generateComparisonCSV(comparisonResult);
+        const csvFileName = path.basename(csvPath);
+        
+        // Clean up uploaded files
+        fs.unlinkSync(file1.path);
+        fs.unlinkSync(file2.path);
+        
+        // Log the comparison
+        await storage.createQueryLog({
+          userId: req.session.userId!,
+          username: req.session.username!,
+          query: `File Comparison: ${file1.originalname} vs ${file2.originalname} (Key: ${parsedKeyColumns.join(', ')})`,
+          rowsReturned: comparisonResult.uniqueToFile1.length + comparisonResult.uniqueToFile2.length + comparisonResult.deltaRows.length,
+          executionTime: 0,
+          status: 'success',
+        });
+        
+        res.json({
+          summary: comparisonResult.summary,
+          uniqueToFile1Count: comparisonResult.uniqueToFile1.length,
+          uniqueToFile2Count: comparisonResult.uniqueToFile2.length,
+          commonRowsCount: comparisonResult.commonRows.length,
+          deltaRowsCount: comparisonResult.deltaRows.length,
+          downloadFileName: csvFileName,
+          message: 'Comparison completed successfully',
+        });
+        
+        // Clean up old comparison files (older than 24 hours)
+        cleanupOldFiles(path.join(__dirname, '..', 'comparison_results'));
+      } catch (error: any) {
+        // Clean up uploaded files on error
+        if (fs.existsSync(file1.path)) fs.unlinkSync(file1.path);
+        if (fs.existsSync(file2.path)) fs.unlinkSync(file2.path);
+        throw error;
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.get("/api/compare/download/:filename", requireAuth, async (req, res) => {
+    try {
+      const { filename } = req.params;
+      
+      // Validate filename to prevent path traversal
+      const safeName = path.basename(filename);
+      const filePath = path.join(__dirname, '..', 'comparison_results', safeName);
+      
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: "File not found" });
+      }
+      
+      // Send file
+      res.download(filePath, safeName, (err) => {
+        if (err) {
+          console.error('Error downloading file:', err);
+          if (!res.headersSent) {
+            res.status(500).json({ message: "Error downloading file" });
+          }
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.get("/api/compare/columns/:filename", requireAuth, upload.single('file'), async (req, res) => {
+    try {
+      const file = req.file;
+      
+      if (!file) {
+        return res.status(400).json({ message: "File is required" });
+      }
+      
+      try {
+        const parsed = parseFile(file.path);
+        
+        // Clean up uploaded file
+        fs.unlinkSync(file.path);
+        
+        res.json({
+          columns: parsed.columns,
+          rowCount: parsed.rowCount,
+        });
+      } catch (error: any) {
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        throw error;
+      }
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
