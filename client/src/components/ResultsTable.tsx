@@ -37,7 +37,32 @@ export default function ResultsTable({
   );
 
   const handleExport = () => {
-    console.log('Export to CSV triggered');
+    if (data.length === 0) return;
+
+    const csvHeaders = columns.join(',');
+    const csvRows = data.map(row => 
+      columns.map(col => {
+        const value = row[col];
+        if (value === null || value === undefined) return '';
+        const stringValue = String(value);
+        if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+          return `"${stringValue.replace(/"/g, '""')}"`;
+        }
+        return stringValue;
+      }).join(',')
+    );
+
+    const csvContent = [csvHeaders, ...csvRows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `query_results_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (columns.length === 0) {
