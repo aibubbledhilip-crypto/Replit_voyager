@@ -80,3 +80,25 @@ export const insertExportJobSchema = createInsertSchema(exportJobs).omit({
 
 export type InsertExportJob = z.infer<typeof insertExportJobSchema>;
 export type ExportJob = typeof exportJobs.$inferSelect;
+
+export const sftpConfigs = pgTable("sftp_configs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  host: text("host").notNull(),
+  port: integer("port").notNull().default(22),
+  username: text("username").notNull(),
+  password: text("password").notNull(),
+  remotePath: text("remote_path").notNull(),
+  status: text("status").notNull().default('active'), // 'active' or 'inactive'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSftpConfigSchema = createInsertSchema(sftpConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertSftpConfig = z.infer<typeof insertSftpConfigSchema>;
+export type SftpConfig = typeof sftpConfigs.$inferSelect;

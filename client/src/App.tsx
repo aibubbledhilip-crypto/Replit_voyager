@@ -13,6 +13,8 @@ import MsisdnLookupPage from "@/pages/MsisdnLookupPage";
 import FileComparisonPage from "@/pages/FileComparisonPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import UsageLogsPage from "@/pages/UsageLogsPage";
+import SftpConfigPage from "@/pages/SftpConfigPage";
+import SftpMonitorPage from "@/pages/SftpMonitorPage";
 import NotFound from "@/pages/not-found";
 import { apiRequest } from "@/lib/api";
 
@@ -74,6 +76,8 @@ function AuthenticatedApp() {
                 <Route path="/file-comparison" component={FileComparisonPage} />
                 <Route path="/admin" component={AdminDashboardPage} />
                 <Route path="/admin/logs" component={UsageLogsPage} />
+                <Route path="/admin/sftp-config" component={SftpConfigPage} />
+                <Route path="/sftp-monitor" component={SftpMonitorPage} />
                 <Route component={NotFound} />
               </Switch>
             </div>

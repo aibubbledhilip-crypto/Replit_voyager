@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, queryLogs, settings, exportJobs, type User, type InsertUser, type QueryLog, type InsertQueryLog, type Setting, type InsertSetting, type ExportJob, type InsertExportJob } from "@shared/schema";
+import { users, queryLogs, settings, exportJobs, sftpConfigs, type User, type InsertUser, type QueryLog, type InsertQueryLog, type Setting, type InsertSetting, type ExportJob, type InsertExportJob, type SftpConfig, type InsertSftpConfig } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
@@ -28,6 +28,13 @@ export interface IStorage {
   updateExportJobStatus(id: string, status: string, filePath?: string, errorMessage?: string): Promise<void>;
   getExportJobsByUser(userId: string): Promise<ExportJob[]>;
   getAllExportJobs(): Promise<ExportJob[]>;
+  
+  getAllSftpConfigs(): Promise<SftpConfig[]>;
+  getActiveSftpConfigs(): Promise<SftpConfig[]>;
+  getSftpConfigById(id: string): Promise<SftpConfig | undefined>;
+  createSftpConfig(config: InsertSftpConfig): Promise<SftpConfig>;
+  updateSftpConfig(id: string, config: InsertSftpConfig): Promise<SftpConfig | undefined>;
+  deleteSftpConfig(id: string): Promise<boolean>;
 }
 
 export class DbStorage implements IStorage {
@@ -164,6 +171,41 @@ export class DbStorage implements IStorage {
 
   async getAllExportJobs(): Promise<ExportJob[]> {
     return await db.select().from(exportJobs).orderBy(desc(exportJobs.createdAt));
+  }
+
+  async getAllSftpConfigs(): Promise<SftpConfig[]> {
+    return await db.select().from(sftpConfigs).orderBy(desc(sftpConfigs.createdAt));
+  }
+
+  async getActiveSftpConfigs(): Promise<SftpConfig[]> {
+    return await db.select().from(sftpConfigs)
+      .where(eq(sftpConfigs.status, 'active'))
+      .orderBy(desc(sftpConfigs.createdAt));
+  }
+
+  async getSftpConfigById(id: string): Promise<SftpConfig | undefined> {
+    const result = await db.select().from(sftpConfigs).where(eq(sftpConfigs.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createSftpConfig(config: InsertSftpConfig): Promise<SftpConfig> {
+    const result = await db.insert(sftpConfigs).values(config).returning();
+    return result[0];
+  }
+
+  async updateSftpConfig(id: string, config: InsertSftpConfig): Promise<SftpConfig | undefined> {
+    const result = await db.update(sftpConfigs)
+      .set({ ...config, updatedAt: new Date() })
+      .where(eq(sftpConfigs.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteSftpConfig(id: string): Promise<boolean> {
+    const result = await db.delete(sftpConfigs)
+      .where(eq(sftpConfigs.id, id))
+      .returning();
+    return result.length > 0;
   }
 }
 

@@ -1,4 +1,4 @@
-import { Home, Database, FileText, Settings, Shield, Search, GitCompare } from "lucide-react";
+import { Home, Database, FileText, Settings, Shield, Search, GitCompare, Server, Activity } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -32,6 +32,16 @@ const adminMenuItems = [
     icon: GitCompare,
   },
   {
+    title: "SFTP Monitor",
+    url: "/sftp-monitor",
+    icon: Activity,
+  },
+  {
+    title: "SFTP Configuration",
+    url: "/admin/sftp-config",
+    icon: Server,
+  },
+  {
     title: "Usage Logs",
     url: "/admin/logs",
     icon: FileText,
@@ -53,6 +63,11 @@ const userMenuItems = [
     title: "File Comparison",
     url: "/file-comparison",
     icon: GitCompare,
+  },
+  {
+    title: "SFTP Monitor",
+    url: "/sftp-monitor",
+    icon: Activity,
   },
 ];
 

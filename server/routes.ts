@@ -11,6 +11,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from 'url';
 import { parseFile, compareDatasets, cleanupOldFiles } from "./file-comparison-helper";
+import { checkSftpFiles, testSftpConnection } from "./sftp-helper";
+import { insertSftpConfigSchema } from "@shared/schema";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -701,6 +703,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // SFTP Configuration Routes (Admin only)
+  app.get("/api/sftp/configs", requireAdmin, async (req, res) => {
+    try {
+      const configs = await storage.getAllSftpConfigs();
+      res.json(configs);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/sftp/configs", requireAdmin, async (req, res) => {
+    try {
+      const validatedData = insertSftpConfigSchema.parse(req.body);
+      const newConfig = await storage.createSftpConfig(validatedData);
+      res.status(201).json(newConfig);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/sftp/configs/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = insertSftpConfigSchema.parse(req.body);
+      const updated = await storage.updateSftpConfig(id, validatedData);
+      
+      if (!updated) {
+        return res.status(404).json({ message: "SFTP configuration not found" });
+      }
+      
+      res.json(updated);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/sftp/configs/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteSftpConfig(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "SFTP configuration not found" });
+      }
+      
+      res.json({ message: "SFTP configuration deleted successfully" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/sftp/test", requireAdmin, async (req, res) => {
+    try {
+      const result = await testSftpConnection(req.body);
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/sftp/monitor", requireAuth, async (req, res) => {
+    try {
+      const configs = await storage.getActiveSftpConfigs();
+      
+      // Check all SFTP servers in parallel
+      const results = await Promise.all(
+        configs.map(config => checkSftpFiles(config))
+      );
+      
+      res.json(results);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/sftp/monitor/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const config = await storage.getSftpConfigById(id);
+      
+      if (!config) {
+        return res.status(404).json({ message: "SFTP configuration not found" });
+      }
+      
+      const result = await checkSftpFiles(config);
+      res.json(result);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
