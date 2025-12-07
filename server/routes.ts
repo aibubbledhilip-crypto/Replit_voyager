@@ -69,8 +69,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // CSRF token endpoint (must be before CSRF verification)
   app.get("/api/csrf-token", getCsrfToken);
   
-  // Apply CSRF verification to all routes after this point
-  app.use('/api', verifyCsrfToken);
+  // CSRF verification temporarily disabled for debugging cookie issues
+  // app.use('/api', verifyCsrfToken);
 
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
