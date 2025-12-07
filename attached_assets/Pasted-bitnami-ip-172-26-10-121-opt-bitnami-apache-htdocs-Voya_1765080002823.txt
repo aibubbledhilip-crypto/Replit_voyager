@@ -1,0 +1,80 @@
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ pm2 restart voyager
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [voyager](ids: [ 0 ])
+[PM2] [voyager](0) ✓
+┌────┬────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name       │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ voyager    │ default     │ N/A     │ cluster │ 372973   │ 0s     │ 20   │ online    │ 0%       │ 48.6mb   │ bitnami  │ disabled │
+└────┴────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ pm2 logs voyager --lines 50
+
+^C
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ pm2 logs voyager --lines 30
+
+[TAILING] Tailing last 30 lines for [voyager] process (change the value with --lines option)
+/opt/bitnami/apache/htdocs/VoyagerAthena/logs/pm2-out-0.log last 30 lines:
+/opt/bitnami/apache/htdocs/VoyagerAthena/logs/pm2-error-0.log last 30 lines:
+^C
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ pm2 status
+┌────┬────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name       │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ voyager    │ default     │ N/A     │ cluster │ 372973   │ 3m     │ 20   │ online    │ 0%       │ 74.0mb   │ bitnami  │ disabled │
+└────┴────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ pm2 show voyager
+ Describing process with id 0 - name voyager
+┌───────────────────┬──────────────────────────────────────────────────────────────────┐
+│ status            │ online                                                           │
+│ name              │ voyager                                                          │
+│ namespace         │ default                                                          │
+│ version           │ N/A                                                              │
+│ restarts          │ 20                                                               │
+│ uptime            │ 3m                                                               │
+│ entire log path   │ /opt/bitnami/apache/htdocs/VoyagerAthena/logs/pm2-combined-0.log │
+│ script path       │ /opt/bitnami/node/bin/npx                                        │
+│ script args       │ tsx server/index.ts                                              │
+│ error log path    │ /opt/bitnami/apache/htdocs/VoyagerAthena/logs/pm2-error-0.log    │
+│ out log path      │ /opt/bitnami/apache/htdocs/VoyagerAthena/logs/pm2-out-0.log      │
+│ pid path          │ /home/bitnami/.pm2/pids/voyager-0.pid                            │
+│ interpreter       │ /opt/bitnami/node/bin/node                                       │
+│ interpreter args  │ N/A                                                              │
+│ script id         │ 0                                                                │
+│ exec cwd          │ /opt/bitnami/apache/htdocs/VoyagerAthena                         │
+│ exec mode         │ cluster_mode                                                     │
+│ node.js version   │ 22.18.0                                                          │
+│ node env          │ production                                                       │
+│ watch & reload    │ ✘                                                                │
+│ unstable restarts │ 0                                                                │
+│ created at        │ 2025-12-07T03:56:28.041Z                                         │
+└───────────────────┴──────────────────────────────────────────────────────────────────┘
+ Actions available
+┌────────────────────────┐
+│ km:heapdump            │
+│ km:cpu:profiling:start │
+│ km:cpu:profiling:stop  │
+│ km:heap:sampling:start │
+│ km:heap:sampling:stop  │
+└────────────────────────┘
+ Trigger via: pm2 trigger voyager <action_name>
+
+ Code metrics value
+┌────────────────────────┬───────────┐
+│ Used Heap Size         │ 15.84 MiB │
+│ Heap Usage             │ 84.6 %    │
+│ Heap Size              │ 18.72 MiB │
+│ Event Loop Latency p95 │ 1.04 ms   │
+│ Event Loop Latency     │ 0.56 ms   │
+│ Active handles         │ 3         │
+│ Active requests        │ 0         │
+└────────────────────────┴───────────┘
+ Divergent env variables from local env
+┌──────┬──────┐
+│ PORT │ 5000 │
+└──────┴──────┘
+
+ Add your own code metrics: http://bit.ly/code-metrics
+ Use `pm2 logs voyager [--lines 1000]` to display logs
+ Use `pm2 env 0` to display environment variables
+ Use `pm2 monit` to monitor CPU and Memory usage voyager
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$
