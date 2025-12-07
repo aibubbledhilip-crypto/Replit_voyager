@@ -91,7 +91,7 @@ export const sftpConfigs = pgTable("sftp_configs", {
   privateKey: text("private_key"), // PEM file content for RSA authentication
   passphrase: text("passphrase"), // Optional passphrase for encrypted private keys
   authType: text("auth_type").notNull().default('password'), // 'password' or 'key'
-  remotePath: text("remote_path").notNull(),
+  remotePaths: text("remote_paths").array().notNull().default(sql`ARRAY['/']::text[]`), // Multiple paths to monitor
   status: text("status").notNull().default('active'), // 'active' or 'inactive'
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

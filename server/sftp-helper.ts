@@ -8,13 +8,22 @@ interface SftpFileInfo {
   hasCurrentDate: boolean;
 }
 
-interface SftpMonitorResult {
-  configId: string;
-  configName: string;
+interface PathResult {
+  path: string;
   files: SftpFileInfo[];
   allFilesHaveCurrentDate: boolean;
   totalFiles: number;
   filesWithCurrentDate: number;
+  error?: string;
+}
+
+interface SftpMonitorResult {
+  configId: string;
+  configName: string;
+  paths: PathResult[];
+  allPathsHealthy: boolean;
+  totalPaths: number;
+  healthyPaths: number;
   error?: string;
 }
 
@@ -68,17 +77,11 @@ function buildConnectionOptions(config: Partial<SftpConfig>) {
 }
 
 /**
- * Connect to SFTP server and list files in the specified path
+ * Check files in a single path
  */
-export async function checkSftpFiles(config: SftpConfig): Promise<SftpMonitorResult> {
-  const sftp = new SftpClient();
-  
+async function checkPath(sftp: SftpClient, remotePath: string): Promise<PathResult> {
   try {
-    // Connect to SFTP server
-    await sftp.connect(buildConnectionOptions(config));
-    
-    // List files in the remote path
-    const fileList = await sftp.list(config.remotePath);
+    const fileList = await sftp.list(remotePath);
     
     // Process files (exclude directories)
     const files: SftpFileInfo[] = fileList
@@ -90,20 +93,63 @@ export async function checkSftpFiles(config: SftpConfig): Promise<SftpMonitorRes
         hasCurrentDate: hasCurrentDateInFilename(item.name),
       }));
     
-    // Disconnect
-    await sftp.end();
-    
     // Calculate statistics
     const filesWithCurrentDate = files.filter(f => f.hasCurrentDate).length;
     const allFilesHaveCurrentDate = files.length > 0 && filesWithCurrentDate === files.length;
     
     return {
-      configId: config.id,
-      configName: config.name,
+      path: remotePath,
       files,
       allFilesHaveCurrentDate,
       totalFiles: files.length,
       filesWithCurrentDate,
+    };
+  } catch (error: any) {
+    return {
+      path: remotePath,
+      files: [],
+      allFilesHaveCurrentDate: false,
+      totalFiles: 0,
+      filesWithCurrentDate: 0,
+      error: error.message || `Failed to access path: ${remotePath}`,
+    };
+  }
+}
+
+/**
+ * Connect to SFTP server and check all configured paths
+ */
+export async function checkSftpFiles(config: SftpConfig): Promise<SftpMonitorResult> {
+  const sftp = new SftpClient();
+  
+  try {
+    // Connect to SFTP server
+    await sftp.connect(buildConnectionOptions(config));
+    
+    // Get paths to check (use remotePaths array)
+    const paths = config.remotePaths || ['/'];
+    
+    // Check all paths
+    const pathResults: PathResult[] = [];
+    for (const remotePath of paths) {
+      const result = await checkPath(sftp, remotePath);
+      pathResults.push(result);
+    }
+    
+    // Disconnect
+    await sftp.end();
+    
+    // Calculate overall health
+    const healthyPaths = pathResults.filter(p => !p.error && p.allFilesHaveCurrentDate).length;
+    const allPathsHealthy = pathResults.length > 0 && healthyPaths === pathResults.length;
+    
+    return {
+      configId: config.id,
+      configName: config.name,
+      paths: pathResults,
+      allPathsHealthy,
+      totalPaths: pathResults.length,
+      healthyPaths,
     };
   } catch (error: any) {
     // Ensure disconnection even on error
@@ -114,27 +160,28 @@ export async function checkSftpFiles(config: SftpConfig): Promise<SftpMonitorRes
     return {
       configId: config.id,
       configName: config.name,
-      files: [],
-      allFilesHaveCurrentDate: false,
-      totalFiles: 0,
-      filesWithCurrentDate: 0,
+      paths: [],
+      allPathsHealthy: false,
+      totalPaths: 0,
+      healthyPaths: 0,
       error: error.message || 'Failed to connect to SFTP server',
     };
   }
 }
 
 /**
- * Test SFTP connection without listing files
+ * Test SFTP connection and verify access to all paths
  */
-export async function testSftpConnection(config: Partial<SftpConfig>): Promise<{ success: boolean; error?: string }> {
+export async function testSftpConnection(config: Partial<SftpConfig> & { remotePaths?: string[] }): Promise<{ success: boolean; error?: string }> {
   const sftp = new SftpClient();
   
   try {
     await sftp.connect(buildConnectionOptions(config));
     
-    // Try to access the remote path
-    if (config.remotePath) {
-      await sftp.list(config.remotePath);
+    // Try to access all remote paths
+    const paths = config.remotePaths || ['/'];
+    for (const remotePath of paths) {
+      await sftp.list(remotePath);
     }
     
     await sftp.end();

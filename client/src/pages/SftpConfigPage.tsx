@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Dialog,
@@ -26,7 +25,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { getCsrfToken } from "@/lib/api";
-import { Plus, Edit, Trash2, Server, Loader2, TestTube, Upload, Key } from "lucide-react";
+import { Plus, Edit, Trash2, Server, Loader2, TestTube, Upload, Key, FolderOpen, X } from "lucide-react";
 
 interface SftpConfig {
   id: string;
@@ -35,7 +34,7 @@ interface SftpConfig {
   port: number;
   username: string;
   authType: string;
-  remotePath: string;
+  remotePaths: string[];
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -53,7 +52,7 @@ export default function SftpConfigPage() {
     authType: "password" as "password" | "key",
     privateKey: "",
     passphrase: "",
-    remotePath: "/",
+    remotePaths: ["/"],
     status: "active",
   });
   const [isTesting, setIsTesting] = useState(false);
@@ -143,7 +142,7 @@ export default function SftpConfigPage() {
       authType: "password" as "password" | "key",
       privateKey: "",
       passphrase: "",
-      remotePath: "/",
+      remotePaths: ["/"],
       status: "active",
     });
     setEditingConfig(null);
@@ -153,16 +152,19 @@ export default function SftpConfigPage() {
   const handleOpenDialog = (config?: SftpConfig) => {
     if (config) {
       setEditingConfig(config);
+      const paths = config.remotePaths && config.remotePaths.length > 0 
+        ? config.remotePaths.map(p => p || "/")
+        : ["/"];
       setFormData({
         name: config.name,
         host: config.host,
         port: config.port,
         username: config.username,
-        password: "", // Don't populate password for security
+        password: "",
         authType: (config.authType || "password") as "password" | "key",
-        privateKey: "", // Don't populate private key for security
+        privateKey: "",
         passphrase: "",
-        remotePath: config.remotePath,
+        remotePaths: paths,
         status: config.status,
       });
       setKeyFileName(config.authType === 'key' ? '(existing key)' : '');
@@ -205,13 +207,58 @@ export default function SftpConfigPage() {
     reader.readAsText(file);
   };
 
+  const handleAddPath = () => {
+    setFormData({
+      ...formData,
+      remotePaths: [...formData.remotePaths, "/"],
+    });
+  };
+
+  const handleRemovePath = (index: number) => {
+    if (formData.remotePaths.length <= 1) {
+      toast({
+        title: "Cannot Remove",
+        description: "At least one path is required",
+        variant: "destructive",
+      });
+      return;
+    }
+    const newPaths = formData.remotePaths.filter((_, i) => i !== index);
+    setFormData({ ...formData, remotePaths: newPaths });
+  };
+
+  const handlePathChange = (index: number, value: string) => {
+    const newPaths = [...formData.remotePaths];
+    newPaths[index] = value || "";
+    setFormData({ ...formData, remotePaths: newPaths });
+  };
+  
+  const ensureValidPaths = (paths: string[] | undefined | null): string[] => {
+    if (!paths || paths.length === 0) {
+      return ["/"];
+    }
+    return paths.map(p => p || "");
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    const validPaths = formData.remotePaths.filter(p => p.trim() !== "");
+    if (validPaths.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "At least one valid path is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const submitData = { ...formData, remotePaths: validPaths };
+    
     if (editingConfig) {
-      updateMutation.mutate({ id: editingConfig.id, data: formData });
+      updateMutation.mutate({ id: editingConfig.id, data: submitData });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(submitData);
     }
   };
 
@@ -243,6 +290,16 @@ export default function SftpConfigPage() {
       return;
     }
 
+    const validPaths = formData.remotePaths.filter(p => p.trim() !== "");
+    if (validPaths.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "At least one path is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsTesting(true);
     try {
       const csrfToken = await getCsrfToken();
@@ -261,7 +318,7 @@ export default function SftpConfigPage() {
           authType: formData.authType,
           privateKey: formData.authType === "key" ? formData.privateKey : undefined,
           passphrase: formData.authType === "key" ? formData.passphrase : undefined,
-          remotePath: formData.remotePath,
+          remotePaths: validPaths,
         }),
       });
       const result: { success: boolean; error?: string } = await res.json();
@@ -269,7 +326,7 @@ export default function SftpConfigPage() {
       if (result.success) {
         toast({
           title: "Connection Successful",
-          description: "SFTP server is accessible",
+          description: `SFTP server is accessible. Verified ${validPaths.length} path(s).`,
         });
       } else {
         toast({
@@ -305,13 +362,13 @@ export default function SftpConfigPage() {
               Add SFTP Server
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingConfig ? "Edit SFTP Configuration" : "Add SFTP Configuration"}
               </DialogTitle>
               <DialogDescription>
-                Configure SFTP server connection details
+                Configure SFTP server connection details and paths to monitor
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -459,15 +516,48 @@ export default function SftpConfigPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="remotePath">Remote Path</Label>
-                <Input
-                  id="remotePath"
-                  value={formData.remotePath}
-                  onChange={(e) => setFormData({ ...formData, remotePath: e.target.value })}
-                  placeholder="/path/to/monitor"
-                  required
-                  data-testid="input-sftp-path"
-                />
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <FolderOpen className="h-4 w-4" />
+                    Remote Paths to Monitor
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddPath}
+                    data-testid="button-add-path"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Path
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {formData.remotePaths.map((path, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        value={path || ""}
+                        onChange={(e) => handlePathChange(index, e.target.value)}
+                        placeholder="/path/to/monitor"
+                        data-testid={`input-sftp-path-${index}`}
+                      />
+                      {formData.remotePaths.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemovePath(index)}
+                          data-testid={`button-remove-path-${index}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Add multiple paths to monitor different directories on the same server
+                </p>
               </div>
 
               <div className="flex gap-2">
@@ -531,7 +621,7 @@ export default function SftpConfigPage() {
                     <TableHead>Host</TableHead>
                     <TableHead>Username</TableHead>
                     <TableHead>Auth</TableHead>
-                    <TableHead>Path</TableHead>
+                    <TableHead>Paths</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -553,7 +643,12 @@ export default function SftpConfigPage() {
                           )}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-mono text-sm">{config.remotePath}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+                          <FolderOpen className="h-3 w-3" />
+                          {config.remotePaths?.length || 1} path(s)
+                        </Badge>
+                      </TableCell>
                       <TableCell>
                         <Badge variant={config.status === 'active' ? 'default' : 'secondary'}>
                           {config.status}
