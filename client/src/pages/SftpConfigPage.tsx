@@ -50,12 +50,14 @@ export default function SftpConfigPage() {
     username: "",
     password: "",
     authType: "password" as "password" | "key",
-    privateKeyPath: "",
+    privateKey: "",
     passphrase: "",
     remotePath: "/",
     status: "active",
   });
   const [isTesting, setIsTesting] = useState(false);
+  const [keyFileName, setKeyFileName] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
 
@@ -64,11 +66,10 @@ export default function SftpConfigPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: typeof formData) =>
-      apiRequest("/api/sftp/configs", {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+    mutationFn: async (data: typeof formData) => {
+      const res = await apiRequest("POST", "/api/sftp/configs", data);
+      return res.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sftp/configs"] });
       setIsDialogOpen(false);
@@ -88,11 +89,10 @@ export default function SftpConfigPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: typeof formData }) =>
-      apiRequest(`/api/sftp/configs/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      }),
+    mutationFn: async ({ id, data }: { id: string; data: typeof formData }) => {
+      const res = await apiRequest("PUT", `/api/sftp/configs/${id}`, data);
+      return res.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sftp/configs"] });
       setIsDialogOpen(false);
@@ -112,10 +112,10 @@ export default function SftpConfigPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) =>
-      apiRequest(`/api/sftp/configs/${id}`, {
-        method: "DELETE",
-      }),
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("DELETE", `/api/sftp/configs/${id}`);
+      return res.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sftp/configs"] });
       toast({
@@ -140,12 +140,13 @@ export default function SftpConfigPage() {
       username: "",
       password: "",
       authType: "password" as "password" | "key",
-      privateKeyPath: "",
+      privateKey: "",
       passphrase: "",
       remotePath: "/",
       status: "active",
     });
     setEditingConfig(null);
+    setKeyFileName("");
   };
 
   const handleOpenDialog = (config?: SftpConfig) => {
@@ -158,15 +159,49 @@ export default function SftpConfigPage() {
         username: config.username,
         password: "", // Don't populate password for security
         authType: (config.authType || "password") as "password" | "key",
-        privateKeyPath: "",
+        privateKey: "", // Don't populate private key for security
         passphrase: "",
         remotePath: config.remotePath,
         status: config.status,
       });
+      setKeyFileName(config.authType === 'key' ? '(existing key)' : '');
     } else {
       resetForm();
     }
     setIsDialogOpen(true);
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.pem') && !file.name.endsWith('.key')) {
+      toast({
+        title: "Invalid File",
+        description: "Please upload a .pem or .key file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      setFormData({ ...formData, privateKey: content });
+      setKeyFileName(file.name);
+      toast({
+        title: "File Loaded",
+        description: `Private key loaded from ${file.name}`,
+      });
+    };
+    reader.onerror = () => {
+      toast({
+        title: "Error",
+        description: "Failed to read the file",
+        variant: "destructive",
+      });
+    };
+    reader.readAsText(file);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -198,10 +233,10 @@ export default function SftpConfigPage() {
       return;
     }
 
-    if (formData.authType === "key" && !formData.privateKeyPath) {
+    if (formData.authType === "key" && !formData.privateKey && !editingConfig) {
       toast({
         title: "Validation Error",
-        description: "Please provide the private key file path",
+        description: "Please upload a private key file",
         variant: "destructive",
       });
       return;
@@ -209,19 +244,17 @@ export default function SftpConfigPage() {
 
     setIsTesting(true);
     try {
-      const result: { success: boolean; error?: string } = await apiRequest("/api/sftp/test", {
-        method: "POST",
-        body: JSON.stringify({
-          host: formData.host,
-          port: formData.port,
-          username: formData.username,
-          password: formData.authType === "password" ? formData.password : undefined,
-          authType: formData.authType,
-          privateKeyPath: formData.authType === "key" ? formData.privateKeyPath : undefined,
-          passphrase: formData.authType === "key" ? formData.passphrase : undefined,
-          remotePath: formData.remotePath,
-        }),
+      const res = await apiRequest("POST", "/api/sftp/test", {
+        host: formData.host,
+        port: formData.port,
+        username: formData.username,
+        password: formData.authType === "password" ? formData.password : undefined,
+        authType: formData.authType,
+        privateKey: formData.authType === "key" ? formData.privateKey : undefined,
+        passphrase: formData.authType === "key" ? formData.passphrase : undefined,
+        remotePath: formData.remotePath,
       });
+      const result: { success: boolean; error?: string } = await res.json();
 
       if (result.success) {
         toast({
@@ -359,18 +392,47 @@ export default function SftpConfigPage() {
               ) : (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="privateKeyPath">Private Key File Path</Label>
-                    <Input
-                      id="privateKeyPath"
-                      value={formData.privateKeyPath}
-                      onChange={(e) => setFormData({ ...formData, privateKeyPath: e.target.value })}
-                      placeholder="/path/to/private_key.pem"
-                      required={!editingConfig}
-                      data-testid="input-sftp-key-path"
+                    <Label>Private Key File (.pem)</Label>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      accept=".pem,.key"
+                      className="hidden"
+                      data-testid="input-sftp-key-file"
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Enter the full path to the .pem file on the server
-                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex-1"
+                        data-testid="button-upload-key"
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        {keyFileName || "Upload .pem File"}
+                      </Button>
+                      {keyFileName && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setFormData({ ...formData, privateKey: "" });
+                            setKeyFileName("");
+                            if (fileInputRef.current) fileInputRef.current.value = "";
+                          }}
+                          data-testid="button-clear-key"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    {editingConfig && !keyFileName && (
+                      <p className="text-xs text-muted-foreground">
+                        Leave blank to keep the existing key
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="passphrase">Passphrase (optional)</Label>

@@ -55,7 +55,10 @@ Voyager is a secure enterprise web application for querying AWS Athena databases
 4. **MSISDN Lookup**: Multi-source phone number search across 5 data sources (SF, Aria, Matrix, Trufinder, Nokia)
 5. **File Comparison**: Upload and compare two CSV/XLSX files to identify unique rows and matching key rows with downloadable reports
 6. **SFTP File Monitoring**: Monitor SFTP servers for files with current date in filenames
-   - Admin can configure SFTP servers (host, username, password, path)
+   - Admin can configure SFTP servers (host, username, password/RSA key, path)
+   - **Supports two authentication types**:
+     - Password authentication
+     - RSA key authentication (upload .pem file directly from local machine)
    - Real-time monitoring with green/red status indicators
    - Green = all files have today's date in filename
    - Red = some files missing today's date
