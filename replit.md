@@ -4,6 +4,13 @@
 Voyager is a secure enterprise web application for querying AWS Athena databases with role-based access control, usage logging, and admin-controlled query limits.
 
 ## Recent Changes
+- **2025-12-07**:
+  - **Session and Cookie Configuration Fix for Apache Reverse Proxy**:
+    - Fixed slow login issue on Lightsail by optimizing database connection pool
+    - Updated session configuration: `resave: true`, `saveUninitialized: true`, `secure: false`
+    - Added `proxy: true` to session config for reverse proxy compatibility
+    - **Note**: CSRF protection temporarily disabled due to cookie forwarding issues with Apache
+    - Future improvement: Configure Apache to properly forward cookies for CSRF re-enablement
 - **2025-11-08**: 
   - **Enhanced File Comparison Feature with Flexible Column Mapping and Separate Reports**:
     - Upload and compare two CSV/XLSX files to identify unique rows and matching key rows
