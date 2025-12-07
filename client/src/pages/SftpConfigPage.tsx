@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +25,7 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, Server, Loader2, TestTube } from "lucide-react";
+import { Plus, Edit, Trash2, Server, Loader2, TestTube, Upload, Key } from "lucide-react";
 
 interface SftpConfig {
   id: string;
@@ -31,6 +33,7 @@ interface SftpConfig {
   host: string;
   port: number;
   username: string;
+  authType: string;
   remotePath: string;
   status: string;
   createdAt: string;

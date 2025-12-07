@@ -44,6 +44,29 @@ function hasCurrentDateInFilename(filename: string): boolean {
 }
 
 /**
+ * Build connection options based on auth type
+ */
+function buildConnectionOptions(config: Partial<SftpConfig>) {
+  const options: any = {
+    host: config.host,
+    port: config.port || 22,
+    username: config.username,
+    readyTimeout: 10000, // 10 seconds
+  };
+  
+  if (config.authType === 'key' && config.privateKey) {
+    options.privateKey = config.privateKey;
+    if (config.passphrase) {
+      options.passphrase = config.passphrase;
+    }
+  } else if (config.password) {
+    options.password = config.password;
+  }
+  
+  return options;
+}
+
+/**
  * Connect to SFTP server and list files in the specified path
  */
 export async function checkSftpFiles(config: SftpConfig): Promise<SftpMonitorResult> {
@@ -51,13 +74,7 @@ export async function checkSftpFiles(config: SftpConfig): Promise<SftpMonitorRes
   
   try {
     // Connect to SFTP server
-    await sftp.connect({
-      host: config.host,
-      port: config.port,
-      username: config.username,
-      password: config.password,
-      readyTimeout: 10000, // 10 seconds
-    });
+    await sftp.connect(buildConnectionOptions(config));
     
     // List files in the remote path
     const fileList = await sftp.list(config.remotePath);
@@ -112,13 +129,7 @@ export async function testSftpConnection(config: Partial<SftpConfig>): Promise<{
   const sftp = new SftpClient();
   
   try {
-    await sftp.connect({
-      host: config.host!,
-      port: config.port || 22,
-      username: config.username!,
-      password: config.password!,
-      readyTimeout: 10000,
-    });
+    await sftp.connect(buildConnectionOptions(config));
     
     // Try to access the remote path
     if (config.remotePath) {

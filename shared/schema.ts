@@ -87,7 +87,10 @@ export const sftpConfigs = pgTable("sftp_configs", {
   host: text("host").notNull(),
   port: integer("port").notNull().default(22),
   username: text("username").notNull(),
-  password: text("password").notNull(),
+  password: text("password"), // Optional if using private key
+  privateKey: text("private_key"), // PEM format private key for RSA authentication
+  passphrase: text("passphrase"), // Optional passphrase for encrypted private keys
+  authType: text("auth_type").notNull().default('password'), // 'password' or 'key'
   remotePath: text("remote_path").notNull(),
   status: text("status").notNull().default('active'), // 'active' or 'inactive'
   createdAt: timestamp("created_at").defaultNow().notNull(),
