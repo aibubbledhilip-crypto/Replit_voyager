@@ -13,7 +13,13 @@ if (process.env.NODE_ENV === 'production') {
   // Use node-postgres for Lightsail/production
   const pg = await import('pg');
   const drizzleNodePg = await import('drizzle-orm/node-postgres');
-  pool = new pg.default.Pool({ connectionString: process.env.DATABASE_URL });
+  pool = new pg.default.Pool({ 
+    connectionString: process.env.DATABASE_URL,
+    max: 10,
+    min: 2,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+  });
   db = drizzleNodePg.drizzle(pool, { schema });
 } else {
   // Use Neon for Replit development
