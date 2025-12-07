@@ -1,6 +1,22 @@
 import SftpClient from 'ssh2-sftp-client';
 import type { SftpConfig } from '@shared/schema';
 
+/**
+ * Get current date components in Central Time (America/Chicago)
+ * This handles both CST (UTC-6) and CDT (UTC-5) automatically
+ */
+function getCentralTimeDate(): { year: number; month: string; day: string; dateObj: Date } {
+  const now = new Date();
+  const centralTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  
+  return {
+    year: centralTime.getFullYear(),
+    month: String(centralTime.getMonth() + 1).padStart(2, '0'),
+    day: String(centralTime.getDate()).padStart(2, '0'),
+    dateObj: centralTime,
+  };
+}
+
 interface SftpFileInfo {
   name: string;
   size: number;
@@ -30,17 +46,14 @@ interface SftpMonitorResult {
 }
 
 /**
- * Check if a filename contains today's date in common formats:
+ * Check if a filename contains today's date (in Central Time) in common formats:
  * - YYYYMMDD
  * - YYYY-MM-DD
  * - YYYY_MM_DD
  * - YYYYMMDD_HHMMSS
  */
 function hasCurrentDateInFilename(filename: string): boolean {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
+  const { year, month, day } = getCentralTimeDate();
   
   // Common date formats in filenames
   const formats = [
@@ -55,17 +68,20 @@ function hasCurrentDateInFilename(filename: string): boolean {
 }
 
 /**
- * Check if a file's modification timestamp is from today
+ * Check if a file's modification timestamp is from today (in Central Time)
  */
 function hasCurrentDateInModified(modifyTime: number): boolean {
-  const today = new Date();
-  const modifyDate = new Date(modifyTime);
+  const { year, month, day } = getCentralTimeDate();
   
-  return (
-    modifyDate.getFullYear() === today.getFullYear() &&
-    modifyDate.getMonth() === today.getMonth() &&
-    modifyDate.getDate() === today.getDate()
-  );
+  // Convert modify time to Central Time for comparison
+  const modifyDate = new Date(modifyTime);
+  const modifyCentral = new Date(modifyDate.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  
+  const modifyYear = modifyCentral.getFullYear();
+  const modifyMonth = String(modifyCentral.getMonth() + 1).padStart(2, '0');
+  const modifyDay = String(modifyCentral.getDate()).padStart(2, '0');
+  
+  return year === modifyYear && month === modifyMonth && day === modifyDay;
 }
 
 /**
