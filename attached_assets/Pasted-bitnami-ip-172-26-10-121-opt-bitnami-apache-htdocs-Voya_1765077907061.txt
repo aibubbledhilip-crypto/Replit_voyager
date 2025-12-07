@@ -1,0 +1,77 @@
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ pm2 kill
+[PM2] Applying action deleteProcessId on app [all](ids: [ 0 ])
+[PM2] [voyager](0) ✓
+[PM2] [v] All Applications Stopped
+[PM2] [v] PM2 Daemon Stopped
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ rm -rf ./logs/*.log
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ cat ecosystem.config.cjs
+require('dotenv').config();
+module.exports = {
+  apps: [{
+    name: 'voyager',
+    script: 'npx',
+    args: 'tsx server/index.ts',
+    cwd: '/opt/bitnami/apache/htdocs/VoyagerAthena',
+    instances: 1,
+    autorestart: true,
+    watch: false,
+    max_memory_restart: '1G',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 5000,
+      DATABASE_URL: process.env.DATABASE_URL,
+      SESSION_SECRET: process.env.SESSION_SECRET,
+      AWS_REGION: process.env.AWS_REGION,
+      AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+      AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+      AWS_S3_OUTPUT_LOCATION: process.env.AWS_S3_OUTPUT_LOCATION
+    },
+    error_file: './logs/pm2-error.log',
+    out_file: './logs/pm2-out.log',
+    log_file: './logs/pm2-combined.log',
+    time: true
+  }]
+};
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ pm2 start ecosystem.config.cjs
+[PM2] Spawning PM2 daemon with pm2_home=/home/bitnami/.pm2
+[PM2] PM2 Successfully daemonized
+[dotenv@17.2.3] injecting env (13) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+[PM2][WARN] Applications voyager not running, starting...
+[PM2] App [voyager] launched (1 instances)
+┌────┬────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name       │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ voyager    │ default     │ N/A     │ cluster │ 370973   │ 0s     │ 0    │ online    │ 0%       │ 48.9mb   │ bitnami  │ disabled │
+└────┴────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ pm2 status
+┌────┬────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name       │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ voyager    │ default     │ N/A     │ cluster │ 371013   │ 1s     │ 1    │ online    │ 0%       │ 79.7mb   │ bitnami  │ disabled │
+└────┴────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ pm2 logs voyager --lines 50
+
+[TAILING] Tailing last 50 lines for [voyager] process (change the value with --lines option)
+/opt/bitnami/apache/htdocs/VoyagerAthena/logs/pm2-out-0.log last 50 lines:
+/opt/bitnami/apache/htdocs/VoyagerAthena/logs/pm2-error-0.log last 50 lines:
+0|voyager  | 2025-12-07T03:24:35:
+0|voyager  | 2025-12-07T03:24:35:
+0|voyager  | 2025-12-07T03:24:35:
+0|voyager  | 2025-12-07T03:24:39:
+0|voyager  | 2025-12-07T03:24:39:
+0|voyager  | 2025-12-07T03:24:39:
+0|voyager  | 2025-12-07T03:24:42:
+0|voyager  | 2025-12-07T03:24:42:
+0|voyager  | 2025-12-07T03:24:42:
+0|voyager  | 2025-12-07T03:24:46:
+0|voyager  | 2025-12-07T03:24:46:
+0|voyager  | 2025-12-07T03:24:46:
+0|voyager  | 2025-12-07T03:24:50:
+0|voyager  | 2025-12-07T03:24:50:
+0|voyager  | 2025-12-07T03:24:50:
+0|voyager  | 2025-12-07T03:24:53:
+0|voyager  | 2025-12-07T03:24:53:
+0|voyager  | 2025-12-07T03:24:53:
+^C0|voyager  | 2025-12-07T03:24:57:
+0|voyager  | 2025-12-07T03:24:57:
+0|voyager  | 2025-12-07T03:24:57:
