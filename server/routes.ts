@@ -805,7 +805,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         configs.map(config => checkSftpFiles(config))
       );
       
-      res.json(results);
+      // Include server time for debugging timezone differences
+      const serverTime = new Date().toISOString();
+      const serverDate = new Date().toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZoneName: 'short'
+      });
+      
+      res.json({ 
+        results, 
+        serverTime,
+        serverDate,
+        serverTimestamp: Date.now()
+      });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

@@ -16,7 +16,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Loader2, RefreshCw, FileCheck, FileX, Server, AlertCircle, FolderOpen, ChevronDown, ChevronRight } from "lucide-react";
+import { Loader2, RefreshCw, FileCheck, FileX, Server, AlertCircle, FolderOpen, ChevronDown, ChevronRight, Clock } from "lucide-react";
 
 interface SftpFileInfo {
   name: string;
@@ -46,15 +46,26 @@ interface SftpMonitorResult {
   error?: string;
 }
 
+interface MonitorResponse {
+  results: SftpMonitorResult[];
+  serverTime: string;
+  serverDate: string;
+  serverTimestamp: number;
+}
+
 export default function SftpMonitorPage() {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [expandedServers, setExpandedServers] = useState<Set<string>>(new Set());
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
 
-  const { data: results = [], isLoading, refetch } = useQuery<SftpMonitorResult[]>({
+  const { data, isLoading, refetch } = useQuery<MonitorResponse>({
     queryKey: ["/api/sftp/monitor"],
     refetchInterval: autoRefresh ? 60000 : false,
   });
+  
+  const results = data?.results || [];
+  const serverDate = data?.serverDate || "";
+  const serverTime = data?.serverTime || "";
 
   const handleRefresh = () => {
     refetch();
@@ -121,6 +132,22 @@ export default function SftpMonitorPage() {
           </Button>
         </div>
       </div>
+
+      {/* Application Server Time */}
+      {serverDate && (
+        <Card className="bg-muted/50" data-testid="card-server-time">
+          <CardContent className="flex items-center gap-3 py-3">
+            <Clock className="h-5 w-5 text-primary" />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+              <span className="text-sm font-medium">Application Server Time:</span>
+              <span className="text-sm font-mono" data-testid="text-server-time">{serverDate}</span>
+            </div>
+            <div className="ml-auto text-xs text-muted-foreground hidden md:block">
+              (Used for date comparison)
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Server Status Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
