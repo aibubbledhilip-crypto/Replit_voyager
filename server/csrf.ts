@@ -39,6 +39,9 @@ export function verifyCsrfToken(req: Request, res: Response, next: NextFunction)
 
 export function getCsrfToken(req: Request, res: Response) {
   console.log(`[CSRF] Session ID: ${req.session?.id}, Has token: ${!!req.session?.csrfToken}`);
+  console.log(`[CSRF] Cookie header: ${req.headers.cookie}`);
+  console.log(`[CSRF] X-Forwarded-Proto: ${req.headers['x-forwarded-proto']}`);
+  
   if (!req.session?.csrfToken) {
     console.log(`[CSRF] No token in session, generating new one`);
     req.session.csrfToken = generateCsrfToken();
