@@ -49,6 +49,9 @@ export default function SftpConfigPage() {
     port: 22,
     username: "",
     password: "",
+    authType: "password" as "password" | "key",
+    privateKeyPath: "",
+    passphrase: "",
     remotePath: "/",
     status: "active",
   });
@@ -136,6 +139,9 @@ export default function SftpConfigPage() {
       port: 22,
       username: "",
       password: "",
+      authType: "password" as "password" | "key",
+      privateKeyPath: "",
+      passphrase: "",
       remotePath: "/",
       status: "active",
     });
@@ -151,6 +157,9 @@ export default function SftpConfigPage() {
         port: config.port,
         username: config.username,
         password: "", // Don't populate password for security
+        authType: (config.authType || "password") as "password" | "key",
+        privateKeyPath: "",
+        passphrase: "",
         remotePath: config.remotePath,
         status: config.status,
       });
@@ -171,10 +180,28 @@ export default function SftpConfigPage() {
   };
 
   const handleTest = async () => {
-    if (!formData.host || !formData.username || !formData.password) {
+    if (!formData.host || !formData.username) {
       toast({
         title: "Validation Error",
-        description: "Please fill in host, username, and password",
+        description: "Please fill in host and username",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.authType === "password" && !formData.password) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in password",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.authType === "key" && !formData.privateKeyPath) {
+      toast({
+        title: "Validation Error",
+        description: "Please provide the private key file path",
         variant: "destructive",
       });
       return;
@@ -188,7 +215,10 @@ export default function SftpConfigPage() {
           host: formData.host,
           port: formData.port,
           username: formData.username,
-          password: formData.password,
+          password: formData.authType === "password" ? formData.password : undefined,
+          authType: formData.authType,
+          privateKeyPath: formData.authType === "key" ? formData.privateKeyPath : undefined,
+          passphrase: formData.authType === "key" ? formData.passphrase : undefined,
           remotePath: formData.remotePath,
         }),
       });
@@ -292,17 +322,69 @@ export default function SftpConfigPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder={editingConfig ? "Leave blank to keep current" : "Enter password"}
-                  required={!editingConfig}
-                  data-testid="input-sftp-password"
-                />
+                <Label>Authentication Type</Label>
+                <RadioGroup
+                  value={formData.authType}
+                  onValueChange={(value) => setFormData({ ...formData, authType: value as "password" | "key" })}
+                  className="flex gap-4"
+                  data-testid="radio-auth-type"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="password" id="auth-password" data-testid="radio-auth-password" />
+                    <Label htmlFor="auth-password" className="font-normal cursor-pointer">Password</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="key" id="auth-key" data-testid="radio-auth-key" />
+                    <Label htmlFor="auth-key" className="font-normal cursor-pointer flex items-center gap-1">
+                      <Key className="h-3 w-3" />
+                      Private Key (PEM)
+                    </Label>
+                  </div>
+                </RadioGroup>
               </div>
+
+              {formData.authType === "password" ? (
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder={editingConfig ? "Leave blank to keep current" : "Enter password"}
+                    required={!editingConfig}
+                    data-testid="input-sftp-password"
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="privateKeyPath">Private Key File Path</Label>
+                    <Input
+                      id="privateKeyPath"
+                      value={formData.privateKeyPath}
+                      onChange={(e) => setFormData({ ...formData, privateKeyPath: e.target.value })}
+                      placeholder="/path/to/private_key.pem"
+                      required={!editingConfig}
+                      data-testid="input-sftp-key-path"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Enter the full path to the .pem file on the server
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="passphrase">Passphrase (optional)</Label>
+                    <Input
+                      id="passphrase"
+                      type="password"
+                      value={formData.passphrase}
+                      onChange={(e) => setFormData({ ...formData, passphrase: e.target.value })}
+                      placeholder="Leave blank if key is not encrypted"
+                      data-testid="input-sftp-passphrase"
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="remotePath">Remote Path</Label>
@@ -376,6 +458,7 @@ export default function SftpConfigPage() {
                     <TableHead>Name</TableHead>
                     <TableHead>Host</TableHead>
                     <TableHead>Username</TableHead>
+                    <TableHead>Auth</TableHead>
                     <TableHead>Path</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -389,6 +472,15 @@ export default function SftpConfigPage() {
                         {config.host}:{config.port}
                       </TableCell>
                       <TableCell className="font-mono text-sm">{config.username}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                          {config.authType === 'key' ? (
+                            <><Key className="h-3 w-3" /> Key</>
+                          ) : (
+                            'Password'
+                          )}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="font-mono text-sm">{config.remotePath}</TableCell>
                       <TableCell>
                         <Badge variant={config.status === 'active' ? 'default' : 'secondary'}>

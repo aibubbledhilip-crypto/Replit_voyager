@@ -1,4 +1,5 @@
 import SftpClient from 'ssh2-sftp-client';
+import { readFileSync, existsSync } from 'fs';
 import type { SftpConfig } from '@shared/schema';
 
 interface SftpFileInfo {
@@ -54,8 +55,12 @@ function buildConnectionOptions(config: Partial<SftpConfig>) {
     readyTimeout: 10000, // 10 seconds
   };
   
-  if (config.authType === 'key' && config.privateKey) {
-    options.privateKey = config.privateKey;
+  if (config.authType === 'key' && config.privateKeyPath) {
+    // Read private key from file path on server
+    if (!existsSync(config.privateKeyPath)) {
+      throw new Error(`Private key file not found: ${config.privateKeyPath}`);
+    }
+    options.privateKey = readFileSync(config.privateKeyPath, 'utf8');
     if (config.passphrase) {
       options.passphrase = config.passphrase;
     }
