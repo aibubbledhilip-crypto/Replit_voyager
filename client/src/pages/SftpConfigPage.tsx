@@ -25,7 +25,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { getCsrfToken } from "@/lib/api";
-import { Plus, Edit, Trash2, Server, Loader2, TestTube, Upload, Key, FolderOpen, X } from "lucide-react";
+import { Plus, Edit, Trash2, Server, Loader2, TestTube, Upload, Key, FolderOpen, X, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface SftpConfig {
   id: string;
@@ -33,6 +34,8 @@ interface SftpConfig {
   host: string;
   port: number;
   username: string;
+  password?: string;
+  privateKey?: string;
   authType: string;
   remotePaths: string[];
   status: string;
@@ -346,8 +349,31 @@ export default function SftpConfigPage() {
     }
   };
 
+  const configsMissingCredentials = configs.filter(config => {
+    if (config.authType === 'key') {
+      return !config.privateKey;
+    } else {
+      return !config.password;
+    }
+  });
+
   return (
     <div className="space-y-6">
+      {configsMissingCredentials.length > 0 && (
+        <Alert variant="destructive" data-testid="alert-missing-credentials">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Credentials Required</AlertTitle>
+          <AlertDescription>
+            {configsMissingCredentials.length} server(s) are missing authentication credentials and cannot connect. 
+            Please edit these configurations and re-enter the {configsMissingCredentials.some(c => c.authType === 'key') ? 'private key' : 'password'}:
+            <ul className="mt-2 list-disc list-inside">
+              {configsMissingCredentials.map(c => (
+                <li key={c.id}>{c.name} ({c.authType === 'key' ? 'RSA Key' : 'Password'} authentication)</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-semibold mb-2">SFTP Configuration</h1>

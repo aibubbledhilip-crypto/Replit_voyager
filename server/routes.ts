@@ -735,6 +735,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const validatedData = insertSftpConfigSchema.parse(req.body);
+      
+      // Get existing config to preserve credentials if not provided
+      const existingConfig = await storage.getSftpConfigById(id);
+      if (!existingConfig) {
+        return res.status(404).json({ message: "SFTP configuration not found" });
+      }
+      
+      // Preserve existing password if not provided (empty string means keep existing)
+      if (!validatedData.password && existingConfig.password) {
+        validatedData.password = existingConfig.password;
+      }
+      
+      // Preserve existing private key if not provided
+      if (!validatedData.privateKey && existingConfig.privateKey) {
+        validatedData.privateKey = existingConfig.privateKey;
+      }
+      
+      // Preserve existing passphrase if not provided
+      if (!validatedData.passphrase && existingConfig.passphrase) {
+        validatedData.passphrase = existingConfig.passphrase;
+      }
+      
       const updated = await storage.updateSftpConfig(id, validatedData);
       
       if (!updated) {
