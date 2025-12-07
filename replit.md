@@ -54,15 +54,19 @@ Voyager is a secure enterprise web application for querying AWS Athena databases
 3. **AWS Athena Integration**: Execute SQL queries against AWS Athena database
 4. **MSISDN Lookup**: Multi-source phone number search across 5 data sources (SF, Aria, Matrix, Trufinder, Nokia)
 5. **File Comparison**: Upload and compare two CSV/XLSX files to identify unique rows and matching key rows with downloadable reports
-6. **SFTP File Monitoring**: Monitor SFTP servers for files with current date in filenames
-   - Admin can configure SFTP servers (host, username, password/RSA key, path)
+6. **SFTP File Monitoring**: Monitor SFTP servers for file freshness across multiple directories
+   - Admin can configure SFTP servers (host, username, password/RSA key)
+   - **Multiple paths per server**: Each server can monitor multiple directories
    - **Supports two authentication types**:
      - Password authentication
      - RSA key authentication (upload .pem file directly from local machine)
+   - **Credential preservation**: Existing credentials are retained when editing configs without re-entering them
    - Real-time monitoring with green/red status indicators
-   - Green = all files have today's date in filename
-   - Red = some files missing today's date
-   - Supports date formats: YYYYMMDD, YYYY-MM-DD, YYYY_MM_DD
+   - **Files marked green if either**:
+     - Filename contains today's date (formats: YYYYMMDD, YYYY-MM-DD, YYYY_MM_DD)
+     - File was last modified today
+   - Files marked red if neither condition is met
+   - Per-path status display with collapsible file listings
    - Auto-refresh option for continuous monitoring
 7. **Query Row Limits**: Admin-configurable limits for data extraction
 8. **Usage Logging**: Comprehensive logging of all query executions
