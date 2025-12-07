@@ -444,7 +444,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const queries = [
         {
           name: 'SF',
-          query: `select * from "dvsum-s3-glue-prod".vw_all_assets_generic_device where sf_parent_msisdn = '${sanitizedMsisdn}'`,
+          query: `select * from "dvsum-s3-glue-prod".vw_sf_all_segment_hierarchy where msisdn = '${sanitizedMsisdn}'`,
         },
         {
           name: 'Aria',
