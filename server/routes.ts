@@ -75,13 +75,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
+      const loginStart = Date.now();
       const { username, password } = req.body;
       
       if (!username || !password) {
         return res.status(400).json({ message: "Username and password are required" });
       }
 
+      const dbStart = Date.now();
       const user = await storage.getUserByUsername(username);
+      console.log(`[LOGIN] DB lookup: ${Date.now() - dbStart}ms`);
+      
       if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
@@ -90,16 +94,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Account is inactive" });
       }
 
+      const bcryptStart = Date.now();
       const isValid = await bcrypt.compare(password, user.password);
+      console.log(`[LOGIN] bcrypt compare: ${Date.now() - bcryptStart}ms`);
+      
       if (!isValid) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
       // Update last active
+      const updateStart = Date.now();
       await storage.updateUserLastActive(user.id);
+      console.log(`[LOGIN] Update last active: ${Date.now() - updateStart}ms`);
 
       // Regenerate session to prevent session fixation
+      const sessionStart = Date.now();
       req.session.regenerate((err) => {
+        console.log(`[LOGIN] Session regenerate: ${Date.now() - sessionStart}ms`);
         if (err) {
           return res.status(500).json({ message: "Failed to create session" });
         }
@@ -112,7 +123,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Generate new CSRF token for the new session
         req.session.csrfToken = undefined;
 
+        const saveStart = Date.now();
         req.session.save((err) => {
+          console.log(`[LOGIN] Session save: ${Date.now() - saveStart}ms`);
+          console.log(`[LOGIN] Total login time: ${Date.now() - loginStart}ms`);
           if (err) {
             return res.status(500).json({ message: "Failed to save session" });
           }
