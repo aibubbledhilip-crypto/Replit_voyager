@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { getCsrfToken } from "@/lib/api";
 import { Plus, Edit, Trash2, Server, Loader2, TestTube, Upload, Key } from "lucide-react";
 
 interface SftpConfig {
@@ -244,15 +245,24 @@ export default function SftpConfigPage() {
 
     setIsTesting(true);
     try {
-      const res = await apiRequest("POST", "/api/sftp/test", {
-        host: formData.host,
-        port: formData.port,
-        username: formData.username,
-        password: formData.authType === "password" ? formData.password : undefined,
-        authType: formData.authType,
-        privateKey: formData.authType === "key" ? formData.privateKey : undefined,
-        passphrase: formData.authType === "key" ? formData.passphrase : undefined,
-        remotePath: formData.remotePath,
+      const csrfToken = await getCsrfToken();
+      const res = await fetch("/api/sftp/test", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          host: formData.host,
+          port: formData.port,
+          username: formData.username,
+          password: formData.authType === "password" ? formData.password : undefined,
+          authType: formData.authType,
+          privateKey: formData.authType === "key" ? formData.privateKey : undefined,
+          passphrase: formData.authType === "key" ? formData.passphrase : undefined,
+          remotePath: formData.remotePath,
+        }),
       });
       const result: { success: boolean; error?: string } = await res.json();
 
