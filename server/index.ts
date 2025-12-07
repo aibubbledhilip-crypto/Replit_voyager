@@ -52,11 +52,11 @@ app.use(session({
     checkPeriod: 86400000 // prune expired entries every 24h
   }),
   secret: process.env.SESSION_SECRET!,
-  resave: false,
-  saveUninitialized: false,
+  resave: true, // Ensure session is saved on each request
+  saveUninitialized: true, // Create session even for unauthenticated requests (needed for CSRF)
   proxy: true, // Trust the reverse proxy
   cookie: {
-    secure: 'auto', // Auto-detect based on X-Forwarded-Proto header
+    secure: false, // Disable secure cookies temporarily for debugging
     httpOnly: true,
     sameSite: 'lax',
     maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
