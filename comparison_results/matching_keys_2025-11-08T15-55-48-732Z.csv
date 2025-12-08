@@ -1,3 +1,0 @@
-File1_customer_id,File1_name,File1_email,File1_phone,File1_status,File1_signup_date,File1_balance_usd,File2_customer_id,File2_name,File2_email,File2_phone,File2_status,File2_signup_date,File2_balance_usd
-1003,Customer 3,customer3@example.com,+1-555-328-3286,Active,2024-07-07,2984.25,1003,Customer 3,customer3@newmail.io,+1-555-328-3286,Active,2024-07-07,3205.49
-1005,Customer 5,customer5@example.com,+1-555-704-7912,Active,2024-11-26,2296.24,1005,Customer 5,customer5@example.com,+1-555-704-7912,Active,2024-11-26,2296.24

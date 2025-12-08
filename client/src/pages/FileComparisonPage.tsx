@@ -22,19 +22,12 @@ interface ComparisonSummary {
   comparisonColumns: string[];
 }
 
-interface SeparateReports {
-  summary: string | null;
-  uniqueToFile1: string | null;
-  uniqueToFile2: string | null;
-  matchingKeys: string | null;
-}
-
 interface ComparisonResult {
   summary: ComparisonSummary;
   uniqueToFile1Count: number;
   uniqueToFile2Count: number;
   matchingKeysCount: number;
-  separateReports: SeparateReports;
+  downloadFile: string;
   message: string;
 }
 
@@ -554,70 +547,27 @@ export default function FileComparisonPage() {
               </div>
             </div>
 
-            {/* Download Buttons */}
+            {/* Download Button */}
             <div className="pt-4 border-t space-y-3">
-              <h3 className="text-sm font-medium">Download Reports</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                {comparisonResult.separateReports.summary && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(comparisonResult.separateReports.summary!)}
-                    data-testid="button-download-summary"
-                    className="w-full"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Summary
-                  </Button>
-                )}
-                {comparisonResult.separateReports.uniqueToFile1 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(comparisonResult.separateReports.uniqueToFile1!)}
-                    data-testid="button-download-unique-file1"
-                    className="w-full"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Unique to File 1 ({comparisonResult.uniqueToFile1Count})
-                  </Button>
-                )}
-                {comparisonResult.separateReports.uniqueToFile2 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(comparisonResult.separateReports.uniqueToFile2!)}
-                    data-testid="button-download-unique-file2"
-                    className="w-full"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Unique to File 2 ({comparisonResult.uniqueToFile2Count})
-                  </Button>
-                )}
-                {comparisonResult.separateReports.matchingKeys && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(comparisonResult.separateReports.matchingKeys!)}
-                    data-testid="button-download-matching-keys"
-                    className="w-full"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Matching Keys ({comparisonResult.matchingKeysCount})
-                  </Button>
-                )}
-              </div>
+              <h3 className="text-sm font-medium">Download Report</h3>
+              <Button
+                onClick={() => handleDownload(comparisonResult.downloadFile)}
+                data-testid="button-download-report"
+                className="w-full"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download Comparison Report (XLSX)
+              </Button>
             </div>
 
             {/* Info Message */}
             <div className="flex items-start gap-2 p-4 bg-muted/30 rounded-md">
               <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium mb-1">About the Reports</p>
+                <p className="font-medium mb-1">About the Report</p>
                 <p className="text-muted-foreground">
-                  Download individual reports for each category. Each CSV file contains specific data: 
-                  rows unique to each file, matching keys with side-by-side data from both files, 
-                  and a comprehensive summary.
+                  The Excel file contains 4 sheets: Summary, Only in File 1, Only in File 2, 
+                  and Matching Keys with side-by-side data from both files.
                 </p>
               </div>
             </div>

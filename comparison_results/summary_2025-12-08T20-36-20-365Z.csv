@@ -1,0 +1,9 @@
+Metric,Value
+File 1,Exceptions_DQ-0000165_20251209014916.xlsx
+File 2,Rule 9 12.08.2025.xlsx
+Total Rows in File 1,977
+Total Rows in File 2,37
+Only in File 1,967
+Only in File 2,27
+Matching Keys (in both files),10
+Comparison Key Columns,"client_acct_id→BAN, general_device_aria_instance_no→Instance"

@@ -1,4 +1,0 @@
-customer_id,name,email,phone,status,signup_date,balance_usd
-1001,Customer 1,customer1@example.com,+1-555-754-2824,Active,2024-04-12,3982.71
-1002,Customer 2,customer2@example.com,+1-555-859-5506,Inactive,2024-09-27,3659.97
-1004,Customer 4,customer4@example.com,+1-555-792-9935,Active,2024-05-01,779.97

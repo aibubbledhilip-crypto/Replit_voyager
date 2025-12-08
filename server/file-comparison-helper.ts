@@ -440,6 +440,89 @@ function csvEscape(values: string[]): string {
   }).join(',');
 }
 
+/**
+ * Generate a single XLSX file with all comparison results on separate sheets
+ */
+export function generateComparisonXLSX(result: ComparisonResult): string {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const fileName = `comparison_${timestamp}.xlsx`;
+  const filePath = path.join(COMPARISON_RESULTS_DIR, fileName);
+  
+  const workbook = XLSX.utils.book_new();
+  
+  // Sheet 1: Summary
+  const summaryData = [
+    ['Metric', 'Value'],
+    ['File 1', result.summary.file1Name],
+    ['File 2', result.summary.file2Name],
+    ['Total Rows in File 1', result.summary.file1TotalRows],
+    ['Total Rows in File 2', result.summary.file2TotalRows],
+    ['Only in File 1', result.summary.uniqueToFile1Count],
+    ['Only in File 2', result.summary.uniqueToFile2Count],
+    ['Matching Keys (in both files)', result.summary.matchingKeysCount],
+    ['Comparison Key Columns', result.summary.comparisonColumns.join(', ')],
+  ];
+  const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+  XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+  
+  // Sheet 2: Only in File 1
+  if (result.uniqueToFile1.length > 0) {
+    const columns = Object.keys(result.uniqueToFile1[0]);
+    const file1Data = [columns];
+    result.uniqueToFile1.forEach(row => {
+      file1Data.push(columns.map(col => String(row[col] ?? '')));
+    });
+    const file1Sheet = XLSX.utils.aoa_to_sheet(file1Data);
+    XLSX.utils.book_append_sheet(workbook, file1Sheet, 'Only in File 1');
+  } else {
+    const emptySheet = XLSX.utils.aoa_to_sheet([['No unique rows in File 1']]);
+    XLSX.utils.book_append_sheet(workbook, emptySheet, 'Only in File 1');
+  }
+  
+  // Sheet 3: Only in File 2
+  if (result.uniqueToFile2.length > 0) {
+    const columns = Object.keys(result.uniqueToFile2[0]);
+    const file2Data = [columns];
+    result.uniqueToFile2.forEach(row => {
+      file2Data.push(columns.map(col => String(row[col] ?? '')));
+    });
+    const file2Sheet = XLSX.utils.aoa_to_sheet(file2Data);
+    XLSX.utils.book_append_sheet(workbook, file2Sheet, 'Only in File 2');
+  } else {
+    const emptySheet = XLSX.utils.aoa_to_sheet([['No unique rows in File 2']]);
+    XLSX.utils.book_append_sheet(workbook, emptySheet, 'Only in File 2');
+  }
+  
+  // Sheet 4: Matching Keys
+  if (result.matchingKeys.length > 0) {
+    const file1Columns = Object.keys(result.matchingKeys[0].file1Data);
+    const file2Columns = Object.keys(result.matchingKeys[0].file2Data);
+    
+    // Create header with File1_ and File2_ prefixes
+    const headers: string[] = [];
+    file1Columns.forEach(col => headers.push(`File1_${col}`));
+    file2Columns.forEach(col => headers.push(`File2_${col}`));
+    
+    const matchingData = [headers];
+    result.matchingKeys.forEach(match => {
+      const row: string[] = [];
+      file1Columns.forEach(col => row.push(String(match.file1Data[col] ?? '')));
+      file2Columns.forEach(col => row.push(String(match.file2Data[col] ?? '')));
+      matchingData.push(row);
+    });
+    const matchingSheet = XLSX.utils.aoa_to_sheet(matchingData);
+    XLSX.utils.book_append_sheet(workbook, matchingSheet, 'Matching Keys');
+  } else {
+    const emptySheet = XLSX.utils.aoa_to_sheet([['No matching keys found']]);
+    XLSX.utils.book_append_sheet(workbook, emptySheet, 'Matching Keys');
+  }
+  
+  // Write the file
+  XLSX.writeFile(workbook, filePath);
+  
+  return fileName;
+}
+
 export function cleanupOldFiles(directory: string, maxAgeMs: number = 24 * 60 * 60 * 1000) {
   if (!fs.existsSync(directory)) return;
   

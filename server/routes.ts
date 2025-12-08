@@ -640,9 +640,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           file2.originalname
         );
         
-        // Generate separate CSV reports
-        const { generateSeparateReports } = await import('./file-comparison-helper.js');
-        const separateReports = generateSeparateReports(comparisonResult);
+        // Generate single XLSX file with all results on separate sheets
+        const { generateComparisonXLSX } = await import('./file-comparison-helper.js');
+        const xlsxFileName = generateComparisonXLSX(comparisonResult);
         
         // Clean up uploaded files
         fs.unlinkSync(file1.path);
@@ -664,7 +664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           uniqueToFile1Count: comparisonResult.uniqueToFile1.length,
           uniqueToFile2Count: comparisonResult.uniqueToFile2.length,
           matchingKeysCount: comparisonResult.matchingKeys.length,
-          separateReports,
+          downloadFile: xlsxFileName,
           message: 'Comparison completed successfully',
         });
         
