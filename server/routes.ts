@@ -346,7 +346,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Get list of tables/views only (no column fetching to reduce queries)
-      const tablesResult = await executeSchemaQuery(`SHOW TABLES IN "${databaseName}"`);
+      const tablesResult = await executeSchemaQuery(`SHOW TABLES IN \`${databaseName}\``);
       const tableNames = tablesResult.slice(1).map(row => row[0]).filter(Boolean);
 
       const schema = tableNames.map(name => ({ name, columns: [] }));
@@ -389,7 +389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const databaseName = 'dvsum-s3-glue-prod';
 
       const startCommand = new StartQueryExecutionCommand({
-        QueryString: `SHOW COLUMNS IN "${databaseName}"."${tableName}"`,
+        QueryString: `SHOW COLUMNS IN \`${databaseName}\`.\`${tableName}\``,
         ResultConfiguration: { OutputLocation: s3OutputLocation },
       });
 
