@@ -1,28 +1,169 @@
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Play, Trash2, Database } from "lucide-react";
+import { Play, Trash2, Database, Table, Columns } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
+interface Suggestion {
+  label: string;
+  type: 'table' | 'column';
+  table?: string;
+}
+
 interface QueryBuilderProps {
   onExecute?: (query: string) => void;
   onClear?: () => void;
   connectionStatus?: 'connected' | 'disconnected';
+  suggestions?: Suggestion[];
 }
+
+const SQL_KEYWORDS = [
+  'SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'NOT', 'IN', 'LIKE', 'BETWEEN',
+  'JOIN', 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'ON', 'AS', 'ORDER', 'BY',
+  'GROUP', 'HAVING', 'LIMIT', 'OFFSET', 'DISTINCT', 'COUNT', 'SUM', 'AVG',
+  'MIN', 'MAX', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'NULL', 'IS',
+  'CREATE', 'INSERT', 'UPDATE', 'DELETE', 'DROP', 'ALTER', 'TABLE',
+  'UNION', 'ALL', 'EXISTS', 'TRUE', 'FALSE', 'ASC', 'DESC', 'WITH'
+];
 
 export default function QueryBuilder({ 
   onExecute, 
   onClear,
-  connectionStatus = 'connected'
+  connectionStatus = 'connected',
+  suggestions = []
 }: QueryBuilderProps) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredSuggestions, setFilteredSuggestions] = useState<(Suggestion | { label: string; type: 'keyword' })[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  const getCurrentWord = useCallback((text: string, position: number): { word: string; start: number; end: number } => {
+    const beforeCursor = text.slice(0, position);
+    const afterCursor = text.slice(position);
+    
+    const wordStartMatch = beforeCursor.match(/[\w.]*$/);
+    const wordEndMatch = afterCursor.match(/^[\w.]*/);
+    
+    const start = position - (wordStartMatch?.[0]?.length || 0);
+    const end = position + (wordEndMatch?.[0]?.length || 0);
+    const word = text.slice(start, end);
+    
+    return { word, start, end };
+  }, []);
+
+  const updateSuggestions = useCallback((text: string, position: number) => {
+    const { word } = getCurrentWord(text, position);
+    
+    if (word.length < 1) {
+      setShowSuggestions(false);
+      return;
+    }
+
+    const searchTerm = word.toLowerCase();
+    
+    const keywordMatches = SQL_KEYWORDS
+      .filter(kw => kw.toLowerCase().startsWith(searchTerm))
+      .slice(0, 5)
+      .map(kw => ({ label: kw, type: 'keyword' as const }));
+    
+    const tableMatches = suggestions
+      .filter(s => s.type === 'table' && s.label.toLowerCase().includes(searchTerm))
+      .slice(0, 10);
+    
+    const columnMatches = suggestions
+      .filter(s => s.type === 'column' && s.label.toLowerCase().includes(searchTerm))
+      .slice(0, 10);
+
+    const allMatches = [...keywordMatches, ...tableMatches, ...columnMatches];
+    
+    setFilteredSuggestions(allMatches);
+    setSelectedIndex(0);
+    setShowSuggestions(allMatches.length > 0);
+  }, [suggestions, getCurrentWord]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!showSuggestions) {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        handleExecute();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex(prev => 
+          prev < filteredSuggestions.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex(prev => 
+          prev > 0 ? prev - 1 : filteredSuggestions.length - 1
+        );
+        break;
+      case 'Tab':
+      case 'Enter':
+        if (filteredSuggestions.length > 0) {
+          e.preventDefault();
+          insertSuggestion(filteredSuggestions[selectedIndex]);
+        }
+        break;
+      case 'Escape':
+        setShowSuggestions(false);
+        break;
+    }
+  };
+
+  const insertSuggestion = (suggestion: Suggestion | { label: string; type: 'keyword' }) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const { start, end } = getCurrentWord(query, cursorPosition);
+    
+    let insertText = suggestion.label;
+    if (suggestion.type === 'table') {
+      insertText = `"dvsum-s3-glue-prod".${suggestion.label}`;
+    }
+    
+    const newQuery = query.slice(0, start) + insertText + query.slice(end);
+    setQuery(newQuery);
+    
+    const newPosition = start + insertText.length;
+    setCursorPosition(newPosition);
+    
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(newPosition, newPosition);
+    }, 0);
+    
+    setShowSuggestions(false);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    const newPosition = e.target.selectionStart || 0;
+    
+    setQuery(newValue);
+    setCursorPosition(newPosition);
+    updateSuggestions(newValue, newPosition);
+  };
+
+  const handleClick = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+    const position = (e.target as HTMLTextAreaElement).selectionStart || 0;
+    setCursorPosition(position);
+  };
 
   const handleExecute = () => {
     if (query.trim()) {
@@ -36,6 +177,16 @@ export default function QueryBuilder({
     console.log('Query cleared');
     onClear?.();
   };
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <Card data-testid="card-query-builder">
@@ -77,13 +228,58 @@ export default function QueryBuilder({
           </CollapsibleContent>
         </Collapsible>
 
-        <Textarea
-          placeholder="SELECT * FROM your_table LIMIT 100;"
-          className="min-h-64 font-mono text-sm resize-none"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          data-testid="input-sql-query"
-        />
+        <div className="relative">
+          <Textarea
+            ref={textareaRef}
+            placeholder="SELECT * FROM your_table LIMIT 100; (Ctrl+Enter to execute)"
+            className="min-h-64 font-mono text-sm resize-none"
+            value={query}
+            onChange={handleChange}
+            onClick={handleClick}
+            onKeyDown={handleKeyDown}
+            data-testid="input-sql-query"
+          />
+          
+          {showSuggestions && filteredSuggestions.length > 0 && (
+            <div 
+              ref={suggestionsRef}
+              className="absolute z-50 mt-1 w-72 bg-popover border rounded-md shadow-lg overflow-hidden"
+              data-testid="suggestions-dropdown"
+            >
+              <div className="max-h-64 overflow-y-auto">
+                {filteredSuggestions.map((suggestion, index) => (
+                  <button
+                    key={`${suggestion.type}-${suggestion.label}`}
+                    className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${
+                      index === selectedIndex 
+                        ? 'bg-accent text-accent-foreground' 
+                        : 'hover:bg-muted'
+                    }`}
+                    onClick={() => insertSuggestion(suggestion)}
+                    data-testid={`suggestion-${suggestion.label}`}
+                  >
+                    {suggestion.type === 'keyword' ? (
+                      <span className="text-purple-500 font-mono text-xs w-4">SQL</span>
+                    ) : suggestion.type === 'table' ? (
+                      <Table className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                    ) : (
+                      <Columns className="h-4 w-4 text-orange-500 flex-shrink-0" />
+                    )}
+                    <span className="truncate font-mono">{suggestion.label}</span>
+                    {suggestion.type === 'column' && 'table' in suggestion && suggestion.table && (
+                      <span className="ml-auto text-xs text-muted-foreground truncate">
+                        {suggestion.table}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="px-3 py-1.5 text-xs text-muted-foreground border-t bg-muted/30">
+                ↑↓ navigate • Tab/Enter select • Esc close
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="flex gap-2 justify-end flex-wrap">
           <Button 

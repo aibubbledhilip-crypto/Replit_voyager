@@ -280,6 +280,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Schema cache to avoid hammering Athena
+  let schemaCache: { 
+    data: any; 
+    timestamp: number;
+  } | null = null;
+  const SCHEMA_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+  // Database schema endpoint - get tables only (columns fetched on demand)
+  app.get("/api/query/schema", requireAuth, async (req, res) => {
+    try {
+      // Return cached data if valid
+      if (schemaCache && (Date.now() - schemaCache.timestamp) < SCHEMA_CACHE_TTL) {
+        return res.json(schemaCache.data);
+      }
+
+      const athenaClient = new AthenaClient({
+        region: process.env.AWS_REGION || 'us-east-1',
+        credentials: {
+          accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+        },
+      });
+
+      const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION || 's3://dvsum-staging-prod';
+      const databaseName = 'dvsum-s3-glue-prod';
+
+      // Helper function to execute a query and get results
+      const executeSchemaQuery = async (query: string): Promise<string[][]> => {
+        const startCommand = new StartQueryExecutionCommand({
+          QueryString: query,
+          ResultConfiguration: { OutputLocation: s3OutputLocation },
+        });
+
+        const startResponse = await athenaClient.send(startCommand);
+        const queryExecutionId = startResponse.QueryExecutionId;
+
+        if (!queryExecutionId) throw new Error('Failed to start query');
+
+        let queryStatus = 'RUNNING';
+        const maxPollTime = 30000;
+        const pollStartTime = Date.now();
+
+        while (queryStatus === 'RUNNING' || queryStatus === 'QUEUED') {
+          if (Date.now() - pollStartTime > maxPollTime) {
+            throw new Error('Schema query timeout');
+          }
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const execResponse = await athenaClient.send(
+            new GetQueryExecutionCommand({ QueryExecutionId: queryExecutionId })
+          );
+          queryStatus = execResponse.QueryExecution?.Status?.State || 'FAILED';
+        }
+
+        if (queryStatus !== 'SUCCEEDED') {
+          throw new Error(`Query failed: ${queryStatus}`);
+        }
+
+        const resultsResponse = await athenaClient.send(
+          new GetQueryResultsCommand({ QueryExecutionId: queryExecutionId, MaxResults: 1000 })
+        );
+
+        const rows = resultsResponse.ResultSet?.Rows || [];
+        return rows.map(row => row.Data?.map(cell => cell.VarCharValue || '') || []);
+      };
+
+      // Get list of tables/views only (no column fetching to reduce queries)
+      const tablesResult = await executeSchemaQuery(`SHOW TABLES IN "${databaseName}"`);
+      const tableNames = tablesResult.slice(1).map(row => row[0]).filter(Boolean);
+
+      const schema = tableNames.map(name => ({ name, columns: [] }));
+
+      const responseData = {
+        database: databaseName,
+        tables: schema,
+        totalTables: tableNames.length,
+        fetchedTables: tableNames.length,
+      };
+
+      // Cache the result
+      schemaCache = { data: responseData, timestamp: Date.now() };
+
+      res.json(responseData);
+    } catch (error: any) {
+      console.error('Schema fetch error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get columns for a specific table (on demand)
+  app.get("/api/query/schema/:tableName/columns", requireAuth, async (req, res) => {
+    try {
+      const { tableName } = req.params;
+      
+      if (!tableName || !/^[a-zA-Z0-9_]+$/.test(tableName)) {
+        return res.status(400).json({ message: "Invalid table name" });
+      }
+
+      const athenaClient = new AthenaClient({
+        region: process.env.AWS_REGION || 'us-east-1',
+        credentials: {
+          accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+        },
+      });
+
+      const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION || 's3://dvsum-staging-prod';
+      const databaseName = 'dvsum-s3-glue-prod';
+
+      const startCommand = new StartQueryExecutionCommand({
+        QueryString: `SHOW COLUMNS IN "${databaseName}"."${tableName}"`,
+        ResultConfiguration: { OutputLocation: s3OutputLocation },
+      });
+
+      const startResponse = await athenaClient.send(startCommand);
+      const queryExecutionId = startResponse.QueryExecutionId;
+
+      if (!queryExecutionId) throw new Error('Failed to start query');
+
+      let queryStatus = 'RUNNING';
+      const maxPollTime = 30000;
+      const pollStartTime = Date.now();
+
+      while (queryStatus === 'RUNNING' || queryStatus === 'QUEUED') {
+        if (Date.now() - pollStartTime > maxPollTime) {
+          throw new Error('Column query timeout');
+        }
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const execResponse = await athenaClient.send(
+          new GetQueryExecutionCommand({ QueryExecutionId: queryExecutionId })
+        );
+        queryStatus = execResponse.QueryExecution?.Status?.State || 'FAILED';
+      }
+
+      if (queryStatus !== 'SUCCEEDED') {
+        throw new Error(`Query failed: ${queryStatus}`);
+      }
+
+      const resultsResponse = await athenaClient.send(
+        new GetQueryResultsCommand({ QueryExecutionId: queryExecutionId, MaxResults: 500 })
+      );
+
+      const rows = resultsResponse.ResultSet?.Rows || [];
+      const columns = rows.slice(1).map(row => ({
+        name: row.Data?.[0]?.VarCharValue || '',
+        type: row.Data?.[1]?.VarCharValue || 'string',
+      }));
+
+      res.json({ tableName, columns });
+    } catch (error: any) {
+      console.error('Column fetch error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Query execution route
   app.post("/api/query/execute", requireAuth, async (req, res) => {
     try {

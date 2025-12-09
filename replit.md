@@ -4,6 +4,17 @@
 Voyager is a secure enterprise web application for querying AWS Athena databases with role-based access control, usage logging, and admin-controlled query limits.
 
 ## Recent Changes
+- **2025-12-09**:
+  - **Schema Browser and SQL Autocomplete**:
+    - Added schema browser sidebar to Query Execution page showing all tables/views
+    - Tables can be expanded to view column names and types (fetched on demand)
+    - SQL autocomplete in the query editor with keyword, table, and column suggestions
+    - Autocomplete triggered while typing with arrow key navigation and Tab/Enter to select
+    - Server-side schema caching (10-minute TTL) to reduce Athena API calls
+    - Error handling with retry options for failed column/schema loads
+  - **File Comparison Output Changed to Single XLSX**:
+    - Now generates a single XLSX file with 4 sheets instead of multiple CSV files
+    - Sheets: Summary, Only in File 1, Only in File 2, Matching Keys
 - **2025-12-07**:
   - **Session and Cookie Configuration Fix for Apache Reverse Proxy**:
     - Fixed slow login issue on Lightsail by optimizing database connection pool
