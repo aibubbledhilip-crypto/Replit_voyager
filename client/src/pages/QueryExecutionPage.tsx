@@ -295,6 +295,7 @@ export default function QueryExecutionPage() {
           onClear={handleClear}
           connectionStatus="connected"
           suggestions={autocompleteSuggestions}
+          onTableUsed={fetchColumns}
         />
         
         {isExecuting ? (

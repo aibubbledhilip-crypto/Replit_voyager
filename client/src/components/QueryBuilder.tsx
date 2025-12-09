@@ -21,6 +21,7 @@ interface QueryBuilderProps {
   onClear?: () => void;
   connectionStatus?: 'connected' | 'disconnected';
   suggestions?: Suggestion[];
+  onTableUsed?: (tableName: string) => void;
 }
 
 const SQL_KEYWORDS = [
@@ -36,7 +37,8 @@ export default function QueryBuilder({
   onExecute, 
   onClear,
   connectionStatus = 'connected',
-  suggestions = []
+  suggestions = [],
+  onTableUsed
 }: QueryBuilderProps) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -135,6 +137,8 @@ export default function QueryBuilder({
     let insertText = suggestion.label;
     if (suggestion.type === 'table') {
       insertText = `"dvsum-s3-glue-prod".${suggestion.label}`;
+      // Trigger column loading for this table
+      onTableUsed?.(suggestion.label);
     }
     
     const newQuery = query.slice(0, start) + insertText + query.slice(end);
