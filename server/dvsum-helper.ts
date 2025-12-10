@@ -5,7 +5,7 @@ import archiver from 'archiver';
 
 const DVSUM_BASE_URL = 'https://www.app.dvsum.ai';
 const DVSUM_RULES_URL = `${DVSUM_BASE_URL}/rules?selected-filter=all&node-id=45397986&selected-asset-type=RLS`;
-const WAIT_TIMEOUT = 30000;
+const WAIT_TIMEOUT = 60000;
 
 interface DownloadResult {
   success: boolean;
@@ -36,6 +36,24 @@ async function clickElementByText(page: Page, selector: string, text: string): P
   return false;
 }
 
+async function waitForAnySelector(page: Page, selectors: string[], timeout: number): Promise<string | null> {
+  const promises = selectors.map(selector => 
+    page.waitForSelector(selector, { timeout, visible: true })
+      .then(() => selector)
+      .catch(() => null)
+  );
+  
+  const results = await Promise.race([
+    Promise.all(promises),
+    new Promise<string[]>(resolve => setTimeout(() => resolve([]), timeout))
+  ]);
+  
+  if (Array.isArray(results)) {
+    return results.find(r => r !== null) || null;
+  }
+  return null;
+}
+
 export async function downloadDvsumReports(
   username: string,
   password: string,
@@ -59,12 +77,17 @@ export async function downloadDvsumReports(
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=IsolateOrigins,site-per-process',
       ],
     });
 
     const page = await browser.newPage();
     
     await page.setViewport({ width: 1920, height: 1080 });
+    
+    // Set a realistic user agent
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
     
     const client = await page.createCDPSession();
     await client.send('Page.setDownloadBehavior', {
@@ -73,38 +96,113 @@ export async function downloadDvsumReports(
     });
 
     console.log('[DVSum] Navigating to login page...');
-    await page.goto(`${DVSUM_BASE_URL}/login`, { waitUntil: 'networkidle2', timeout: WAIT_TIMEOUT });
+    await page.goto(`${DVSUM_BASE_URL}/login`, { waitUntil: 'networkidle0', timeout: WAIT_TIMEOUT });
     
-    await page.waitForSelector('input[type="email"], input[name="email"], input[type="text"]', { timeout: WAIT_TIMEOUT });
+    // Wait for page to fully load
+    await new Promise(resolve => setTimeout(resolve, 5000));
     
-    console.log('[DVSum] Entering credentials...');
-    const emailInput = await page.$('input[type="email"]') || await page.$('input[name="email"]') || await page.$('input[type="text"]');
-    if (emailInput) {
-      await emailInput.type(username, { delay: 50 });
-    }
+    // Log the current URL and page content for debugging
+    const currentUrl = page.url();
+    console.log(`[DVSum] Current URL: ${currentUrl}`);
     
-    const passwordInput = await page.$('input[type="password"]');
-    if (passwordInput) {
-      await passwordInput.type(password, { delay: 50 });
-    }
+    // Try to find any input field - DVSum might use custom components
+    const inputSelectors = [
+      'input[type="email"]',
+      'input[type="text"]',
+      'input[name="email"]',
+      'input[name="username"]',
+      'input[placeholder*="email" i]',
+      'input[placeholder*="user" i]',
+      'input[id*="email" i]',
+      'input[id*="user" i]',
+      'input:not([type="hidden"]):not([type="password"])',
+    ];
     
-    const loginButton = await page.$('button[type="submit"]');
-    if (loginButton) {
-      await loginButton.click();
-    } else {
-      const signInBtn = await findElementByText(page, 'button', 'Login') || await findElementByText(page, 'button', 'Sign in');
-      if (signInBtn) {
-        await signInBtn.click();
+    let emailInput = null;
+    for (const selector of inputSelectors) {
+      emailInput = await page.$(selector);
+      if (emailInput) {
+        console.log(`[DVSum] Found email input with selector: ${selector}`);
+        break;
       }
     }
     
-    console.log('[DVSum] Waiting for login to complete...');
-    await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: WAIT_TIMEOUT }).catch(() => {});
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    if (!emailInput) {
+      // Take a screenshot for debugging
+      const screenshotPath = path.join(downloadDir, 'login_page.png');
+      await page.screenshot({ path: screenshotPath, fullPage: true });
+      console.log(`[DVSum] Screenshot saved to ${screenshotPath}`);
+      
+      // Get page content for debugging
+      const pageContent = await page.content();
+      const contentPath = path.join(downloadDir, 'login_page.html');
+      fs.writeFileSync(contentPath, pageContent);
+      console.log(`[DVSum] Page HTML saved to ${contentPath}`);
+      
+      // Check if we're on a different page (SSO redirect, etc)
+      if (currentUrl.includes('auth0') || currentUrl.includes('okta') || currentUrl.includes('login.microsoft')) {
+        throw new Error('DVSum uses SSO authentication. Please log in manually through your browser first.');
+      }
+      
+      throw new Error('Could not find login form. The DVSum page structure may have changed.');
+    }
     
-    const currentUrl = page.url();
-    if (currentUrl.includes('/login')) {
-      const errorElement = await page.$('.error, .alert-error, [class*="error"]');
+    console.log('[DVSum] Entering credentials...');
+    await emailInput.click();
+    await emailInput.type(username, { delay: 30 });
+    
+    // Find password field
+    const passwordInput = await page.$('input[type="password"]');
+    if (passwordInput) {
+      await passwordInput.click();
+      await passwordInput.type(password, { delay: 30 });
+    } else {
+      throw new Error('Could not find password field');
+    }
+    
+    // Find and click login button
+    const buttonSelectors = [
+      'button[type="submit"]',
+      'button:not([type])',
+      'input[type="submit"]',
+      '[role="button"]',
+    ];
+    
+    let loginButton = null;
+    for (const selector of buttonSelectors) {
+      const buttons = await page.$$(selector);
+      for (const btn of buttons) {
+        const text = await btn.evaluate((el: Element) => el.textContent?.toLowerCase() || '');
+        if (text.includes('login') || text.includes('sign in') || text.includes('submit') || text.includes('continue')) {
+          loginButton = btn;
+          break;
+        }
+      }
+      if (loginButton) break;
+    }
+    
+    if (!loginButton) {
+      // Try to find any button
+      loginButton = await page.$('button[type="submit"]') || await page.$('button');
+    }
+    
+    if (loginButton) {
+      console.log('[DVSum] Clicking login button...');
+      await loginButton.click();
+    } else {
+      // Try pressing Enter
+      await page.keyboard.press('Enter');
+    }
+    
+    console.log('[DVSum] Waiting for login to complete...');
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    // Check if login was successful
+    const postLoginUrl = page.url();
+    console.log(`[DVSum] Post-login URL: ${postLoginUrl}`);
+    
+    if (postLoginUrl.includes('/login') || postLoginUrl.includes('error')) {
+      const errorElement = await page.$('.error, .alert-error, [class*="error"], [class*="Error"]');
       if (errorElement) {
         const errorText = await errorElement.evaluate((el: Element) => el.textContent);
         throw new Error(`Login failed: ${errorText?.trim() || 'Invalid credentials'}`);
@@ -113,9 +211,9 @@ export async function downloadDvsumReports(
     }
     
     console.log('[DVSum] Login successful, navigating to rules page...');
-    await page.goto(DVSUM_RULES_URL, { waitUntil: 'networkidle2', timeout: WAIT_TIMEOUT });
+    await page.goto(DVSUM_RULES_URL, { waitUntil: 'networkidle0', timeout: WAIT_TIMEOUT });
     
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => setTimeout(resolve, 5000));
     
     console.log('[DVSum] Extracting rule IDs...');
     const ruleIds = await page.evaluate(() => {
@@ -137,6 +235,10 @@ export async function downloadDvsumReports(
     console.log(`[DVSum] Found ${ruleIds.length} rules: ${ruleIds.slice(0, 5).join(', ')}...`);
     
     if (ruleIds.length === 0) {
+      // Save screenshot for debugging
+      const screenshotPath = path.join(downloadDir, 'rules_page.png');
+      await page.screenshot({ path: screenshotPath, fullPage: true });
+      
       result.message = 'No rules found on the page. Please verify your access to DVSum rules.';
       return result;
     }
@@ -155,7 +257,7 @@ export async function downloadDvsumReports(
           if (text === ruleId) {
             const href = await link.evaluate((el: Element) => el.getAttribute('href'));
             if (href) {
-              await page.goto(`${DVSUM_BASE_URL}${href}`, { waitUntil: 'networkidle2', timeout: WAIT_TIMEOUT });
+              await page.goto(`${DVSUM_BASE_URL}${href}`, { waitUntil: 'networkidle0', timeout: WAIT_TIMEOUT });
               found = true;
               break;
             }
@@ -166,26 +268,27 @@ export async function downloadDvsumReports(
           throw new Error(`Rule link not found: ${ruleId}`);
         }
         
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 3000));
         
         // Look for Data tab
-        const dataTabClicked = await clickElementByText(page, 'button, a, [role="tab"]', 'Data');
+        const dataTabClicked = await clickElementByText(page, 'button, a, [role="tab"], div[role="tab"]', 'Data');
         if (dataTabClicked) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 3000));
         }
         
         // Look for Export button
-        const exportClicked = await clickElementByText(page, 'button', 'Export');
+        const exportClicked = await clickElementByText(page, 'button, [role="button"]', 'Export');
         if (exportClicked) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 2000));
           
           // Click CSV option
           const csvClicked = await clickElementByText(page, '*', 'CSV Export') || 
                             await clickElementByText(page, '*', 'Export to CSV') ||
-                            await clickElementByText(page, '*', 'CSV');
+                            await clickElementByText(page, '*', 'CSV') ||
+                            await clickElementByText(page, '*', 'Download');
           
           if (csvClicked) {
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await new Promise(resolve => setTimeout(resolve, 5000));
             result.downloaded++;
             console.log(`[DVSum] Downloaded ${ruleId}`);
           } else {
@@ -196,8 +299,8 @@ export async function downloadDvsumReports(
         }
         
         // Navigate back to rules list
-        await page.goto(DVSUM_RULES_URL, { waitUntil: 'networkidle2', timeout: WAIT_TIMEOUT });
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await page.goto(DVSUM_RULES_URL, { waitUntil: 'networkidle0', timeout: WAIT_TIMEOUT });
+        await new Promise(resolve => setTimeout(resolve, 3000));
         
       } catch (error: any) {
         console.error(`[DVSum] Failed to download ${ruleId}: ${error.message}`);
@@ -205,13 +308,13 @@ export async function downloadDvsumReports(
         result.failedRules.push(ruleId);
         
         // Try to navigate back to rules list
-        await page.goto(DVSUM_RULES_URL, { waitUntil: 'networkidle2', timeout: WAIT_TIMEOUT }).catch(() => {});
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await page.goto(DVSUM_RULES_URL, { waitUntil: 'networkidle0', timeout: WAIT_TIMEOUT }).catch(() => {});
+        await new Promise(resolve => setTimeout(resolve, 3000));
       }
     }
     
     // Wait for downloads to complete
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => setTimeout(resolve, 5000));
     
     // Check for downloaded files
     const files = fs.readdirSync(downloadDir).filter(f => f.endsWith('.csv') || f.endsWith('.xlsx'));
