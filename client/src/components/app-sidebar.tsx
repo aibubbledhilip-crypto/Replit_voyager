@@ -1,4 +1,4 @@
-import { Home, Database, FileText, Settings, Shield, Search, GitCompare, Server, Activity } from "lucide-react";
+import { Home, Database, FileText, Settings, Shield, Search, GitCompare, Server, Activity, FileDown } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -37,6 +37,11 @@ const adminMenuItems = [
     icon: Activity,
   },
   {
+    title: "DVSum Reports",
+    url: "/dvsum-reports",
+    icon: FileDown,
+  },
+  {
     title: "SFTP Configuration",
     url: "/admin/sftp-config",
     icon: Server,
@@ -68,6 +73,11 @@ const userMenuItems = [
     title: "SFTP Monitor",
     url: "/sftp-monitor",
     icon: Activity,
+  },
+  {
+    title: "DVSum Reports",
+    url: "/dvsum-reports",
+    icon: FileDown,
   },
 ];
 

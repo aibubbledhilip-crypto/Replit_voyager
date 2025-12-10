@@ -12,6 +12,7 @@ import * as path from "path";
 import { fileURLToPath } from 'url';
 import { parseFile, compareDatasets, cleanupOldFiles } from "./file-comparison-helper";
 import { checkSftpFiles, testSftpConnection } from "./sftp-helper";
+import { downloadDvsumReports } from "./dvsum-helper";
 import { insertSftpConfigSchema } from "@shared/schema";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -995,6 +996,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await checkSftpFiles(config);
       res.json(result);
     } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // DVSum Report Download
+  const DVSUM_DOWNLOAD_DIR = path.join(__dirname, '..', 'dvsum_downloads');
+  if (!fs.existsSync(DVSUM_DOWNLOAD_DIR)) {
+    fs.mkdirSync(DVSUM_DOWNLOAD_DIR, { recursive: true });
+  }
+
+  app.post("/api/dvsum/download", requireAuth, async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+      
+      // Create a unique download directory for this request
+      const requestId = Date.now().toString();
+      const downloadDir = path.join(DVSUM_DOWNLOAD_DIR, requestId);
+      fs.mkdirSync(downloadDir, { recursive: true });
+      
+      console.log(`[DVSum] Starting download for user ${req.session.userId}`);
+      
+      const result = await downloadDvsumReports(username, password, downloadDir);
+      
+      if (result.success && result.zipPath && fs.existsSync(result.zipPath)) {
+        // Stream the zip file to the user
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', 'attachment; filename="dvsum_reports.zip"');
+        
+        const fileStream = fs.createReadStream(result.zipPath);
+        fileStream.pipe(res);
+        
+        fileStream.on('end', () => {
+          // Cleanup download directory after sending
+          setTimeout(() => {
+            fs.rmSync(downloadDir, { recursive: true, force: true });
+          }, 5000);
+        });
+      } else {
+        res.json({
+          success: result.success,
+          downloaded: result.downloaded,
+          failed: result.failed,
+          failedRules: result.failedRules,
+          message: result.message,
+        });
+      }
+    } catch (error: any) {
+      console.error('[DVSum] Download error:', error);
       res.status(500).json({ message: error.message });
     }
   });
