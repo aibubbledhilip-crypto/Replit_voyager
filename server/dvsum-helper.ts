@@ -36,24 +36,6 @@ async function clickElementByText(page: Page, selector: string, text: string): P
   return false;
 }
 
-async function waitForAnySelector(page: Page, selectors: string[], timeout: number): Promise<string | null> {
-  const promises = selectors.map(selector => 
-    page.waitForSelector(selector, { timeout, visible: true })
-      .then(() => selector)
-      .catch(() => null)
-  );
-  
-  const results = await Promise.race([
-    Promise.all(promises),
-    new Promise<string[]>(resolve => setTimeout(() => resolve([]), timeout))
-  ]);
-  
-  if (Array.isArray(results)) {
-    return results.find(r => r !== null) || null;
-  }
-  return null;
-}
-
 export async function downloadDvsumReports(
   username: string,
   password: string,
@@ -95,127 +77,193 @@ export async function downloadDvsumReports(
       downloadPath: downloadDir,
     });
 
-    console.log('[DVSum] Navigating to login page...');
+    // STEP 1: Navigate to DVSum landing page
+    console.log('[DVSum] Step 1: Navigating to landing page...');
     await page.goto(`${DVSUM_BASE_URL}/login`, { waitUntil: 'networkidle0', timeout: WAIT_TIMEOUT });
     
-    // Wait for page to fully load
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // STEP 2: Click the orange "Sign In" button on landing page
+    console.log('[DVSum] Step 2: Looking for Sign In button on landing page...');
+    
+    // Find and click the Sign In button (orange button)
+    const signInButtonClicked = await clickElementByText(page, 'button, a', 'Sign In') ||
+                                await clickElementByText(page, 'button, a', 'Sign in') ||
+                                await clickElementByText(page, '[role="button"]', 'Sign In');
+    
+    if (!signInButtonClicked) {
+      // Try finding button by class or other attributes
+      const buttons = await page.$$('button, a.btn, a[class*="button"], a[class*="btn"]');
+      let clicked = false;
+      for (const btn of buttons) {
+        const text = await btn.evaluate((el: Element) => el.textContent?.trim().toLowerCase() || '');
+        if (text.includes('sign in') || text.includes('signin') || text.includes('login')) {
+          await btn.click();
+          clicked = true;
+          console.log('[DVSum] Clicked Sign In button');
+          break;
+        }
+      }
+      if (!clicked) {
+        // Take screenshot for debugging
+        await page.screenshot({ path: path.join(downloadDir, 'landing_page.png'), fullPage: true });
+        throw new Error('Could not find Sign In button on landing page');
+      }
+    } else {
+      console.log('[DVSum] Clicked Sign In button');
+    }
+    
+    // STEP 3: Wait for redirect to Cognito (auth.dvsum.ai)
+    console.log('[DVSum] Step 3: Waiting for redirect to auth page...');
     await new Promise(resolve => setTimeout(resolve, 5000));
     
-    // Log the current URL and page content for debugging
-    const currentUrl = page.url();
-    console.log(`[DVSum] Current URL: ${currentUrl}`);
+    const authUrl = page.url();
+    console.log(`[DVSum] Current URL after clicking Sign In: ${authUrl}`);
     
-    // Try to find any input field - DVSum might use custom components
-    const inputSelectors = [
-      'input[type="email"]',
-      'input[type="text"]',
-      'input[name="email"]',
-      'input[name="username"]',
-      'input[placeholder*="email" i]',
-      'input[placeholder*="user" i]',
-      'input[id*="email" i]',
-      'input[id*="user" i]',
-      'input:not([type="hidden"]):not([type="password"])',
-    ];
+    if (!authUrl.includes('auth.dvsum.ai') && !authUrl.includes('cognito')) {
+      // Take screenshot
+      await page.screenshot({ path: path.join(downloadDir, 'after_signin_click.png'), fullPage: true });
+      console.log('[DVSum] Warning: Not on auth page, trying to continue...');
+    }
     
+    // STEP 4: Fill in credentials on the RIGHT side form (email/password login)
+    console.log('[DVSum] Step 4: Looking for email/password form...');
+    
+    // Wait for the form to be visible
+    await page.waitForSelector('input', { timeout: WAIT_TIMEOUT });
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // The Cognito page has two forms - we need the right side with email/password
+    // Look for all inputs and find the email and password fields
+    const allInputs = await page.$$('input');
+    console.log(`[DVSum] Found ${allInputs.length} input fields`);
+    
+    // Find email input (on the right side - "Sign in with your email and password")
     let emailInput = null;
-    for (const selector of inputSelectors) {
-      emailInput = await page.$(selector);
-      if (emailInput) {
-        console.log(`[DVSum] Found email input with selector: ${selector}`);
-        break;
+    let passwordInput = null;
+    
+    // Try to find by name attribute first
+    emailInput = await page.$('input[name="email"]') || 
+                 await page.$('input[type="email"]') ||
+                 await page.$('input[placeholder*="email" i]') ||
+                 await page.$('input[placeholder*="name@host.com" i]');
+    
+    passwordInput = await page.$('input[name="password"]') ||
+                    await page.$('input[type="password"]');
+    
+    if (!emailInput) {
+      // If we can't find by attributes, look at all text inputs
+      for (const input of allInputs) {
+        const type = await input.evaluate((el: Element) => el.getAttribute('type'));
+        const placeholder = await input.evaluate((el: Element) => el.getAttribute('placeholder') || '');
+        
+        if (type === 'email' || placeholder.toLowerCase().includes('email') || placeholder.includes('@')) {
+          emailInput = input;
+        } else if (type === 'password') {
+          passwordInput = input;
+        }
       }
     }
     
     if (!emailInput) {
-      // Take a screenshot for debugging
-      const screenshotPath = path.join(downloadDir, 'login_page.png');
-      await page.screenshot({ path: screenshotPath, fullPage: true });
-      console.log(`[DVSum] Screenshot saved to ${screenshotPath}`);
-      
-      // Get page content for debugging
-      const pageContent = await page.content();
-      const contentPath = path.join(downloadDir, 'login_page.html');
-      fs.writeFileSync(contentPath, pageContent);
-      console.log(`[DVSum] Page HTML saved to ${contentPath}`);
-      
-      // Check if we're on a different page (SSO redirect, etc)
-      if (currentUrl.includes('auth0') || currentUrl.includes('okta') || currentUrl.includes('login.microsoft')) {
-        throw new Error('DVSum uses SSO authentication. Please log in manually through your browser first.');
-      }
-      
-      throw new Error('Could not find login form. The DVSum page structure may have changed.');
+      await page.screenshot({ path: path.join(downloadDir, 'cognito_page.png'), fullPage: true });
+      throw new Error('Could not find email input on auth page');
     }
     
-    console.log('[DVSum] Entering credentials...');
+    if (!passwordInput) {
+      await page.screenshot({ path: path.join(downloadDir, 'cognito_page.png'), fullPage: true });
+      throw new Error('Could not find password input on auth page');
+    }
+    
+    console.log('[DVSum] Found email and password inputs, entering credentials...');
+    
+    // Clear and type email
     await emailInput.click();
+    await emailInput.evaluate((el: HTMLInputElement) => el.value = '');
     await emailInput.type(username, { delay: 30 });
     
-    // Find password field
-    const passwordInput = await page.$('input[type="password"]');
-    if (passwordInput) {
-      await passwordInput.click();
-      await passwordInput.type(password, { delay: 30 });
-    } else {
-      throw new Error('Could not find password field');
-    }
+    // Clear and type password
+    await passwordInput.click();
+    await passwordInput.evaluate((el: HTMLInputElement) => el.value = '');
+    await passwordInput.type(password, { delay: 30 });
     
-    // Find and click login button
-    const buttonSelectors = [
-      'button[type="submit"]',
-      'button:not([type])',
-      'input[type="submit"]',
-      '[role="button"]',
-    ];
+    // STEP 5: Click the blue "Sign in" submit button (on the right side)
+    console.log('[DVSum] Step 5: Clicking Sign in button...');
     
-    let loginButton = null;
-    for (const selector of buttonSelectors) {
-      const buttons = await page.$$(selector);
-      for (const btn of buttons) {
-        const text = await btn.evaluate((el: Element) => el.textContent?.toLowerCase() || '');
-        if (text.includes('login') || text.includes('sign in') || text.includes('submit') || text.includes('continue')) {
-          loginButton = btn;
+    // Find the submit button near the password field (right side form)
+    const submitButtons = await page.$$('button[type="submit"], button, input[type="submit"]');
+    let submitClicked = false;
+    
+    for (const btn of submitButtons) {
+      const text = await btn.evaluate((el: Element) => el.textContent?.trim().toLowerCase() || '');
+      const isVisible = await btn.evaluate((el: Element) => {
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+      });
+      
+      if (isVisible && (text.includes('sign in') || text.includes('signin') || text.includes('login') || text.includes('submit'))) {
+        // Check if this button is on the right side (x > 400 typically)
+        const btnX = await btn.evaluate((el: Element) => el.getBoundingClientRect().x);
+        if (btnX > 400) { // Right side of the form
+          await btn.click();
+          submitClicked = true;
+          console.log('[DVSum] Clicked right-side Sign in button');
           break;
         }
       }
-      if (loginButton) break;
     }
     
-    if (!loginButton) {
-      // Try to find any button
-      loginButton = await page.$('button[type="submit"]') || await page.$('button');
+    if (!submitClicked) {
+      // Fallback: try to click any visible Sign in button
+      for (const btn of submitButtons) {
+        const text = await btn.evaluate((el: Element) => el.textContent?.trim().toLowerCase() || '');
+        if (text.includes('sign in') || text === 'sign in') {
+          await btn.click();
+          submitClicked = true;
+          console.log('[DVSum] Clicked Sign in button (fallback)');
+          break;
+        }
+      }
     }
     
-    if (loginButton) {
-      console.log('[DVSum] Clicking login button...');
-      await loginButton.click();
-    } else {
-      // Try pressing Enter
+    if (!submitClicked) {
+      // Last resort: press Enter
       await page.keyboard.press('Enter');
+      console.log('[DVSum] Pressed Enter to submit');
     }
     
-    console.log('[DVSum] Waiting for login to complete...');
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    // STEP 6: Wait for login to complete
+    console.log('[DVSum] Step 6: Waiting for login to complete...');
+    await new Promise(resolve => setTimeout(resolve, 8000));
     
-    // Check if login was successful
     const postLoginUrl = page.url();
     console.log(`[DVSum] Post-login URL: ${postLoginUrl}`);
     
-    if (postLoginUrl.includes('/login') || postLoginUrl.includes('error')) {
-      const errorElement = await page.$('.error, .alert-error, [class*="error"], [class*="Error"]');
+    // Check if we're still on the login/auth page
+    if (postLoginUrl.includes('auth.dvsum.ai') || postLoginUrl.includes('/login')) {
+      // Check for error messages
+      const errorElement = await page.$('[class*="error" i], [class*="alert" i], [role="alert"]');
       if (errorElement) {
-        const errorText = await errorElement.evaluate((el: Element) => el.textContent);
-        throw new Error(`Login failed: ${errorText?.trim() || 'Invalid credentials'}`);
+        const errorText = await errorElement.evaluate((el: Element) => el.textContent?.trim() || '');
+        if (errorText) {
+          throw new Error(`Login failed: ${errorText}`);
+        }
       }
-      throw new Error('Login failed: Please check your credentials');
+      
+      await page.screenshot({ path: path.join(downloadDir, 'login_failed.png'), fullPage: true });
+      throw new Error('Login failed: Still on auth page. Please verify your credentials.');
     }
     
-    console.log('[DVSum] Login successful, navigating to rules page...');
+    console.log('[DVSum] Login successful!');
+    
+    // STEP 7: Navigate to rules page
+    console.log('[DVSum] Step 7: Navigating to rules page...');
     await page.goto(DVSUM_RULES_URL, { waitUntil: 'networkidle0', timeout: WAIT_TIMEOUT });
     
     await new Promise(resolve => setTimeout(resolve, 5000));
     
-    console.log('[DVSum] Extracting rule IDs...');
+    // STEP 8: Extract rule IDs
+    console.log('[DVSum] Step 8: Extracting rule IDs...');
     const ruleIds = await page.evaluate(() => {
       const links = document.querySelectorAll('a[href*="/rules/"]');
       const ids: string[] = [];
@@ -232,17 +280,15 @@ export async function downloadDvsumReports(
       return ids;
     });
     
-    console.log(`[DVSum] Found ${ruleIds.length} rules: ${ruleIds.slice(0, 5).join(', ')}...`);
+    console.log(`[DVSum] Found ${ruleIds.length} rules: ${ruleIds.slice(0, 5).join(', ')}${ruleIds.length > 5 ? '...' : ''}`);
     
     if (ruleIds.length === 0) {
-      // Save screenshot for debugging
-      const screenshotPath = path.join(downloadDir, 'rules_page.png');
-      await page.screenshot({ path: screenshotPath, fullPage: true });
-      
+      await page.screenshot({ path: path.join(downloadDir, 'rules_page.png'), fullPage: true });
       result.message = 'No rules found on the page. Please verify your access to DVSum rules.';
       return result;
     }
     
+    // STEP 9: Download each rule
     for (let i = 0; i < ruleIds.length; i++) {
       const ruleId = ruleIds[i];
       console.log(`[DVSum] Processing ${i + 1}/${ruleIds.length}: ${ruleId}`);
@@ -257,7 +303,8 @@ export async function downloadDvsumReports(
           if (text === ruleId) {
             const href = await link.evaluate((el: Element) => el.getAttribute('href'));
             if (href) {
-              await page.goto(`${DVSUM_BASE_URL}${href}`, { waitUntil: 'networkidle0', timeout: WAIT_TIMEOUT });
+              const fullUrl = href.startsWith('http') ? href : `${DVSUM_BASE_URL}${href}`;
+              await page.goto(fullUrl, { waitUntil: 'networkidle0', timeout: WAIT_TIMEOUT });
               found = true;
               break;
             }
@@ -273,19 +320,21 @@ export async function downloadDvsumReports(
         // Look for Data tab
         const dataTabClicked = await clickElementByText(page, 'button, a, [role="tab"], div[role="tab"]', 'Data');
         if (dataTabClicked) {
+          console.log(`[DVSum] Clicked Data tab for ${ruleId}`);
           await new Promise(resolve => setTimeout(resolve, 3000));
         }
         
         // Look for Export button
         const exportClicked = await clickElementByText(page, 'button, [role="button"]', 'Export');
         if (exportClicked) {
+          console.log(`[DVSum] Clicked Export button for ${ruleId}`);
           await new Promise(resolve => setTimeout(resolve, 2000));
           
           // Click CSV option
           const csvClicked = await clickElementByText(page, '*', 'CSV Export') || 
                             await clickElementByText(page, '*', 'Export to CSV') ||
                             await clickElementByText(page, '*', 'CSV') ||
-                            await clickElementByText(page, '*', 'Download');
+                            await clickElementByText(page, 'button, a, [role="menuitem"]', 'Download');
           
           if (csvClicked) {
             await new Promise(resolve => setTimeout(resolve, 5000));
@@ -317,14 +366,18 @@ export async function downloadDvsumReports(
     await new Promise(resolve => setTimeout(resolve, 5000));
     
     // Check for downloaded files
-    const files = fs.readdirSync(downloadDir).filter(f => f.endsWith('.csv') || f.endsWith('.xlsx'));
+    const files = fs.readdirSync(downloadDir).filter(f => 
+      (f.endsWith('.csv') || f.endsWith('.xlsx')) && !f.includes('dvsum_reports')
+    );
+    
+    console.log(`[DVSum] Found ${files.length} downloaded files`);
     
     if (files.length > 0) {
       const zipPath = path.join(downloadDir, 'dvsum_reports.zip');
       await createZipArchive(downloadDir, files, zipPath);
       result.zipPath = zipPath;
       result.success = true;
-      result.message = `Downloaded ${result.downloaded} reports, ${result.failed} failed`;
+      result.message = `Downloaded ${files.length} reports successfully`;
     } else if (result.downloaded > 0) {
       result.success = true;
       result.message = `Processed ${result.downloaded} reports but files may still be downloading`;
