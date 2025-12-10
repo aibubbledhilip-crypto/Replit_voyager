@@ -1,0 +1,420 @@
+"""
+DVSum Report Downloader - Simplified All-in-One Version
+No complex dependencies or imports. Works standalone.
+
+Usage:
+    python dvsum_downloader_simple.py
+
+Requirements:
+    pip install selenium
+
+Optional but recommended:
+    pip install webdriver-manager
+"""
+
+import os
+import sys
+import time
+import logging
+from datetime import datetime
+from pathlib import Path
+
+try:
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.chrome.options import Options
+    from selenium.common.exceptions import (
+        TimeoutException,
+        NoSuchElementException,
+        WebDriverException
+    )
+except ImportError as e:
+    print(f"ERROR: Missing required package: {e}")
+    print("\nPlease install required packages:")
+    print("  pip install selenium")
+    print("\nOptional for automatic driver management:")
+    print("  pip install webdriver-manager")
+    sys.exit(1)
+
+# ======================== CONFIGURATION ========================
+
+DVSUM_RULES_URL = "https://www.app.dvsum.ai/rules?selected-filter=all&node-id=45397986&selected-asset-type=RLS"
+DOWNLOAD_DIR = "dvsum_reports"
+EXPORT_FORMAT = "csv"  # or "excel"
+HEADLESS = False
+WAIT_TIMEOUT = 30
+CHROMEDRIVER_PATH = None  # Set to path if not in PATH
+
+# ======================== LOGGING SETUP ========================
+
+# Create logs directory
+os.makedirs("logs", exist_ok=True)
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('logs/dvsum_downloader.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# ======================== UTILITY FUNCTIONS ========================
+
+def ensure_download_dir():
+    """Create download directory if it doesn't exist"""
+    Path(DOWNLOAD_DIR).mkdir(parents=True, exist_ok=True)
+    logger.info(f"Download directory: {os.path.abspath(DOWNLOAD_DIR)}")
+
+
+def get_chromedriver():
+    """
+    Get ChromeDriver instance
+    Tries webdriver-manager first, then system PATH, then manual path
+    """
+    try:
+        # Try webdriver-manager first (automatic)
+        try:
+            from webdriver_manager.chrome import ChromeDriverManager
+            driver_path = ChromeDriverManager().install()
+            logger.info(f"Using ChromeDriver from webdriver-manager: {driver_path}")
+            return driver_path
+        except ImportError:
+            logger.info("webdriver-manager not installed, using system PATH")
+            return None
+    except Exception as e:
+        logger.warning(f"webdriver-manager error: {e}, will try PATH")
+        return None
+
+
+def setup_chrome_driver():
+    """Setup and return Chrome WebDriver"""
+    try:
+        logger.info("Initializing Chrome WebDriver...")
+        
+        # Chrome options
+        chrome_options = Options()
+        
+        if HEADLESS:
+            chrome_options.add_argument("--headless=new")
+            logger.info("Running in headless mode")
+        
+        # Download preferences
+        prefs = {
+            "download.default_directory": str(Path(DOWNLOAD_DIR).absolute()),
+            "download.prompt_for_download": False,
+            "download.directory_upgrade": True,
+            "safebrowsing.enabled": False
+        }
+        chrome_options.add_experimental_option("prefs", prefs)
+        
+        # Additional options
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--start-maximized")
+        
+        # Try to initialize driver
+        if CHROMEDRIVER_PATH:
+            if not os.path.exists(CHROMEDRIVER_PATH):
+                logger.error(f"ChromeDriver not found at: {CHROMEDRIVER_PATH}")
+                return None
+            driver = webdriver.Chrome(CHROMEDRIVER_PATH, options=chrome_options)
+        else:
+            # Try automatic first
+            driver_path = get_chromedriver()
+            if driver_path:
+                driver = webdriver.Chrome(driver_path, options=chrome_options)
+            else:
+                # Fall back to system PATH
+                driver = webdriver.Chrome(options=chrome_options)
+        
+        logger.info("✓ Chrome WebDriver initialized successfully")
+        return driver
+    except WebDriverException as e:
+        logger.error(f"✗ Failed to initialize Chrome WebDriver: {e}")
+        logger.error("\nTroubleshooting:")
+        logger.error("1. Download ChromeDriver: https://chromedriver.chromium.org/")
+        logger.error("2. Match it with your Chrome version")
+        logger.error("3. Either add to PATH or set CHROMEDRIVER_PATH")
+        logger.error("4. Install webdriver-manager: pip install webdriver-manager")
+        return None
+    except Exception as e:
+        logger.error(f"✗ Unexpected error initializing driver: {e}")
+        return None
+
+
+# ======================== MAIN DOWNLOADER CLASS ========================
+
+class DVSumReportDownloader:
+    """Downloads all reports from DVSum"""
+    
+    def __init__(self, driver):
+        """Initialize downloader"""
+        self.driver = driver
+        self.wait = WebDriverWait(driver, WAIT_TIMEOUT)
+        self.downloaded = 0
+        self.failed = 0
+        self.failed_rules = []
+        self.start_time = datetime.now()
+    
+    def navigate_to_rules(self):
+        """Navigate to Rules page"""
+        try:
+            logger.info(f"Navigating to Rules page...")
+            self.driver.get(DVSUM_RULES_URL)
+            
+            # Wait for rules to load
+            self.wait.until(
+                EC.presence_of_element_located(
+                    (By.XPATH, "//a[contains(@href, '/rules/') and contains(text(), 'DQ-')]")
+                )
+            )
+            
+            time.sleep(2)
+            logger.info("✓ Rules page loaded")
+            return True
+        except TimeoutException:
+            logger.error("✗ Timeout loading Rules page")
+            return False
+        except Exception as e:
+            logger.error(f"✗ Error navigating to Rules page: {e}")
+            return False
+    
+    def get_all_rule_ids(self):
+        """Extract all rule IDs from page"""
+        try:
+            logger.info("Extracting rule IDs...")
+            
+            # Wait for elements
+            self.wait.until(
+                EC.presence_of_all_elements_located(
+                    (By.XPATH, "//a[contains(@href, '/rules/') and contains(text(), 'DQ-')]")
+                )
+            )
+            
+            # Get all rule links
+            rule_links = self.driver.find_elements(
+                By.XPATH,
+                "//a[contains(@href, '/rules/') and contains(text(), 'DQ-')]"
+            )
+            
+            # Extract unique rule IDs
+            rule_ids = []
+            seen = set()
+            
+            for link in rule_links:
+                try:
+                    rule_id = link.text.strip()
+                    if rule_id.startswith('DQ-') and rule_id not in seen:
+                        rule_ids.append(rule_id)
+                        seen.add(rule_id)
+                except:
+                    continue
+            
+            logger.info(f"✓ Found {len(rule_ids)} rules: {rule_ids[:5]}...")
+            return rule_ids
+        except Exception as e:
+            logger.error(f"✗ Error extracting rule IDs: {e}")
+            return []
+    
+    def navigate_to_rule_data(self, rule_id):
+        """Navigate to Data tab of a rule"""
+        try:
+            logger.info(f"  Opening {rule_id} data page...")
+            
+            # Find and click the rule link
+            rule_link = self.wait.until(
+                EC.presence_of_element_located(
+                    (By.XPATH, f"//a[contains(@href, '/rules/') and text()='{rule_id}']")
+                )
+            )
+            
+            rule_url = rule_link.get_attribute('href')
+            self.driver.get(rule_url)
+            time.sleep(2)
+            
+            # Look for Data Quality tab and click it
+            try:
+                dq_tab = self.driver.find_element(
+                    By.XPATH,
+                    "//button[contains(text(), 'Data Quality')] | //a[contains(text(), 'Data Quality')]"
+                )
+                self.driver.execute_script("arguments[0].click();", dq_tab)
+                time.sleep(1)
+            except NoSuchElementException:
+                logger.debug(f"  No Data Quality tab found, proceeding...")
+            
+            # Look for Data tab and click it
+            try:
+                # Try to find Data tab (exact text match)
+                data_tabs = self.driver.find_elements(By.XPATH, "//*[text()='Data']")
+                if data_tabs:
+                    self.driver.execute_script("arguments[0].click();", data_tabs[0])
+                    time.sleep(2)
+            except NoSuchElementException:
+                logger.debug(f"  No Data tab found")
+            
+            # Wait for Export button
+            try:
+                self.wait.until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, "//button[contains(text(), 'Export')]")
+                    )
+                )
+            except TimeoutException:
+                logger.warning(f"  No Export button found for {rule_id}")
+                return False
+            
+            logger.info(f"  ✓ Opened {rule_id}")
+            return True
+        except Exception as e:
+            logger.error(f"  ✗ Error navigating to {rule_id}: {e}")
+            return False
+    
+    def download_report(self, rule_id):
+        """Download report as CSV or Excel"""
+        try:
+            logger.info(f"  Downloading {rule_id} ({EXPORT_FORMAT.upper()})...")
+            
+            # Click Export button
+            export_btn = self.wait.until(
+                EC.element_to_be_clickable(
+                    (By.XPATH, "//button[contains(text(), 'Export')]")
+                )
+            )
+            self.driver.execute_script("arguments[0].click();", export_btn)
+            time.sleep(1)
+            
+            # Click CSV or Excel option
+            if EXPORT_FORMAT.lower() == 'csv':
+                export_option = self.wait.until(
+                    EC.element_to_be_clickable(
+                        (By.XPATH, "//*[contains(text(), 'CSV Export')]")
+                    )
+                )
+            else:
+                export_option = self.wait.until(
+                    EC.element_to_be_clickable(
+                        (By.XPATH, "//*[contains(text(), 'Excel Export')]")
+                    )
+                )
+            
+            self.driver.execute_script("arguments[0].click();", export_option)
+            time.sleep(3)  # Wait for download
+            
+            logger.info(f"  ✓ Downloaded {rule_id}")
+            self.downloaded += 1
+            return True
+        except Exception as e:
+            logger.error(f"  ✗ Error downloading {rule_id}: {e}")
+            self.failed += 1
+            self.failed_rules.append(rule_id)
+            return False
+    
+    def download_all(self):
+        """Main method to download all reports"""
+        # Navigate to rules page
+        if not self.navigate_to_rules():
+            return
+        
+        # Get all rule IDs
+        rule_ids = self.get_all_rule_ids()
+        if not rule_ids:
+            logger.error("No rules found!")
+            return
+        
+        total = len(rule_ids)
+        logger.info(f"\n{'='*70}")
+        logger.info(f"Starting download of {total} reports...")
+        logger.info(f"{'='*70}\n")
+        
+        # Download each report
+        for idx, rule_id in enumerate(rule_ids, 1):
+            logger.info(f"[{idx}/{total}] Processing {rule_id}")
+            
+            if self.navigate_to_rule_data(rule_id):
+                self.download_report(rule_id)
+            else:
+                self.failed += 1
+                self.failed_rules.append(rule_id)
+            
+            # Delay between downloads
+            time.sleep(2)
+        
+        # Print summary
+        self.print_summary()
+    
+    def print_summary(self):
+        """Print download summary"""
+        duration = (datetime.now() - self.start_time).total_seconds()
+        total = self.downloaded + self.failed
+        success_rate = (self.downloaded / total * 100) if total > 0 else 0
+        
+        logger.info(f"\n{'='*70}")
+        logger.info("DOWNLOAD SUMMARY")
+        logger.info(f"{'='*70}")
+        logger.info(f"Total Rules: {total}")
+        logger.info(f"Downloaded: {self.downloaded}")
+        logger.info(f"Failed: {self.failed}")
+        logger.info(f"Success Rate: {success_rate:.1f}%")
+        logger.info(f"Duration: {duration:.1f} seconds")
+        
+        if self.failed_rules:
+            logger.warning(f"\nFailed Rules:")
+            for rule_id in self.failed_rules:
+                logger.warning(f"  - {rule_id}")
+        
+        logger.info(f"\nReports saved to: {os.path.abspath(DOWNLOAD_DIR)}")
+        logger.info(f"{'='*70}\n")
+
+
+# ======================== MAIN EXECUTION ========================
+
+def main():
+    """Main execution"""
+    logger.info("="*70)
+    logger.info("DVSum Report Downloader - Starting")
+    logger.info("="*70)
+    logger.info(f"Export Format: {EXPORT_FORMAT.upper()}")
+    logger.info(f"Headless Mode: {HEADLESS}")
+    logger.info(f"Wait Timeout: {WAIT_TIMEOUT}s")
+    logger.info("="*70)
+    
+    # Create download directory
+    ensure_download_dir()
+    
+    # Setup driver
+    driver = setup_chrome_driver()
+    if not driver:
+        logger.error("Failed to setup Chrome WebDriver")
+        return 1
+    
+    try:
+        # Create downloader and run
+        downloader = DVSumReportDownloader(driver)
+        downloader.download_all()
+        
+        return 0
+    except KeyboardInterrupt:
+        logger.warning("\nDownload interrupted by user")
+        return 2
+    except Exception as e:
+        logger.error(f"Fatal error: {e}", exc_info=True)
+        return 1
+    finally:
+        logger.info("Closing WebDriver...")
+        driver.quit()
+        logger.info("Done!")
+
+
+if __name__ == "__main__":
+    try:
+        exit_code = main()
+        sys.exit(exit_code)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}", exc_info=True)
+        sys.exit(1)
