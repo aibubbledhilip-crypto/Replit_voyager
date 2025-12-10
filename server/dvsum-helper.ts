@@ -16,6 +16,26 @@ interface DownloadResult {
   message?: string;
 }
 
+async function findElementByText(page: Page, selector: string, text: string): Promise<any> {
+  const elements = await page.$$(selector);
+  for (const el of elements) {
+    const elText = await el.evaluate((node: Element) => node.textContent?.trim());
+    if (elText && elText.includes(text)) {
+      return el;
+    }
+  }
+  return null;
+}
+
+async function clickElementByText(page: Page, selector: string, text: string): Promise<boolean> {
+  const element = await findElementByText(page, selector, text);
+  if (element) {
+    await element.click();
+    return true;
+  }
+  return false;
+}
+
 export async function downloadDvsumReports(
   username: string,
   password: string,
@@ -68,9 +88,14 @@ export async function downloadDvsumReports(
       await passwordInput.type(password, { delay: 50 });
     }
     
-    const loginButton = await page.$('button[type="submit"]') || await page.$('button:has-text("Login")') || await page.$('button:has-text("Sign in")');
+    const loginButton = await page.$('button[type="submit"]');
     if (loginButton) {
       await loginButton.click();
+    } else {
+      const signInBtn = await findElementByText(page, 'button', 'Login') || await findElementByText(page, 'button', 'Sign in');
+      if (signInBtn) {
+        await signInBtn.click();
+      }
     }
     
     console.log('[DVSum] Waiting for login to complete...');
@@ -81,7 +106,7 @@ export async function downloadDvsumReports(
     if (currentUrl.includes('/login')) {
       const errorElement = await page.$('.error, .alert-error, [class*="error"]');
       if (errorElement) {
-        const errorText = await errorElement.evaluate(el => el.textContent);
+        const errorText = await errorElement.evaluate((el: Element) => el.textContent);
         throw new Error(`Login failed: ${errorText?.trim() || 'Invalid credentials'}`);
       }
       throw new Error('Login failed: Please check your credentials');
@@ -112,7 +137,7 @@ export async function downloadDvsumReports(
     console.log(`[DVSum] Found ${ruleIds.length} rules: ${ruleIds.slice(0, 5).join(', ')}...`);
     
     if (ruleIds.length === 0) {
-      result.message = 'No rules found on the page';
+      result.message = 'No rules found on the page. Please verify your access to DVSum rules.';
       return result;
     }
     
@@ -121,40 +146,45 @@ export async function downloadDvsumReports(
       console.log(`[DVSum] Processing ${i + 1}/${ruleIds.length}: ${ruleId}`);
       
       try {
-        const ruleLink = await page.$(`a[href*="/rules/"]:has-text("${ruleId}")`);
-        if (!ruleLink) {
-          const allLinks = await page.$$('a[href*="/rules/"]');
-          for (const link of allLinks) {
-            const text = await link.evaluate(el => el.textContent?.trim());
-            if (text === ruleId) {
-              const href = await link.evaluate(el => el.getAttribute('href'));
-              if (href) {
-                await page.goto(`${DVSUM_BASE_URL}${href}`, { waitUntil: 'networkidle2', timeout: WAIT_TIMEOUT });
-                break;
-              }
+        // Find and click the rule link
+        const ruleLinks = await page.$$('a[href*="/rules/"]');
+        let found = false;
+        
+        for (const link of ruleLinks) {
+          const text = await link.evaluate((el: Element) => el.textContent?.trim());
+          if (text === ruleId) {
+            const href = await link.evaluate((el: Element) => el.getAttribute('href'));
+            if (href) {
+              await page.goto(`${DVSUM_BASE_URL}${href}`, { waitUntil: 'networkidle2', timeout: WAIT_TIMEOUT });
+              found = true;
+              break;
             }
           }
-        } else {
-          await ruleLink.click();
-          await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: WAIT_TIMEOUT }).catch(() => {});
+        }
+        
+        if (!found) {
+          throw new Error(`Rule link not found: ${ruleId}`);
         }
         
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        const dataTab = await page.$('button:has-text("Data"), a:has-text("Data"), [role="tab"]:has-text("Data")');
-        if (dataTab) {
-          await dataTab.click();
+        // Look for Data tab
+        const dataTabClicked = await clickElementByText(page, 'button, a, [role="tab"]', 'Data');
+        if (dataTabClicked) {
           await new Promise(resolve => setTimeout(resolve, 2000));
         }
         
-        const exportButton = await page.$('button:has-text("Export")');
-        if (exportButton) {
-          await exportButton.click();
+        // Look for Export button
+        const exportClicked = await clickElementByText(page, 'button', 'Export');
+        if (exportClicked) {
           await new Promise(resolve => setTimeout(resolve, 1000));
           
-          const csvOption = await page.$('*:has-text("CSV Export"), *:has-text("Export to CSV"), *:has-text("CSV")');
-          if (csvOption) {
-            await csvOption.click();
+          // Click CSV option
+          const csvClicked = await clickElementByText(page, '*', 'CSV Export') || 
+                            await clickElementByText(page, '*', 'Export to CSV') ||
+                            await clickElementByText(page, '*', 'CSV');
+          
+          if (csvClicked) {
             await new Promise(resolve => setTimeout(resolve, 3000));
             result.downloaded++;
             console.log(`[DVSum] Downloaded ${ruleId}`);
@@ -165,6 +195,7 @@ export async function downloadDvsumReports(
           throw new Error('Export button not found');
         }
         
+        // Navigate back to rules list
         await page.goto(DVSUM_RULES_URL, { waitUntil: 'networkidle2', timeout: WAIT_TIMEOUT });
         await new Promise(resolve => setTimeout(resolve, 2000));
         
@@ -173,23 +204,30 @@ export async function downloadDvsumReports(
         result.failed++;
         result.failedRules.push(ruleId);
         
+        // Try to navigate back to rules list
         await page.goto(DVSUM_RULES_URL, { waitUntil: 'networkidle2', timeout: WAIT_TIMEOUT }).catch(() => {});
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
     
+    // Wait for downloads to complete
     await new Promise(resolve => setTimeout(resolve, 3000));
     
+    // Check for downloaded files
     const files = fs.readdirSync(downloadDir).filter(f => f.endsWith('.csv') || f.endsWith('.xlsx'));
     
     if (files.length > 0) {
       const zipPath = path.join(downloadDir, 'dvsum_reports.zip');
       await createZipArchive(downloadDir, files, zipPath);
       result.zipPath = zipPath;
+      result.success = true;
+      result.message = `Downloaded ${result.downloaded} reports, ${result.failed} failed`;
+    } else if (result.downloaded > 0) {
+      result.success = true;
+      result.message = `Processed ${result.downloaded} reports but files may still be downloading`;
+    } else {
+      result.message = `No reports were downloaded. ${result.failed} failed.`;
     }
-    
-    result.success = true;
-    result.message = `Downloaded ${result.downloaded} reports, ${result.failed} failed`;
     
     return result;
   } catch (error: any) {

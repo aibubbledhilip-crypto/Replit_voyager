@@ -1006,17 +1006,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fs.mkdirSync(DVSUM_DOWNLOAD_DIR, { recursive: true });
   }
 
-  app.post("/api/dvsum/download", requireAuth, async (req, res) => {
+  app.post("/api/dvsum/download", requireAdmin, async (req, res) => {
+    // Create a unique download directory for this request
+    const requestId = Date.now().toString();
+    const downloadDir = path.join(DVSUM_DOWNLOAD_DIR, requestId);
+    
     try {
       const { username, password } = req.body;
       
-      if (!username || !password) {
+      if (!username || typeof username !== 'string' || !password || typeof password !== 'string') {
         return res.status(400).json({ message: "Username and password are required" });
       }
       
-      // Create a unique download directory for this request
-      const requestId = Date.now().toString();
-      const downloadDir = path.join(DVSUM_DOWNLOAD_DIR, requestId);
       fs.mkdirSync(downloadDir, { recursive: true });
       
       console.log(`[DVSum] Starting download for user ${req.session.userId}`);
@@ -1034,10 +1035,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileStream.on('end', () => {
           // Cleanup download directory after sending
           setTimeout(() => {
-            fs.rmSync(downloadDir, { recursive: true, force: true });
+            try {
+              fs.rmSync(downloadDir, { recursive: true, force: true });
+            } catch (e) {
+              console.error('[DVSum] Cleanup error:', e);
+            }
           }, 5000);
         });
+        
+        fileStream.on('error', () => {
+          // Cleanup on error
+          try {
+            fs.rmSync(downloadDir, { recursive: true, force: true });
+          } catch (e) {
+            console.error('[DVSum] Cleanup error:', e);
+          }
+        });
       } else {
+        // Cleanup if no zip file
+        try {
+          fs.rmSync(downloadDir, { recursive: true, force: true });
+        } catch (e) {
+          console.error('[DVSum] Cleanup error:', e);
+        }
+        
         res.json({
           success: result.success,
           downloaded: result.downloaded,
@@ -1047,8 +1068,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
     } catch (error: any) {
-      console.error('[DVSum] Download error:', error);
-      res.status(500).json({ message: error.message });
+      console.error('[DVSum] Download error:', error.message);
+      
+      // Cleanup on error
+      try {
+        fs.rmSync(downloadDir, { recursive: true, force: true });
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+      
+      res.status(500).json({ message: 'Download failed. Please check your credentials and try again.' });
     }
   });
 
