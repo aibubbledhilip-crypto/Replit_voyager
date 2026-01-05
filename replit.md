@@ -4,14 +4,6 @@
 Voyager is a secure enterprise web application for querying AWS Athena databases with role-based access control, usage logging, and admin-controlled query limits.
 
 ## Recent Changes
-- **2025-12-10**:
-  - **DVSum Report Downloader**:
-    - Added DVSum Report Downloader feature for automated report downloads
-    - Uses Puppeteer browser automation to log into DVSum and download reports
-    - Admin-only access with proper role enforcement
-    - Secure credential handling (not stored, used only during download)
-    - Automatic cleanup of temporary files after download
-    - Downloads packaged as ZIP file for easy transfer
 - **2025-12-09**:
   - **Schema Browser and SQL Autocomplete**:
     - Added schema browser sidebar to Query Execution page showing all tables/views
