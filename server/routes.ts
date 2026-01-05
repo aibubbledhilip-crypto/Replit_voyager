@@ -12,7 +12,6 @@ import * as path from "path";
 import { fileURLToPath } from 'url';
 import { parseFile, compareDatasets, cleanupOldFiles } from "./file-comparison-helper";
 import { checkSftpFiles, testSftpConnection } from "./sftp-helper";
-import { downloadDvsumReports } from "./dvsum-helper";
 import { insertSftpConfigSchema } from "@shared/schema";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -997,87 +996,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
-    }
-  });
-
-  // DVSum Report Download
-  const DVSUM_DOWNLOAD_DIR = path.join(__dirname, '..', 'dvsum_downloads');
-  if (!fs.existsSync(DVSUM_DOWNLOAD_DIR)) {
-    fs.mkdirSync(DVSUM_DOWNLOAD_DIR, { recursive: true });
-  }
-
-  app.post("/api/dvsum/download", requireAdmin, async (req, res) => {
-    // Create a unique download directory for this request
-    const requestId = Date.now().toString();
-    const downloadDir = path.join(DVSUM_DOWNLOAD_DIR, requestId);
-    
-    try {
-      const { username, password } = req.body;
-      
-      if (!username || typeof username !== 'string' || !password || typeof password !== 'string') {
-        return res.status(400).json({ message: "Username and password are required" });
-      }
-      
-      fs.mkdirSync(downloadDir, { recursive: true });
-      
-      console.log(`[DVSum] Starting download for user ${req.session.userId}`);
-      
-      const result = await downloadDvsumReports(username, password, downloadDir);
-      
-      if (result.success && result.zipPath && fs.existsSync(result.zipPath)) {
-        // Stream the zip file to the user
-        res.setHeader('Content-Type', 'application/zip');
-        res.setHeader('Content-Disposition', 'attachment; filename="dvsum_reports.zip"');
-        
-        const fileStream = fs.createReadStream(result.zipPath);
-        fileStream.pipe(res);
-        
-        fileStream.on('end', () => {
-          // Cleanup download directory after sending
-          setTimeout(() => {
-            try {
-              fs.rmSync(downloadDir, { recursive: true, force: true });
-            } catch (e) {
-              console.error('[DVSum] Cleanup error:', e);
-            }
-          }, 5000);
-        });
-        
-        fileStream.on('error', () => {
-          // Cleanup on error
-          try {
-            fs.rmSync(downloadDir, { recursive: true, force: true });
-          } catch (e) {
-            console.error('[DVSum] Cleanup error:', e);
-          }
-        });
-      } else {
-        // Cleanup if no zip file
-        try {
-          fs.rmSync(downloadDir, { recursive: true, force: true });
-        } catch (e) {
-          console.error('[DVSum] Cleanup error:', e);
-        }
-        
-        res.json({
-          success: result.success,
-          downloaded: result.downloaded,
-          failed: result.failed,
-          failedRules: result.failedRules,
-          message: result.message,
-        });
-      }
-    } catch (error: any) {
-      console.error('[DVSum] Download error:', error.message);
-      
-      // Cleanup on error
-      try {
-        fs.rmSync(downloadDir, { recursive: true, force: true });
-      } catch (e) {
-        // Ignore cleanup errors
-      }
-      
-      res.status(500).json({ message: 'Download failed. Please check your credentials and try again.' });
     }
   });
 
