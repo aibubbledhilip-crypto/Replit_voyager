@@ -580,9 +580,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const sanitizedMsisdn = validationResult.data;
 
-      // Get row limit setting
-      const limitSetting = await storage.getSetting('row_limit');
-      const rowLimit = limitSetting ? parseInt(limitSetting.value) : 1000;
+      // Get row limit setting (used for export restriction)
+      const exportLimitSetting = await storage.getSetting('row_limit');
+      const rowLimit = exportLimitSetting ? parseInt(exportLimitSetting.value) : 1000;
+      
+      // Get display limit setting (for results shown in UI)
+      const displayLimitSetting = await storage.getSetting('display_limit');
+      const displayLimit = displayLimitSetting ? parseInt(displayLimitSetting.value) : 10000;
 
       // Initialize Athena client
       const athenaClient = new AthenaClient({
@@ -654,9 +658,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           // Get query results (AWS Athena has a max limit of 1000 per request)
+          // Use displayLimit for fetching results shown in UI
           const getResultsCommand = new GetQueryResultsCommand({
             QueryExecutionId: queryExecutionId,
-            MaxResults: Math.min(rowLimit, 1000),
+            MaxResults: Math.min(displayLimit, 1000),
           });
 
           const resultsResponse = await athenaClient.send(getResultsCommand);
