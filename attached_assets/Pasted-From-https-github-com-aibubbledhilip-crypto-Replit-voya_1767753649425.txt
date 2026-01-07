@@ -1,0 +1,54 @@
+From https://github.com/aibubbledhilip-crypto/Replit_voyager
+ * branch            main       -> FETCH_HEAD
+   76fd3a7..79f6a90  main       -> origin/main
+Updating 76fd3a7..79f6a90
+Fast-forward
+ attached_assets/Pasted-bitnami-ip-172-26-10-121-opt-bitnami-apache-htdocs-Voya_1767752931709.txt | 134 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ attached_assets/Pasted-bitnami-ip-172-26-10-121-opt-bitnami-apache-htdocs-Voya_1767753110545.txt |  92 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ attached_assets/Pasted-bitnami-ip-172-26-10-121-opt-bitnami-apache-htdocs-Voya_1767753497880.txt |  50 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 276 insertions(+)
+ create mode 100644 attached_assets/Pasted-bitnami-ip-172-26-10-121-opt-bitnami-apache-htdocs-Voya_1767752931709.txt
+ create mode 100644 attached_assets/Pasted-bitnami-ip-172-26-10-121-opt-bitnami-apache-htdocs-Voya_1767753110545.txt
+ create mode 100644 attached_assets/Pasted-bitnami-ip-172-26-10-121-opt-bitnami-apache-htdocs-Voya_1767753497880.txt
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ npm install
+
+up to date, audited 725 packages in 2s
+
+79 packages are looking for funding
+  run `npm fund` for details
+
+13 vulnerabilities (3 low, 5 moderate, 5 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+
+Run `npm audit` for details.
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ npm run build
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.20 building for production...
+transforming (4) src/App.tsx
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+✓ 1755 modules transformed.
+../dist/public/index.html                                                            2.23 kB │ gzip:   0.88 kB
+../dist/public/assets/Data_visualization_login_background_22211783-3lAhJdIK.png  1,376.47 kB
+../dist/public/assets/index-8_ioG_f3.css                                            75.18 kB │ gzip:  12.48 kB
+../dist/public/assets/index-Dqn5cFGF.js                                            805.95 kB │ gzip: 256.01 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 8.57s
+
+  dist/index.js  66.6kb
+
+⚡ Done in 31ms
