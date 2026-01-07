@@ -13,6 +13,7 @@ import { fileURLToPath } from 'url';
 import { parseFile, compareDatasets, cleanupOldFiles } from "./file-comparison-helper";
 import { checkSftpFiles, testSftpConnection } from "./sftp-helper";
 import { insertSftpConfigSchema } from "@shared/schema";
+import { executeAthenaQueryWithPagination } from "./athena-helper";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -499,61 +500,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const startTime = Date.now();
 
-      // Start query execution
-      const startCommand = new StartQueryExecutionCommand({
-        QueryString: query,
-        ResultConfiguration: {
-          OutputLocation: s3OutputLocation,
-        },
-      });
+      // Execute query with pagination support for large result sets
+      const result = await executeAthenaQueryWithPagination(
+        athenaClient,
+        query,
+        s3OutputLocation,
+        rowLimit
+      );
 
-      const startResponse = await athenaClient.send(startCommand);
-      const queryExecutionId = startResponse.QueryExecutionId;
-
-      if (!queryExecutionId) {
-        throw new Error('Failed to start query execution');
-      }
-
-      // Poll for query completion (max 5 minutes)
-      let queryStatus = 'RUNNING';
-      const getExecutionCommand = new GetQueryExecutionCommand({ QueryExecutionId: queryExecutionId });
-      const maxPollTime = 5 * 60 * 1000; // 5 minutes
-      const pollStartTime = Date.now();
-
-      while (queryStatus === 'RUNNING' || queryStatus === 'QUEUED') {
-        // Check if we've exceeded max polling time
-        if (Date.now() - pollStartTime > maxPollTime) {
-          throw new Error('Query execution timeout - query is still running in Athena but took longer than 5 minutes. Please try a simpler query or contact admin.');
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-        const executionResponse = await athenaClient.send(getExecutionCommand);
-        queryStatus = executionResponse.QueryExecution?.Status?.State || 'FAILED';
-      }
-
-      if (queryStatus !== 'SUCCEEDED') {
-        throw new Error(`Query failed with status: ${queryStatus}`);
-      }
-
-      // Get query results (AWS Athena has a max limit of 1000 per request)
-      const getResultsCommand = new GetQueryResultsCommand({
-        QueryExecutionId: queryExecutionId,
-        MaxResults: Math.min(rowLimit, 1000),
-      });
-
-      const resultsResponse = await athenaClient.send(getResultsCommand);
-      const rows = resultsResponse.ResultSet?.Rows || [];
-
-      // Parse results
-      const columns = rows[0]?.Data?.map(col => col.VarCharValue || '') || [];
-      const data = rows.slice(1).map(row => {
-        const rowData: Record<string, any> = {};
-        row.Data?.forEach((cell, idx) => {
-          rowData[columns[idx]] = cell.VarCharValue;
-        });
-        return rowData;
-      });
-
+      const columns = result.columns;
+      const data = result.data;
       const executionTime = Date.now() - startTime;
 
       // Log the query execution
