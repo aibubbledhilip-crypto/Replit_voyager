@@ -39,8 +39,11 @@ export default function ResultsTable({
   const handleExport = () => {
     if (data.length === 0) return;
 
+    // Apply row limit restriction for export only
+    const exportData = data.slice(0, rowLimit);
+    
     const csvHeaders = columns.join(',');
-    const csvRows = data.map(row => 
+    const csvRows = exportData.map(row => 
       columns.map(col => {
         const value = row[col];
         if (value === null || value === undefined) return '';
@@ -85,7 +88,7 @@ export default function ResultsTable({
               Showing {currentData.length} of {data.length} rows
             </span>
             <Badge variant="secondary" className="h-5 text-xs" data-testid="badge-row-limit">
-              Limit: {rowLimit}
+              Export Limit: {rowLimit}
             </Badge>
             {executionTime > 0 && (
               <span className="text-sm text-muted-foreground" data-testid="text-execution-time">

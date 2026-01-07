@@ -483,9 +483,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Query is required" });
       }
 
-      // Get row limit setting
+      // Get row limit setting (used for export restriction, not display)
       const limitSetting = await storage.getSetting('row_limit');
       const rowLimit = limitSetting ? parseInt(limitSetting.value) : 1000;
+      
+      // For display, fetch all results (high ceiling to prevent runaway queries)
+      const displayLimit = 100000;
 
       // Initialize Athena client
       const athenaClient = new AthenaClient({
@@ -501,11 +504,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const startTime = Date.now();
 
       // Execute query with pagination support for large result sets
+      // Use displayLimit for fetching all results; rowLimit is only for export restriction
       const result = await executeAthenaQueryWithPagination(
         athenaClient,
         query,
         s3OutputLocation,
-        rowLimit
+        displayLimit
       );
 
       const columns = result.columns;
