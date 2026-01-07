@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { users, queryLogs, settings, exportJobs, sftpConfigs, type User, type InsertUser, type QueryLog, type InsertQueryLog, type Setting, type InsertSetting, type ExportJob, type InsertExportJob, type SftpConfig, type InsertSftpConfig } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { users, queryLogs, settings, exportJobs, sftpConfigs, savedQueries, type User, type InsertUser, type QueryLog, type InsertQueryLog, type Setting, type InsertSetting, type ExportJob, type InsertExportJob, type SftpConfig, type InsertSftpConfig, type SavedQuery, type InsertSavedQuery } from "@shared/schema";
+import { eq, desc, and } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 const SALT_ROUNDS = 10;
@@ -35,6 +35,10 @@ export interface IStorage {
   createSftpConfig(config: InsertSftpConfig): Promise<SftpConfig>;
   updateSftpConfig(id: string, config: InsertSftpConfig): Promise<SftpConfig | undefined>;
   deleteSftpConfig(id: string): Promise<boolean>;
+  
+  getSavedQueriesByUser(userId: string): Promise<SavedQuery[]>;
+  createSavedQuery(query: InsertSavedQuery): Promise<SavedQuery>;
+  deleteSavedQuery(id: string, userId: string): Promise<boolean>;
 }
 
 export class DbStorage implements IStorage {
@@ -204,6 +208,24 @@ export class DbStorage implements IStorage {
   async deleteSftpConfig(id: string): Promise<boolean> {
     const result = await db.delete(sftpConfigs)
       .where(eq(sftpConfigs.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  async getSavedQueriesByUser(userId: string): Promise<SavedQuery[]> {
+    return await db.select().from(savedQueries)
+      .where(eq(savedQueries.userId, userId))
+      .orderBy(desc(savedQueries.createdAt));
+  }
+
+  async createSavedQuery(query: InsertSavedQuery): Promise<SavedQuery> {
+    const result = await db.insert(savedQueries).values(query).returning();
+    return result[0];
+  }
+
+  async deleteSavedQuery(id: string, userId: string): Promise<boolean> {
+    const result = await db.delete(savedQueries)
+      .where(and(eq(savedQueries.id, id), eq(savedQueries.userId, userId)))
       .returning();
     return result.length > 0;
   }

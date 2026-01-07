@@ -138,7 +138,7 @@ export default function QueryExecutionPage() {
   const getTableColumns = (tableName: string) => tableColumns.get(tableName) || [];
 
   return (
-    <div className="flex gap-4 h-[calc(100vh-140px)]">
+    <div className="flex gap-4 h-full">
       <Card className="w-72 flex-shrink-0 flex flex-col" data-testid="card-schema-browser">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-2">

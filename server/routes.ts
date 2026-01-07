@@ -33,9 +33,6 @@ const upload = multer({
       cb(null, `${name}_${timestamp}${ext}`);
     },
   }),
-  limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit
-  },
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     if (ext === '.csv' || ext === '.xlsx' || ext === '.xls') {
@@ -275,6 +272,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const setting = await storage.upsertSetting({ key, value });
       res.json(setting);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Saved Queries routes
+  app.get("/api/saved-queries", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const queries = await storage.getSavedQueriesByUser(userId);
+      res.json(queries);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/saved-queries", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { name, query } = req.body;
+      
+      if (!name || !query) {
+        return res.status(400).json({ message: "Name and query are required" });
+      }
+      
+      const savedQuery = await storage.createSavedQuery({ userId, name, query });
+      res.json(savedQuery);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/saved-queries/:id", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { id } = req.params;
+      
+      const deleted = await storage.deleteSavedQuery(id, userId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Saved query not found" });
+      }
+      
+      res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

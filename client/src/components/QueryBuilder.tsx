@@ -3,12 +3,37 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Play, Trash2, Database, Table, Columns } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Play, Trash2, Database, Table, Columns, Save, FolderOpen, X, Loader2 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/api";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+
+interface SavedQuery {
+  id: string;
+  name: string;
+  query: string;
+  createdAt: string;
+}
 
 interface Suggestion {
   label: string;
@@ -46,8 +71,56 @@ export default function QueryBuilder({
   const [filteredSuggestions, setFilteredSuggestions] = useState<(Suggestion | { label: string; type: 'keyword' })[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [cursorPosition, setCursorPosition] = useState(0);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [saveName, setSaveName] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  const { data: savedQueries = [], isLoading: isLoadingSaved } = useQuery<SavedQuery[]>({
+    queryKey: ['/api/saved-queries'],
+  });
+
+  const saveQueryMutation = useMutation({
+    mutationFn: async (data: { name: string; query: string }) => {
+      return apiRequest('/api/saved-queries', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/saved-queries'] });
+      setSaveDialogOpen(false);
+      setSaveName("");
+      toast({ title: "Query saved successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to save query", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteQueryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest(`/api/saved-queries/${id}`, { method: 'DELETE' });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/saved-queries'] });
+      toast({ title: "Query deleted" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to delete query", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleSaveQuery = () => {
+    if (saveName.trim() && query.trim()) {
+      saveQueryMutation.mutate({ name: saveName.trim(), query: query.trim() });
+    }
+  };
+
+  const handleLoadQuery = (savedQuery: SavedQuery) => {
+    setQuery(savedQuery.query);
+  };
 
   const getCurrentWord = useCallback((text: string, position: number): { word: string; start: number; end: number } => {
     const beforeCursor = text.slice(0, position);
@@ -286,6 +359,98 @@ export default function QueryBuilder({
         </div>
 
         <div className="flex gap-2 justify-end flex-wrap">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" data-testid="button-load-query">
+                <FolderOpen className="h-4 w-4 mr-2" />
+                Load
+                {savedQueries.length > 0 && (
+                  <Badge variant="secondary" className="ml-2 h-5 text-xs">
+                    {savedQueries.length}
+                  </Badge>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-72">
+              {isLoadingSaved ? (
+                <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Loading...
+                </div>
+              ) : savedQueries.length === 0 ? (
+                <div className="py-4 text-sm text-muted-foreground text-center">
+                  No saved queries
+                </div>
+              ) : (
+                savedQueries.map((sq) => (
+                  <DropdownMenuItem
+                    key={sq.id}
+                    className="flex items-center justify-between gap-2"
+                    onSelect={() => handleLoadQuery(sq)}
+                    data-testid={`menu-item-saved-query-${sq.id}`}
+                  >
+                    <span className="truncate">{sq.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 flex-shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteQueryMutation.mutate(sq.id);
+                      }}
+                      data-testid={`button-delete-query-${sq.id}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuItem>
+                ))
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                variant="outline"
+                disabled={!query.trim()}
+                data-testid="button-save-query"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Save Query</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <Input
+                  placeholder="Query name"
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
+                  data-testid="input-query-name"
+                />
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleSaveQuery}
+                    disabled={!saveName.trim() || saveQueryMutation.isPending}
+                    data-testid="button-confirm-save"
+                  >
+                    {saveQueryMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Save className="h-4 w-4 mr-2" />
+                    )}
+                    Save
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          
           <Button 
             variant="outline" 
             onClick={handleClear}
