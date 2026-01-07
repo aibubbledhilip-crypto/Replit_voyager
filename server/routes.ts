@@ -484,11 +484,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get row limit setting (used for export restriction, not display)
-      const limitSetting = await storage.getSetting('row_limit');
-      const rowLimit = limitSetting ? parseInt(limitSetting.value) : 1000;
+      const exportLimitSetting = await storage.getSetting('row_limit');
+      const rowLimit = exportLimitSetting ? parseInt(exportLimitSetting.value) : 1000;
       
-      // For display, fetch results with a reasonable ceiling to prevent OOM on small servers
-      const displayLimit = 10000;
+      // Get display limit setting (for results shown in UI)
+      const displayLimitSetting = await storage.getSetting('display_limit');
+      const displayLimit = displayLimitSetting ? parseInt(displayLimitSetting.value) : 10000;
 
       // Initialize Athena client
       const athenaClient = new AthenaClient({

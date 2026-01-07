@@ -19,12 +19,19 @@ async function seed() {
       console.log("✓ Admin user already exists");
     }
 
-    // Set default row limit
+    // Set default row limit (for exports)
     await storage.upsertSetting({
       key: "row_limit",
       value: "1000",
     });
-    console.log("✓ Set default row limit to 1000");
+    console.log("✓ Set default export row limit to 1000");
+
+    // Set default display limit
+    await storage.upsertSetting({
+      key: "display_limit",
+      value: "10000",
+    });
+    console.log("✓ Set default display limit to 10000");
 
     console.log("Seed completed successfully!");
   } catch (error) {
