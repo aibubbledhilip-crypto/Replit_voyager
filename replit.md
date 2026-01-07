@@ -4,6 +4,13 @@
 Voyager is a secure enterprise web application for querying AWS Athena databases with role-based access control, usage logging, and admin-controlled query limits.
 
 ## Recent Changes
+- **2026-01-07**:
+  - **Full-Width Query Execution Page**: Query Execution page now uses full browser width for more workspace
+  - **Saved Queries Feature**: Users can save and load frequently-used SQL queries
+    - Save button opens dialog to name and save current query
+    - Load button shows dropdown with all saved queries
+    - Delete option available for each saved query
+  - **Removed File Size Limit**: File comparison tool no longer has a 50MB file size limit
 - **2026-01-05**:
   - **Removed DVSum Reports Feature**: Removed the DVSum Report Downloader from the application per user request
 - **2025-12-09**:

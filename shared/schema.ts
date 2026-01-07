@@ -105,3 +105,19 @@ export const insertSftpConfigSchema = createInsertSchema(sftpConfigs).omit({
 
 export type InsertSftpConfig = z.infer<typeof insertSftpConfigSchema>;
 export type SftpConfig = typeof sftpConfigs.$inferSelect;
+
+export const savedQueries = pgTable("saved_queries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  query: text("query").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertSavedQuerySchema = createInsertSchema(savedQueries).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertSavedQuery = z.infer<typeof insertSavedQuerySchema>;
+export type SavedQuery = typeof savedQueries.$inferSelect;

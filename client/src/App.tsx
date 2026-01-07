@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -25,9 +25,13 @@ interface AuthUser {
 }
 
 function AuthenticatedApp() {
+  const [location] = useLocation();
   const { data: user, isLoading } = useQuery<AuthUser>({
     queryKey: ['/api/auth/me'],
   });
+  
+  // Query Execution page uses full width
+  const isFullWidthPage = location === "/";
 
   const handleLogout = async () => {
     try {
@@ -69,7 +73,7 @@ function AuthenticatedApp() {
             <SidebarTrigger data-testid="button-sidebar-toggle" />
           </div>
           <main className="flex-1 overflow-auto">
-            <div className="p-6 max-w-7xl mx-auto">
+            <div className={`p-6 ${isFullWidthPage ? 'h-full' : 'max-w-7xl mx-auto'}`}>
               <Switch>
                 <Route path="/" component={QueryExecutionPage} />
                 <Route path="/msisdn-lookup" component={MsisdnLookupPage} />
