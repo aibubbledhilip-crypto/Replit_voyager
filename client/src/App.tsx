@@ -30,8 +30,8 @@ function AuthenticatedApp() {
     queryKey: ['/api/auth/me'],
   });
   
-  // Query Execution page uses full width
-  const isFullWidthPage = location === "/";
+  // Query Execution and MSISDN Lookup pages use full width
+  const isFullWidthPage = location === "/" || location === "/msisdn-lookup";
 
   const handleLogout = async () => {
     try {
