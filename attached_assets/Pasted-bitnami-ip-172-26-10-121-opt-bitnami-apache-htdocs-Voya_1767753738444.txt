@@ -1,0 +1,36 @@
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ git pull origin main
+From https://github.com/aibubbledhilip-crypto/Replit_voyager
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ npm run build
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.20 building for production...
+transforming (4) src/App.tsx
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+✓ 1755 modules transformed.
+../dist/public/index.html                                                            2.23 kB │ gzip:   0.88 kB
+../dist/public/assets/Data_visualization_login_background_22211783-3lAhJdIK.png  1,376.47 kB
+../dist/public/assets/index-8_ioG_f3.css                                            75.18 kB │ gzip:  12.48 kB
+../dist/public/assets/index-Dqn5cFGF.js                                            805.95 kB │ gzip: 256.01 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 8.27s
+
+  dist/index.js  66.6kb
+
+⚡ Done in 12ms
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ pm2 restart voyager
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [voyager](ids: [ 0 ])
+[PM2] [voyager](0) ✓
+┌────┬────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name       │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ voyager    │ default     │ N/A     │ fork    │ 737698   │ 0s     │ 2    │ online    │ 0%       │ 21.5mb   │ bitnami  │ disabled │
+└────┴────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴
