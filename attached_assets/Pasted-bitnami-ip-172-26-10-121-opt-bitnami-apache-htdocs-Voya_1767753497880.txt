@@ -1,0 +1,50 @@
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ pm2 start ecosystem.config.cjs
+[PM2][WARN] Applications voyager not running, starting...
+[PM2] App [voyager] launched (1 instances)
+┌────┬────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name       │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ voyager    │ default     │ N/A     │ fork    │ 737447   │ 0s     │ 0    │ online    │ 0%       │ 21.5mb   │ bitnami  │ disabled │
+└────┴────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ pm2 logs voyager
+[TAILING] Tailing last 15 lines for [voyager] process (change the value with --lines option)
+/home/bitnami/.pm2/logs/voyager-error-0.log last 15 lines:
+0|voyager  |     at SendStream.emit (node:events:518:28)
+0|voyager  |     at SendStream.error (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/send/index.js:270:17)
+0|voyager  |     at SendStream.pipe (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/send/index.js:515:10)
+0|voyager  |     at serveStatic (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/serve-static/index.js:125:12)
+0|voyager  | MulterError: File too large
+0|voyager  |     at abortWithCode (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/multer/lib/make-middleware.js:85:22)
+0|voyager  |     at FileStream.<anonymous> (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/multer/lib/make-middleware.js:155:11)
+0|voyager  |     at FileStream.emit (node:events:518:28)
+0|voyager  |     at SBMH.ssCb [as _cb] (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/busboy/lib/types/multipart.js:479:32)
+0|voyager  |     at feed (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/streamsearch/lib/sbmh.js:248:10)
+0|voyager  |     at SBMH.push (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/streamsearch/lib/sbmh.js:104:16)
+0|voyager  |     at Multipart._write (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/busboy/lib/types/multipart.js:567:19)
+0|voyager  |     at writeOrBuffer (node:internal/streams/writable:572:12)
+0|voyager  |     at _write (node:internal/streams/writable:501:10)
+0|voyager  |     at Writable.write (node:internal/streams/writable:510:10)
+
+/home/bitnami/.pm2/logs/voyager-out-0.log last 15 lines:
+0|voyager  | 2:11:50 AM [express] GET /api/csrf-token 304 in 0ms :: {"csrfToken":"11b76f89fabf4e27c88fa7188755b08…
+0|voyager  | 2:12:15 AM [express] POST /api/query/execute 200 in 24926ms :: {"columns":["sf_bancan","sf_msisdn","…
+0|voyager  | 2:25:31 AM [express] GET /api/auth/me 304 in 363ms :: {"id":"28147057-1ce1-4008-be6a-16ce448b7975","…
+0|voyager  | 2:25:33 AM [express] GET /api/query/schema 200 in 1673ms :: {"database":"dvsum-s3-glue-prod","tables…
+0|voyager  | 2:25:37 AM [express] GET /api/auth/me 304 in 2ms :: {"id":"28147057-1ce1-4008-be6a-16ce448b7975","us…
+0|voyager  | 2:25:37 AM [express] GET /api/query/schema 304 in 1ms :: {"database":"dvsum-s3-glue-prod","tables":[…
+0|voyager  | 2:27:26 AM [express] Environment variables validated: SESSION_SECRET, DATABASE_URL, AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_OUTPUT_LOCATION
+0|voyager  | 2:27:26 AM [express] serving on port 5000
+0|voyager  | 2:27:37 AM [express] GET /api/auth/me 401 in 2ms :: {"message":"Unauthorized"}
+0|voyager  | 2:27:44 AM [express] GET /api/csrf-token 200 in 1ms :: {"csrfToken":"fcd4a1ab45cdea26f099a8cfa737aae…
+0|voyager  | 2:27:45 AM [express] POST /api/auth/login 200 in 112ms :: {"id":"5fb1b2a3-99bd-40ec-94ac-4549ed12083…
+0|voyager  | 2:27:45 AM [express] GET /api/auth/me 200 in 3ms :: {"id":"5fb1b2a3-99bd-40ec-94ac-4549ed120834","us…
+0|voyager  | 2:27:46 AM [express] GET /api/query/schema 304 in 1397ms :: {"database":"dvsum-s3-glue-prod","tables…
+0|voyager  | 2:37:17 AM [express] Environment variables validated: SESSION_SECRET, DATABASE_URL, AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_OUTPUT_LOCATION
+0|voyager  | 2:37:17 AM [express] serving on port 5000
+
+0|voyager  | 2:37:33 AM [express] GET /api/auth/me 401 in 3ms :: {"message":"Unauthorized"}
+0|voyager  | 2:37:48 AM [express] GET /api/csrf-token 200 in 1ms :: {"csrfToken":"02522366e52f84dee3e62185dda0248…
+0|voyager  | 2:37:48 AM [express] POST /api/auth/login 200 in 94ms :: {"id":"28147057-1ce1-4008-be6a-16ce448b7975…
+0|voyager  | 2:37:48 AM [express] GET /api/auth/me 200 in 3ms :: {"id":"28147057-1ce1-4008-be6a-16ce448b7975","us…
+0|voyager  | 2:37:50 AM [express] GET /api/query/schema 304 in 1367ms :: {"database":"dvsum-s3-glue-prod","tables…
+
