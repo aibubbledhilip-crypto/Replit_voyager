@@ -5,6 +5,10 @@ Voyager is a secure enterprise web application for querying AWS Athena databases
 
 ## Recent Changes
 - **2026-01-07**:
+  - **Row Limit for Export Only**: Admin-configured row limit now only restricts CSV export, not display
+    - Query results display all returned rows (up to 100k ceiling for browser performance)
+    - Export CSV button respects the admin-set row limit
+    - UI badge updated to show "Export Limit" for clarity
   - **Full-Width Query Execution Page**: Query Execution page now uses full browser width for more workspace
   - **Saved Queries Feature**: Users can save and load frequently-used SQL queries
     - Save button opens dialog to name and save current query
