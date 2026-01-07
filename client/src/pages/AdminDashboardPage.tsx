@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import StatsCard from "@/components/StatsCard";
 import QueryLimitControl from "@/components/QueryLimitControl";
@@ -21,12 +20,17 @@ export default function AdminDashboardPage() {
     queryFn: () => apiRequest('/api/logs'),
   });
 
-  const { data: rowLimitSetting } = useQuery({
+  const { data: exportLimitSetting } = useQuery({
     queryKey: ['/api/settings', 'row_limit'],
     queryFn: () => apiRequest('/api/settings/row_limit'),
   });
 
-  const updateLimitMutation = useMutation({
+  const { data: displayLimitSetting } = useQuery({
+    queryKey: ['/api/settings', 'display_limit'],
+    queryFn: () => apiRequest('/api/settings/display_limit'),
+  });
+
+  const updateExportLimitMutation = useMutation({
     mutationFn: (limit: number) => 
       apiRequest('/api/settings', {
         method: 'PUT',
@@ -36,13 +40,35 @@ export default function AdminDashboardPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/settings', 'row_limit'] });
       toast({
         title: "Success",
-        description: "Row limit updated successfully",
+        description: "Export limit updated successfully",
       });
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to update row limit",
+        description: error.message || "Failed to update export limit",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateDisplayLimitMutation = useMutation({
+    mutationFn: (limit: number) => 
+      apiRequest('/api/settings', {
+        method: 'PUT',
+        body: JSON.stringify({ key: 'display_limit', value: String(limit) }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/settings', 'display_limit'] });
+      toast({
+        title: "Success",
+        description: "Display limit updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update display limit",
         variant: "destructive",
       });
     },
@@ -99,8 +125,10 @@ export default function AdminDashboardPage() {
       </div>
 
       <QueryLimitControl 
-        currentLimit={rowLimitSetting ? parseInt(rowLimitSetting.value) : 1000}
-        onUpdate={(limit) => updateLimitMutation.mutate(limit)}
+        displayLimit={displayLimitSetting ? parseInt(displayLimitSetting.value) : 10000}
+        exportLimit={exportLimitSetting ? parseInt(exportLimitSetting.value) : 1000}
+        onUpdateDisplayLimit={(limit) => updateDisplayLimitMutation.mutate(limit)}
+        onUpdateExportLimit={(limit) => updateExportLimitMutation.mutate(limit)}
       />
 
       <UserManagementTable users={formattedUsers} />
