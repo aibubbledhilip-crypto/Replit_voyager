@@ -1,0 +1,29 @@
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ find /opt/bitnami/apache/htdocs/VoyagerAthena -name "index-*.js" 2>/dev/null
+/opt/bitnami/apache/htdocs/VoyagerAthena/server/public/assets/index-DZTWgjhw.js
+/opt/bitnami/apache/htdocs/VoyagerAthena/server/public/assets/index-Bwxlak7I.js
+/opt/bitnami/apache/htdocs/VoyagerAthena/server/public/assets/index-DsWrXjM5.js
+/opt/bitnami/apache/htdocs/VoyagerAthena/server/public/assets/index-Jbfu4u3y.js
+/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/puppeteer-core/lib/esm/puppeteer/index-browser.js
+/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/puppeteer-core/lib/cjs/puppeteer/index-browser.js
+/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/@babel/core/lib/config/files/index-browser.js
+/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/camelcase-css/index-es5.js
+/opt/bitnami/apache/htdocs/VoyagerAthena/dist/public/assets/index-Dqn5cFGF.js
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ ^C
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ ls -la /opt/bitnami/apache/htdocs/VoyagerAthena/dist/
+total 80
+drwxr-xr-x  3 bitnami bitnami  4096 Dec  7 03:30 .
+drwxr-xr-x 12 bitnami bitnami  4096 Jan  7 02:47 ..
+-rw-r--r--  1 bitnami bitnami 68150 Jan  7 02:47 index.js
+drwxr-xr-x  3 bitnami bitnami  4096 Jan  7 02:47 public
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$ ls -la /opt/bitnami/apache/htdocs/VoyagerAthena/server/public/assets/ 2>/dev/null
+total 4620
+drwxr-xr-x 2 bitnami bitnami    4096 Dec  9 19:39 .
+drwxr-xr-x 3 bitnami bitnami    4096 Dec  7 03:31 ..
+-rw-r--r-- 1 bitnami bitnami 1376470 Dec  9 19:39 Data_visualization_login_background_22211783-3lAhJdIK.png
+-rw-r--r-- 1 bitnami bitnami   75234 Dec  9 19:39 index-BtYi30Hr.css
+-rw-r--r-- 1 bitnami bitnami  803757 Dec  9 19:39 index-Bwxlak7I.js
+-rw-r--r-- 1 bitnami bitnami   74515 Dec  9 02:32 index-CQPeH3rd.css
+-rw-r--r-- 1 bitnami bitnami  783590 Dec  9 02:29 index-DsWrXjM5.js
+-rw-r--r-- 1 bitnami bitnami  782562 Dec  9 02:32 index-DZTWgjhw.js
+-rw-r--r-- 1 bitnami bitnami  803701 Dec  9 19:33 index-Jbfu4u3y.js
+bitnami@ip-172-26-10-121:/opt/bitnami/apache/htdocs/VoyagerAthena$
