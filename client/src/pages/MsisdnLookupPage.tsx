@@ -3,12 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, Download } from "lucide-react";
 import ResultsTable from "@/components/ResultsTable";
 import { apiRequest } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import * as XLSX from "xlsx";
 
 interface QueryResult {
   name: string;
@@ -77,6 +78,49 @@ export default function MsisdnLookupPage() {
     setMsisdn("");
   };
 
+  const handleExportExcel = () => {
+    if (!results) return;
+
+    const workbook = XLSX.utils.book_new();
+    const rowLimit = results.rowLimit;
+
+    results.results.forEach((result) => {
+      let sheetData: any[][] = [];
+      
+      if (result.status === 'success' && result.columns.length > 0) {
+        sheetData.push(result.columns);
+        
+        const exportData = result.data.slice(0, rowLimit);
+        exportData.forEach((row) => {
+          const rowValues = result.columns.map((col) => row[col] ?? '');
+          sheetData.push(rowValues);
+        });
+      } else if (result.status === 'error') {
+        sheetData.push(['Error']);
+        sheetData.push([result.error || 'Query failed']);
+      } else {
+        sheetData.push(['No data found']);
+      }
+
+      const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+      
+      if (result.columns.length > 0) {
+        const colWidths = result.columns.map((col) => ({ wch: Math.max(col.length, 15) }));
+        worksheet['!cols'] = colWidths;
+      }
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, result.name);
+    });
+
+    const fileName = `MSISDN_${results.msisdn}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+
+    toast({
+      title: "Export Complete",
+      description: `Downloaded ${fileName}`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -137,15 +181,25 @@ export default function MsisdnLookupPage() {
       {results && (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <div>
                 <CardTitle>Results for {results.msisdn}</CardTitle>
                 <CardDescription>
                   Found {results.totalRowsReturned} total rows across {results.results.length} sources
                 </CardDescription>
               </div>
-              <div className="text-sm text-muted-foreground">
-                Execution time: {results.executionTime}ms
+              <div className="flex items-center gap-4">
+                <div className="text-sm text-muted-foreground">
+                  Execution time: {results.executionTime}ms
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={handleExportExcel}
+                  data-testid="button-export-excel"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Excel
+                </Button>
               </div>
             </div>
           </CardHeader>
