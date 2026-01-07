@@ -487,8 +487,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limitSetting = await storage.getSetting('row_limit');
       const rowLimit = limitSetting ? parseInt(limitSetting.value) : 1000;
       
-      // For display, fetch all results (high ceiling to prevent runaway queries)
-      const displayLimit = 100000;
+      // For display, fetch results with a reasonable ceiling to prevent OOM on small servers
+      const displayLimit = 10000;
 
       // Initialize Athena client
       const athenaClient = new AthenaClient({
