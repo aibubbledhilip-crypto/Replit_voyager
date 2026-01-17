@@ -1124,14 +1124,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const systemPrompt = promptSetting?.value || `You are a data analyst assistant. Analyze the following data and provide insights:
+      const defaultPrompt = `You are a data analyst assistant. Analyze the following data and provide insights in plain, human-readable text format.
 
-1. Summarize the key findings from the data
-2. Identify any patterns or anomalies
-3. Provide actionable recommendations based on the data
-4. Highlight any data quality issues if present
+IMPORTANT: Do NOT output JSON or any structured data format. Write your analysis as clear, readable paragraphs and bullet points.
 
-Be concise and focus on the most important insights.`;
+Please provide:
+1. A brief summary of the key findings
+2. Any patterns, anomalies, or discrepancies found across the data sources
+3. Actionable recommendations based on the data
+4. Any data quality issues or missing values that need attention
+
+Be concise and focus on the most important insights. Use clear headings and bullet points for readability.`;
+
+      // If custom prompt exists but doesn't specify format, append format instructions
+      let systemPrompt = promptSetting?.value || defaultPrompt;
+      if (promptSetting?.value && !promptSetting.value.toLowerCase().includes('json')) {
+        systemPrompt = promptSetting.value + '\n\nIMPORTANT: Provide your response in plain text format with clear headings and bullet points. Do NOT use JSON format.';
+      }
 
       const analysis = await analyzeData({
         data,
