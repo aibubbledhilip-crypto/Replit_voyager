@@ -141,11 +141,18 @@ export default function ExplorerPage() {
   const handleAIAnalyze = async () => {
     if (!results) return;
 
-    const currentSource = results.results.find(r => r.name === activeTab);
-    if (!currentSource || currentSource.status !== 'success' || currentSource.data.length === 0) {
+    // Collect all successful results from all sources
+    const allSourcesData = results.results
+      .filter(r => r.status === 'success' && r.data.length > 0)
+      .map(r => ({
+        source: r.name,
+        data: r.data,
+      }));
+
+    if (allSourcesData.length === 0) {
       toast({
         title: "No Data to Analyze",
-        description: "Select a tab with data to analyze",
+        description: "No data found across any sources",
         variant: "destructive",
       });
       return;
@@ -158,8 +165,9 @@ export default function ExplorerPage() {
       const response = await apiRequest('/api/ai/analyze', {
         method: 'POST',
         body: JSON.stringify({
-          data: currentSource.data,
-          sourceName: currentSource.name,
+          data: allSourcesData,
+          sourceName: `MSISDN Lookup (${results.msisdn})`,
+          isMultiSource: true,
         }),
       });
 

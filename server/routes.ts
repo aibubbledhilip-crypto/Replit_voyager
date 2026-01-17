@@ -1145,13 +1145,27 @@ Be concise and focus on the most important insights.`;
         },
       });
 
+      // Calculate total rows (handle multi-source format)
+      const isMultiSource = Array.isArray(data) && data.length > 0 && 
+        data[0]?.source !== undefined && Array.isArray(data[0]?.data);
+      
+      let totalRows = 0;
+      if (isMultiSource) {
+        for (const sourceData of data) {
+          totalRows += sourceData.data?.length || 0;
+        }
+      } else {
+        totalRows = data.length;
+      }
+
       res.json({
         analysis,
         provider,
         model,
         sourceName,
-        rowsAnalyzed: data.length,
-        totalRows: data.length,
+        rowsAnalyzed: totalRows,
+        totalRows: totalRows,
+        sourcesAnalyzed: isMultiSource ? data.length : 1,
       });
     } catch (error: any) {
       console.error("AI analysis error:", error);

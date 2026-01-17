@@ -162,6 +162,31 @@ async function analyzeWithOllama(request: AnalysisRequest): Promise<string> {
 }
 
 function formatDataContext(data: any[], sourceName: string): string {
+  // Check if this is multi-source data (from Explorer with all sources)
+  const isMultiSource = Array.isArray(data) && data.length > 0 && 
+    data[0]?.source !== undefined && Array.isArray(data[0]?.data);
+
+  if (isMultiSource) {
+    let context = `Analysis Request: ${sourceName || 'Multi-Source Lookup'}\n\n`;
+    let totalRows = 0;
+    
+    for (const sourceData of data) {
+      const rowCount = sourceData.data?.length || 0;
+      totalRows += rowCount;
+      context += `=== ${sourceData.source} (${rowCount} rows) ===\n`;
+      if (rowCount > 0) {
+        context += JSON.stringify(sourceData.data, null, 2);
+      } else {
+        context += 'No data found';
+      }
+      context += '\n\n';
+    }
+    
+    context = `Total Sources: ${data.length}\nTotal Rows Across All Sources: ${totalRows}\n\n${context}`;
+    return context;
+  }
+
+  // Single source data
   return `Source: ${sourceName || 'Unknown'}
 Total Rows: ${data.length}
 Data:
