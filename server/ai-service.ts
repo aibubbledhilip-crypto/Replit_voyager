@@ -162,12 +162,10 @@ async function analyzeWithOllama(request: AnalysisRequest): Promise<string> {
 }
 
 function formatDataContext(data: any[], sourceName: string): string {
-  const maxRows = 100;
-  const sampleData = data.slice(0, maxRows);
   return `Source: ${sourceName || 'Unknown'}
 Total Rows: ${data.length}
-Sample Data (first ${Math.min(data.length, maxRows)} rows):
-${JSON.stringify(sampleData, null, 2)}`;
+Data:
+${JSON.stringify(data, null, 2)}`;
 }
 
 export async function analyzeData(request: AnalysisRequest): Promise<string> {

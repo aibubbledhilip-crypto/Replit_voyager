@@ -1150,7 +1150,7 @@ Be concise and focus on the most important insights.`;
         provider,
         model,
         sourceName,
-        rowsAnalyzed: Math.min(data.length, 100),
+        rowsAnalyzed: data.length,
         totalRows: data.length,
       });
     } catch (error: any) {
