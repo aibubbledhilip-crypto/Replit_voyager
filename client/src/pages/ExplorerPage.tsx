@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Search, Loader2, Download, Brain, X } from "lucide-react";
+import { Search, Loader2, Download, Brain, X, CheckCircle, AlertTriangle, AlertCircle, HelpCircle } from "lucide-react";
 import ResultsTable from "@/components/ResultsTable";
 import { apiRequest } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -11,7 +11,77 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import * as XLSX from "xlsx";
+
+interface AIIssue {
+  system: string;
+  field: string;
+  issue_type: string;
+  description: string;
+  expected: string | null;
+  actual: string | null;
+}
+
+interface ParsedAIAnalysis {
+  msisdn: string | null;
+  overall_status: "OK" | "HAS_ISSUES";
+  issues: AIIssue[];
+  qa?: {
+    question: string | null;
+    answer: string | null;
+  };
+}
+
+function tryParseAnalysis(analysis: string): ParsedAIAnalysis | null {
+  try {
+    // Try to extract JSON from the response (in case there's extra text)
+    const jsonMatch = analysis.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+    
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (parsed.overall_status && Array.isArray(parsed.issues)) {
+      return parsed as ParsedAIAnalysis;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function getIssueTypeColor(issueType: string): string {
+  switch (issueType) {
+    case "STATUS_MISMATCH":
+      return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+    case "CODE_MISMATCH":
+      return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400";
+    case "MISSING_VALUE":
+      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+    case "PORTED_OUT_CONFLICT":
+      return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400";
+    default:
+      return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
+  }
+}
+
+function getSystemColor(system: string): string {
+  switch (system) {
+    case "Salesforce":
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
+    case "Aria":
+      return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
+    case "Matrixx":
+      return "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400";
+    case "Nokia":
+      return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400";
+    case "TrueFinder":
+      return "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400";
+    case "Cross-System":
+      return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
+    default:
+      return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
+  }
+}
 
 interface QueryResult {
   name: string;
@@ -348,22 +418,126 @@ export default function ExplorerPage() {
       )}
 
       <Dialog open={showAnalysisDialog} onOpenChange={setShowAnalysisDialog}>
-        <DialogContent className="max-w-3xl max-h-[80vh]">
+        <DialogContent className="max-w-4xl max-h-[85vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Brain className="h-5 w-5" />
               AI Analysis - {analysisResult?.sourceName}
             </DialogTitle>
             <DialogDescription>
-              Analyzed {analysisResult?.rowsAnalyzed} of {analysisResult?.totalRows} rows using {analysisResult?.model}
+              Analyzed {analysisResult?.rowsAnalyzed} rows using {analysisResult?.model}
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
-            <div className="prose prose-sm dark:prose-invert max-w-none p-4">
-              <pre className="whitespace-pre-wrap text-sm font-normal">
-                {analysisResult?.analysis}
-              </pre>
-            </div>
+          <ScrollArea className="max-h-[70vh]">
+            {(() => {
+              const parsed = analysisResult?.analysis ? tryParseAnalysis(analysisResult.analysis) : null;
+              
+              if (parsed) {
+                return (
+                  <div className="space-y-4 p-4">
+                    {/* Status Header */}
+                    <div className={`flex items-center gap-3 p-4 rounded-lg ${
+                      parsed.overall_status === "OK" 
+                        ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800" 
+                        : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+                    }`}>
+                      {parsed.overall_status === "OK" ? (
+                        <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                      ) : (
+                        <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                      )}
+                      <div>
+                        <div className="font-semibold text-lg">
+                          {parsed.overall_status === "OK" ? "No Issues Found" : "Issues Detected"}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          MSISDN: {parsed.msisdn || "N/A"}
+                          {parsed.issues.length > 0 && ` • ${parsed.issues.length} issue${parsed.issues.length > 1 ? 's' : ''} found`}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Issues List */}
+                    {parsed.issues.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-base flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4" />
+                          Issues ({parsed.issues.length})
+                        </h3>
+                        {parsed.issues.map((issue, index) => (
+                          <Card key={index} className="border-l-4 border-l-destructive">
+                            <CardContent className="p-4 space-y-3">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Badge className={getSystemColor(issue.system)}>
+                                  {issue.system}
+                                </Badge>
+                                <Badge variant="outline" className={getIssueTypeColor(issue.issue_type)}>
+                                  {issue.issue_type.replace(/_/g, ' ')}
+                                </Badge>
+                                <span className="text-sm font-mono text-muted-foreground">
+                                  {issue.field}
+                                </span>
+                              </div>
+                              <p className="text-sm">{issue.description}</p>
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="bg-muted/50 rounded p-2">
+                                  <div className="text-xs text-muted-foreground mb-1">Expected</div>
+                                  <div className="font-mono text-xs break-all">
+                                    {issue.expected === null ? <span className="text-muted-foreground italic">null</span> : issue.expected}
+                                  </div>
+                                </div>
+                                <div className="bg-muted/50 rounded p-2">
+                                  <div className="text-xs text-muted-foreground mb-1">Actual</div>
+                                  <div className="font-mono text-xs break-all">
+                                    {issue.actual === null ? <span className="text-muted-foreground italic">null</span> : issue.actual}
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Q&A Section */}
+                    {parsed.qa && (parsed.qa.question || parsed.qa.answer) && (
+                      <div className="space-y-2">
+                        <Separator />
+                        <h3 className="font-semibold text-base flex items-center gap-2">
+                          <HelpCircle className="h-4 w-4" />
+                          Q&A
+                        </h3>
+                        <Card>
+                          <CardContent className="p-4 space-y-2">
+                            {parsed.qa.question && (
+                              <div>
+                                <div className="text-xs text-muted-foreground">Question</div>
+                                <div className="text-sm">{parsed.qa.question}</div>
+                              </div>
+                            )}
+                            {parsed.qa.answer && (
+                              <div>
+                                <div className="text-xs text-muted-foreground">Answer</div>
+                                <div className="text-sm">{parsed.qa.answer}</div>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              
+              // Fallback: display raw analysis if not JSON
+              return (
+                <div className="prose prose-sm dark:prose-invert max-w-none p-4">
+                  <pre className="whitespace-pre-wrap text-sm font-normal">
+                    {analysisResult?.analysis}
+                  </pre>
+                </div>
+              );
+            })()}
           </ScrollArea>
         </DialogContent>
       </Dialog>
