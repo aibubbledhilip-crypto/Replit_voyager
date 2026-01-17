@@ -48,11 +48,13 @@ export default function AIConfigPage() {
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState("gpt-4o");
   const [prompt, setPrompt] = useState(defaultPrompt);
-  const [showApiKey, setShowApiKey] = useState(false);
+  const [isApiKeyConfigured, setIsApiKeyConfigured] = useState(false);
+  const [maskedApiKey, setMaskedApiKey] = useState("");
 
   useEffect(() => {
-    if (apiKeySetting?.value) {
-      setApiKey(apiKeySetting.value);
+    if (apiKeySetting) {
+      setIsApiKeyConfigured(apiKeySetting.configured || false);
+      setMaskedApiKey(apiKeySetting.value || '');
     }
   }, [apiKeySetting]);
 
@@ -92,6 +94,8 @@ export default function AIConfigPage() {
       { key: 'openai_api_key', value: apiKey },
       {
         onSuccess: () => {
+          setApiKey("");
+          setIsApiKeyConfigured(true);
           toast({
             title: "Success",
             description: "API key saved successfully",
@@ -137,8 +141,6 @@ export default function AIConfigPage() {
     });
   };
 
-  const maskedApiKey = apiKey ? `${apiKey.slice(0, 7)}...${apiKey.slice(-4)}` : "";
-
   return (
     <div className="space-y-6">
       <div>
@@ -160,38 +162,39 @@ export default function AIConfigPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            {isApiKeyConfigured && (
+              <div className="p-3 bg-muted rounded-md">
+                <p className="text-sm text-muted-foreground">
+                  Current API key: <span className="font-mono">{maskedApiKey}</span>
+                </p>
+              </div>
+            )}
             <div className="space-y-2">
-              <Label htmlFor="api-key">API Key</Label>
+              <Label htmlFor="api-key">{isApiKeyConfigured ? "Update API Key" : "API Key"}</Label>
               <div className="flex gap-2">
                 <Input
                   id="api-key"
                   data-testid="input-api-key"
-                  type={showApiKey ? "text" : "password"}
+                  type="password"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="sk-..."
+                  placeholder={isApiKeyConfigured ? "Enter new key to update..." : "sk-..."}
                   className="flex-1"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowApiKey(!showApiKey)}
-                  data-testid="button-toggle-api-key"
-                >
-                  {showApiKey ? "Hide" : "Show"}
-                </Button>
               </div>
-              {apiKeySetting?.value && !showApiKey && (
-                <p className="text-sm text-muted-foreground">Current key: {maskedApiKey}</p>
-              )}
+              <p className="text-sm text-muted-foreground">
+                {isApiKeyConfigured 
+                  ? "Leave empty to keep current key, or enter a new key to update" 
+                  : "Enter your OpenAI API key starting with sk-"}
+              </p>
             </div>
             <Button
               onClick={handleSaveApiKey}
-              disabled={saveSettingMutation.isPending}
+              disabled={saveSettingMutation.isPending || !apiKey}
               data-testid="button-save-api-key"
             >
               <Save className="h-4 w-4 mr-2" />
-              Save API Key
+              {isApiKeyConfigured ? "Update API Key" : "Save API Key"}
             </Button>
           </div>
         </CardContent>

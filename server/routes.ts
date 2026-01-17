@@ -269,9 +269,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     explorer_column_nokia: 'msisdn',
   };
 
+  // Sensitive settings that require admin access
+  const sensitiveSettings = ['openai_api_key'];
+
   app.get("/api/settings/:key", requireAuth, async (req, res) => {
     try {
       const { key } = req.params;
+      
+      // Check if this is a sensitive setting
+      if (sensitiveSettings.includes(key)) {
+        // Only admins can access sensitive settings
+        const user = await storage.getUser(req.session.userId!);
+        if (!user || user.role !== 'admin') {
+          return res.status(403).json({ message: "Admin access required" });
+        }
+        
+        const setting = await storage.getSetting(key);
+        if (!setting) {
+          return res.json({ key, value: '', configured: false });
+        }
+        // Return masked value for API keys
+        const maskedValue = setting.value ? `${setting.value.slice(0, 7)}...${setting.value.slice(-4)}` : '';
+        return res.json({ key, value: maskedValue, configured: !!setting.value });
+      }
+      
       const setting = await storage.getSetting(key);
       if (!setting) {
         // Return default value if setting doesn't exist
