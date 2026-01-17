@@ -33,6 +33,23 @@ async function seed() {
     });
     console.log("✓ Set default display limit to 10000");
 
+    // Set default MSISDN lookup table configurations
+    const msisdnTables = [
+      { key: "msisdn_table_sf", value: "vw_sf_all_segment_hierarchy", label: "SF" },
+      { key: "msisdn_table_aria", value: "vw_aria_hierarchy_all_status_reverse", label: "Aria" },
+      { key: "msisdn_table_matrix", value: "vw_matrixx_plan", label: "Matrix" },
+      { key: "msisdn_table_trufinder", value: "vw_true_finder_raw", label: "Trufinder" },
+      { key: "msisdn_table_nokia", value: "vw_nokia_raw", label: "Nokia" },
+    ];
+
+    for (const table of msisdnTables) {
+      await storage.upsertSetting({
+        key: table.key,
+        value: table.value,
+      });
+      console.log(`✓ Set MSISDN ${table.label} table to ${table.value}`);
+    }
+
     console.log("Seed completed successfully!");
   } catch (error) {
     console.error("Seed failed:", error);

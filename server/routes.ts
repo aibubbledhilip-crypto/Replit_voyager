@@ -251,11 +251,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Settings routes
+  // Default settings values for when settings don't exist
+  const defaultSettings: Record<string, string> = {
+    row_limit: '1000',
+    display_limit: '10000',
+    msisdn_table_sf: 'vw_sf_all_segment_hierarchy',
+    msisdn_table_aria: 'vw_aria_hierarchy_all_status_reverse',
+    msisdn_table_matrix: 'vw_matrixx_plan',
+    msisdn_table_trufinder: 'vw_true_finder_raw',
+    msisdn_table_nokia: 'vw_nokia_raw',
+  };
+
   app.get("/api/settings/:key", requireAuth, async (req, res) => {
     try {
       const { key } = req.params;
       const setting = await storage.getSetting(key);
       if (!setting) {
+        // Return default value if setting doesn't exist
+        if (defaultSettings[key]) {
+          return res.json({ key, value: defaultSettings[key] });
+        }
         return res.status(404).json({ message: "Setting not found" });
       }
       res.json(setting);
@@ -588,6 +603,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const displayLimitSetting = await storage.getSetting('display_limit');
       const displayLimit = displayLimitSetting ? parseInt(displayLimitSetting.value) : 10000;
 
+      // Get MSISDN table configurations from settings
+      const sfTableSetting = await storage.getSetting('msisdn_table_sf');
+      const ariaTableSetting = await storage.getSetting('msisdn_table_aria');
+      const matrixTableSetting = await storage.getSetting('msisdn_table_matrix');
+      const trufinderTableSetting = await storage.getSetting('msisdn_table_trufinder');
+      const nokiaTableSetting = await storage.getSetting('msisdn_table_nokia');
+
+      const sfTable = sfTableSetting?.value || 'vw_sf_all_segment_hierarchy';
+      const ariaTable = ariaTableSetting?.value || 'vw_aria_hierarchy_all_status_reverse';
+      const matrixTable = matrixTableSetting?.value || 'vw_matrixx_plan';
+      const trufinderTable = trufinderTableSetting?.value || 'vw_true_finder_raw';
+      const nokiaTable = nokiaTableSetting?.value || 'vw_nokia_raw';
+
       // Initialize Athena client
       const athenaClient = new AthenaClient({
         region: process.env.AWS_REGION || 'us-east-1',
@@ -599,27 +627,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION || 's3://dvsum-staging-prod';
 
-      // Define all queries using sanitized MSISDN
+      // Define all queries using sanitized MSISDN and configured table names
       const queries = [
         {
           name: 'SF',
-          query: `select * from "dvsum-s3-glue-prod".vw_sf_all_segment_hierarchy where msisdn = '${sanitizedMsisdn}'`,
+          query: `select * from "dvsum-s3-glue-prod".${sfTable} where msisdn = '${sanitizedMsisdn}'`,
         },
         {
           name: 'Aria',
-          query: `select * from "dvsum-s3-glue-prod".vw_aria_hierarchy_all_status_reverse where msisdn = '${sanitizedMsisdn}'`,
+          query: `select * from "dvsum-s3-glue-prod".${ariaTable} where msisdn = '${sanitizedMsisdn}'`,
         },
         {
           name: 'Matrix',
-          query: `select * from "dvsum-s3-glue-prod".vw_matrixx_plan where msisdn = '${sanitizedMsisdn}'`,
+          query: `select * from "dvsum-s3-glue-prod".${matrixTable} where msisdn = '${sanitizedMsisdn}'`,
         },
         {
           name: 'Trufinder',
-          query: `select * from "dvsum-s3-glue-prod".vw_true_finder_raw where msisdn = '${sanitizedMsisdn}'`,
+          query: `select * from "dvsum-s3-glue-prod".${trufinderTable} where msisdn = '${sanitizedMsisdn}'`,
         },
         {
           name: 'Nokia',
-          query: `select * from "dvsum-s3-glue-prod".vw_nokia_raw where msisdn = '${sanitizedMsisdn}'`,
+          query: `select * from "dvsum-s3-glue-prod".${nokiaTable} where msisdn = '${sanitizedMsisdn}'`,
         },
       ];
 
