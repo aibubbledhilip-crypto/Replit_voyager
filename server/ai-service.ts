@@ -161,6 +161,25 @@ async function analyzeWithOllama(request: AnalysisRequest): Promise<string> {
   return result.message?.content || "Unable to generate analysis.";
 }
 
+function formatRowAsTable(row: Record<string, any>): string {
+  const lines: string[] = [];
+  for (const [key, value] of Object.entries(row)) {
+    const displayValue = value === null || value === undefined ? '(empty)' : String(value);
+    lines.push(`  ${key}: ${displayValue}`);
+  }
+  return lines.join('\n');
+}
+
+function formatDataAsReadable(rows: any[]): string {
+  if (!rows || rows.length === 0) return 'No data found';
+  
+  const formattedRows = rows.map((row, index) => {
+    return `Record ${index + 1}:\n${formatRowAsTable(row)}`;
+  });
+  
+  return formattedRows.join('\n\n');
+}
+
 function formatDataContext(data: any[], sourceName: string): string {
   // Check if this is multi-source data (from Explorer with all sources)
   const isMultiSource = Array.isArray(data) && data.length > 0 && 
@@ -175,7 +194,7 @@ function formatDataContext(data: any[], sourceName: string): string {
       totalRows += rowCount;
       context += `=== ${sourceData.source} (${rowCount} rows) ===\n`;
       if (rowCount > 0) {
-        context += JSON.stringify(sourceData.data, null, 2);
+        context += formatDataAsReadable(sourceData.data);
       } else {
         context += 'No data found';
       }
@@ -190,7 +209,7 @@ function formatDataContext(data: any[], sourceName: string): string {
   return `Source: ${sourceName || 'Unknown'}
 Total Rows: ${data.length}
 Data:
-${JSON.stringify(data, null, 2)}`;
+${formatDataAsReadable(data)}`;
 }
 
 export async function analyzeData(request: AnalysisRequest): Promise<string> {
