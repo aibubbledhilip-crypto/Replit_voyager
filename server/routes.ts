@@ -14,7 +14,7 @@ import { parseFile, compareDatasets, cleanupOldFiles } from "./file-comparison-h
 import { checkSftpFiles, testSftpConnection } from "./sftp-helper";
 import { insertSftpConfigSchema } from "@shared/schema";
 import { executeAthenaQueryWithPagination } from "./athena-helper";
-import { analyzeData, getDefaultModelForProvider, type AIProvider } from "./ai-service";
+import { analyzeData, getValidatedModel, type AIProvider } from "./ai-service";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1097,7 +1097,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ollamaUrlSetting = await storage.getSetting('ollama_url');
 
       const provider = (providerSetting?.value || 'openai') as AIProvider;
-      const model = modelSetting?.value || getDefaultModelForProvider(provider);
+      const model = getValidatedModel(provider, modelSetting?.value);
       
       // Get API key for the selected provider
       let apiKey: string | undefined;

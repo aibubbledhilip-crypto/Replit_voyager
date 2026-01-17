@@ -5,18 +5,48 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Brain, Key } from "lucide-react";
+import { Save, Brain, Key, Server, CheckCircle2 } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
-const availableModels = [
-  { value: "gpt-4o", label: "GPT-4o (Recommended)" },
-  { value: "gpt-4o-mini", label: "GPT-4o Mini (Faster)" },
-  { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
-  { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo (Cheapest)" },
+type AIProvider = 'openai' | 'anthropic' | 'gemini' | 'ollama';
+
+const AI_PROVIDERS = [
+  { value: 'openai' as const, label: 'OpenAI', keyName: 'OpenAI API Key', keyPrefix: 'sk-' },
+  { value: 'anthropic' as const, label: 'Anthropic Claude', keyName: 'Anthropic API Key', keyPrefix: 'sk-ant-' },
+  { value: 'gemini' as const, label: 'Google Gemini', keyName: 'Google API Key', keyPrefix: 'AI' },
+  { value: 'ollama' as const, label: 'Ollama (Local)', keyName: 'Ollama URL', keyPrefix: 'http' },
 ];
+
+const PROVIDER_MODELS: Record<AIProvider, { value: string; label: string }[]> = {
+  openai: [
+    { value: "gpt-4o", label: "GPT-4o (Recommended)" },
+    { value: "gpt-4o-mini", label: "GPT-4o Mini (Faster)" },
+    { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
+    { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo (Cheapest)" },
+  ],
+  anthropic: [
+    { value: "claude-sonnet-4-20250514", label: "Claude Sonnet 4 (Recommended)" },
+    { value: "claude-3-5-sonnet-20241022", label: "Claude 3.5 Sonnet" },
+    { value: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku (Faster)" },
+    { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
+  ],
+  gemini: [
+    { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro (Recommended)" },
+    { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash (Faster)" },
+    { value: "gemini-pro", label: "Gemini Pro" },
+  ],
+  ollama: [
+    { value: "llama3.2", label: "Llama 3.2" },
+    { value: "llama3.1", label: "Llama 3.1" },
+    { value: "mistral", label: "Mistral" },
+    { value: "codellama", label: "Code Llama" },
+    { value: "mixtral", label: "Mixtral" },
+  ],
+};
 
 const defaultPrompt = `You are a data analyst assistant. Analyze the following data and provide insights:
 
@@ -30,9 +60,9 @@ Be concise and focus on the most important insights.`;
 export default function AIConfigPage() {
   const { toast } = useToast();
 
-  const { data: apiKeySetting } = useQuery({
-    queryKey: ['/api/settings', 'openai_api_key'],
-    queryFn: () => apiRequest('/api/settings/openai_api_key'),
+  const { data: providerSetting } = useQuery({
+    queryKey: ['/api/settings', 'ai_provider'],
+    queryFn: () => apiRequest('/api/settings/ai_provider'),
   });
 
   const { data: modelSetting } = useQuery({
@@ -45,18 +75,43 @@ export default function AIConfigPage() {
     queryFn: () => apiRequest('/api/settings/ai_analysis_prompt'),
   });
 
-  const [apiKey, setApiKey] = useState("");
+  const { data: openaiKeySetting } = useQuery({
+    queryKey: ['/api/settings', 'openai_api_key'],
+    queryFn: () => apiRequest('/api/settings/openai_api_key'),
+  });
+
+  const { data: anthropicKeySetting } = useQuery({
+    queryKey: ['/api/settings', 'anthropic_api_key'],
+    queryFn: () => apiRequest('/api/settings/anthropic_api_key'),
+  });
+
+  const { data: geminiKeySetting } = useQuery({
+    queryKey: ['/api/settings', 'gemini_api_key'],
+    queryFn: () => apiRequest('/api/settings/gemini_api_key'),
+  });
+
+  const { data: ollamaUrlSetting } = useQuery({
+    queryKey: ['/api/settings', 'ollama_url'],
+    queryFn: () => apiRequest('/api/settings/ollama_url'),
+  });
+
+  const [provider, setProvider] = useState<AIProvider>('openai');
   const [model, setModel] = useState("gpt-4o");
   const [prompt, setPrompt] = useState(defaultPrompt);
-  const [isApiKeyConfigured, setIsApiKeyConfigured] = useState(false);
-  const [maskedApiKey, setMaskedApiKey] = useState("");
+  
+  const [openaiKey, setOpenaiKey] = useState("");
+  const [anthropicKey, setAnthropicKey] = useState("");
+  const [geminiKey, setGeminiKey] = useState("");
+  const [ollamaUrl, setOllamaUrl] = useState("http://localhost:11434");
+
+  const [configuredKeys, setConfiguredKeys] = useState<Record<string, { configured: boolean; masked: string }>>({});
+  const [isChangingProvider, setIsChangingProvider] = useState(false);
 
   useEffect(() => {
-    if (apiKeySetting) {
-      setIsApiKeyConfigured(apiKeySetting.configured || false);
-      setMaskedApiKey(apiKeySetting.value || '');
+    if (providerSetting?.value) {
+      setProvider(providerSetting.value as AIProvider);
     }
-  }, [apiKeySetting]);
+  }, [providerSetting]);
 
   useEffect(() => {
     if (modelSetting?.value) {
@@ -69,6 +124,39 @@ export default function AIConfigPage() {
       setPrompt(promptSetting.value);
     }
   }, [promptSetting]);
+
+  useEffect(() => {
+    if (openaiKeySetting) {
+      setConfiguredKeys(prev => ({
+        ...prev,
+        openai: { configured: openaiKeySetting.configured || false, masked: openaiKeySetting.value || '' }
+      }));
+    }
+  }, [openaiKeySetting]);
+
+  useEffect(() => {
+    if (anthropicKeySetting) {
+      setConfiguredKeys(prev => ({
+        ...prev,
+        anthropic: { configured: anthropicKeySetting.configured || false, masked: anthropicKeySetting.value || '' }
+      }));
+    }
+  }, [anthropicKeySetting]);
+
+  useEffect(() => {
+    if (geminiKeySetting) {
+      setConfiguredKeys(prev => ({
+        ...prev,
+        gemini: { configured: geminiKeySetting.configured || false, masked: geminiKeySetting.value || '' }
+      }));
+    }
+  }, [geminiKeySetting]);
+
+  useEffect(() => {
+    if (ollamaUrlSetting?.value) {
+      setOllamaUrl(ollamaUrlSetting.value);
+    }
+  }, [ollamaUrlSetting]);
 
   const saveSettingMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
@@ -89,16 +177,68 @@ export default function AIConfigPage() {
     },
   });
 
-  const handleSaveApiKey = () => {
+  const handleProviderChange = async (newProvider: AIProvider) => {
+    if (isChangingProvider) return;
+    
+    const defaultModel = PROVIDER_MODELS[newProvider]?.[0]?.value || '';
+    setIsChangingProvider(true);
+    
+    try {
+      await apiRequest('/api/settings', {
+        method: 'PUT',
+        body: JSON.stringify({ key: 'ai_provider', value: newProvider }),
+      });
+      
+      await apiRequest('/api/settings', {
+        method: 'PUT',
+        body: JSON.stringify({ key: 'ai_model', value: defaultModel }),
+      });
+      
+      setProvider(newProvider);
+      setModel(defaultModel);
+      
+      await queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
+      
+      toast({
+        title: "Provider Changed",
+        description: `Switched to ${AI_PROVIDERS.find(p => p.value === newProvider)?.label}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to change provider",
+        variant: "destructive",
+      });
+    } finally {
+      setIsChangingProvider(false);
+    }
+  };
+
+  const handleSaveApiKey = (providerKey: AIProvider) => {
+    const keyMap: Record<AIProvider, { settingKey: string; value: string; setter: (v: string) => void }> = {
+      openai: { settingKey: 'openai_api_key', value: openaiKey, setter: setOpenaiKey },
+      anthropic: { settingKey: 'anthropic_api_key', value: anthropicKey, setter: setAnthropicKey },
+      gemini: { settingKey: 'gemini_api_key', value: geminiKey, setter: setGeminiKey },
+      ollama: { settingKey: 'ollama_url', value: ollamaUrl, setter: setOllamaUrl },
+    };
+
+    const config = keyMap[providerKey];
+    if (!config.value) return;
+
     saveSettingMutation.mutate(
-      { key: 'openai_api_key', value: apiKey },
+      { key: config.settingKey, value: config.value },
       {
         onSuccess: () => {
-          setApiKey("");
-          setIsApiKeyConfigured(true);
+          if (providerKey !== 'ollama') {
+            config.setter("");
+            setConfiguredKeys(prev => ({
+              ...prev,
+              [providerKey]: { configured: true, masked: `${config.value.slice(0, 7)}...${config.value.slice(-4)}` }
+            }));
+          }
           toast({
             title: "Success",
-            description: "API key saved successfully",
+            description: `${AI_PROVIDERS.find(p => p.value === providerKey)?.keyName} saved successfully`,
           });
         },
       }
@@ -141,61 +281,192 @@ export default function AIConfigPage() {
     });
   };
 
+  const currentProviderInfo = AI_PROVIDERS.find(p => p.value === provider);
+  const availableModels = PROVIDER_MODELS[provider] || [];
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-semibold mb-2">AI Configuration</h1>
-        <p className="text-muted-foreground">Configure AI settings for data analysis in Explorer</p>
+        <p className="text-muted-foreground">Configure AI providers and settings for data analysis in Explorer</p>
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Key className="h-5 w-5 text-muted-foreground" />
+            <Server className="h-5 w-5 text-muted-foreground" />
             <div>
-              <CardTitle>OpenAI API Key</CardTitle>
+              <CardTitle>AI Provider</CardTitle>
               <CardDescription>
-                Your OpenAI API key for AI-powered data analysis
+                Select your preferred AI provider for data analysis
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {isApiKeyConfigured && (
-              <div className="p-3 bg-muted rounded-md">
-                <p className="text-sm text-muted-foreground">
-                  Current API key: <span className="font-mono">{maskedApiKey}</span>
-                </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {AI_PROVIDERS.map((p) => {
+                const isConfigured = p.value === 'ollama' || configuredKeys[p.value]?.configured;
+                return (
+                  <Button
+                    key={p.value}
+                    variant={provider === p.value ? "default" : "outline"}
+                    className="h-auto py-4 flex flex-col gap-1 relative"
+                    onClick={() => handleProviderChange(p.value)}
+                    disabled={isChangingProvider}
+                    data-testid={`button-provider-${p.value}`}
+                  >
+                    <span className="font-medium">{p.label}</span>
+                    {isConfigured && (
+                      <Badge variant="secondary" className="text-xs">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Ready
+                      </Badge>
+                    )}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Key className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <CardTitle>{currentProviderInfo?.keyName || 'API Key'}</CardTitle>
+              <CardDescription>
+                {provider === 'ollama' 
+                  ? 'Configure the URL for your local Ollama instance'
+                  : `Configure your ${currentProviderInfo?.label} API credentials`}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {provider === 'openai' && (
+              <div className="space-y-4">
+                {configuredKeys.openai?.configured && (
+                  <div className="p-3 bg-muted rounded-md">
+                    <p className="text-sm text-muted-foreground">
+                      Current key: <span className="font-mono">{configuredKeys.openai.masked}</span>
+                    </p>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label>OpenAI API Key</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="password"
+                      value={openaiKey}
+                      onChange={(e) => setOpenaiKey(e.target.value)}
+                      placeholder={configuredKeys.openai?.configured ? "Enter new key to update..." : "sk-..."}
+                      data-testid="input-openai-key"
+                    />
+                    <Button
+                      onClick={() => handleSaveApiKey('openai')}
+                      disabled={saveSettingMutation.isPending || !openaiKey}
+                      data-testid="button-save-openai-key"
+                    >
+                      <Save className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="api-key">{isApiKeyConfigured ? "Update API Key" : "API Key"}</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="api-key"
-                  data-testid="input-api-key"
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder={isApiKeyConfigured ? "Enter new key to update..." : "sk-..."}
-                  className="flex-1"
-                />
+
+            {provider === 'anthropic' && (
+              <div className="space-y-4">
+                {configuredKeys.anthropic?.configured && (
+                  <div className="p-3 bg-muted rounded-md">
+                    <p className="text-sm text-muted-foreground">
+                      Current key: <span className="font-mono">{configuredKeys.anthropic.masked}</span>
+                    </p>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label>Anthropic API Key</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="password"
+                      value={anthropicKey}
+                      onChange={(e) => setAnthropicKey(e.target.value)}
+                      placeholder={configuredKeys.anthropic?.configured ? "Enter new key to update..." : "sk-ant-..."}
+                      data-testid="input-anthropic-key"
+                    />
+                    <Button
+                      onClick={() => handleSaveApiKey('anthropic')}
+                      disabled={saveSettingMutation.isPending || !anthropicKey}
+                      data-testid="button-save-anthropic-key"
+                    >
+                      <Save className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {isApiKeyConfigured 
-                  ? "Leave empty to keep current key, or enter a new key to update" 
-                  : "Enter your OpenAI API key starting with sk-"}
-              </p>
-            </div>
-            <Button
-              onClick={handleSaveApiKey}
-              disabled={saveSettingMutation.isPending || !apiKey}
-              data-testid="button-save-api-key"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {isApiKeyConfigured ? "Update API Key" : "Save API Key"}
-            </Button>
+            )}
+
+            {provider === 'gemini' && (
+              <div className="space-y-4">
+                {configuredKeys.gemini?.configured && (
+                  <div className="p-3 bg-muted rounded-md">
+                    <p className="text-sm text-muted-foreground">
+                      Current key: <span className="font-mono">{configuredKeys.gemini.masked}</span>
+                    </p>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label>Google API Key</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="password"
+                      value={geminiKey}
+                      onChange={(e) => setGeminiKey(e.target.value)}
+                      placeholder={configuredKeys.gemini?.configured ? "Enter new key to update..." : "AI..."}
+                      data-testid="input-gemini-key"
+                    />
+                    <Button
+                      onClick={() => handleSaveApiKey('gemini')}
+                      disabled={saveSettingMutation.isPending || !geminiKey}
+                      data-testid="button-save-gemini-key"
+                    >
+                      <Save className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {provider === 'ollama' && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Ollama Server URL</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      value={ollamaUrl}
+                      onChange={(e) => setOllamaUrl(e.target.value)}
+                      placeholder="http://localhost:11434"
+                      data-testid="input-ollama-url"
+                    />
+                    <Button
+                      onClick={() => handleSaveApiKey('ollama')}
+                      disabled={saveSettingMutation.isPending || !ollamaUrl}
+                      data-testid="button-save-ollama-url"
+                    >
+                      <Save className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Make sure Ollama is running locally with the desired model pulled
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -207,7 +478,7 @@ export default function AIConfigPage() {
             <div>
               <CardTitle>Model Selection</CardTitle>
               <CardDescription>
-                Choose the OpenAI model for analysis
+                Choose the model for {currentProviderInfo?.label}
               </CardDescription>
             </div>
           </div>

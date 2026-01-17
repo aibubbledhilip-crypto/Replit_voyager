@@ -51,7 +51,23 @@ export function getModelsForProvider(provider: AIProvider): { value: string; lab
 
 export function getDefaultModelForProvider(provider: AIProvider): string {
   const models = PROVIDER_MODELS[provider];
-  return models?.[0]?.value || '';
+  if (!models || models.length === 0) {
+    throw new Error(`No models available for provider: ${provider}`);
+  }
+  return models[0].value;
+}
+
+export function isValidModelForProvider(provider: AIProvider, model: string): boolean {
+  const models = PROVIDER_MODELS[provider];
+  if (!models) return false;
+  return models.some(m => m.value === model);
+}
+
+export function getValidatedModel(provider: AIProvider, model: string | undefined): string {
+  if (model && isValidModelForProvider(provider, model)) {
+    return model;
+  }
+  return getDefaultModelForProvider(provider);
 }
 
 async function analyzeWithOpenAI(request: AnalysisRequest): Promise<string> {
