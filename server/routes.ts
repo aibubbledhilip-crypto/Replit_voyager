@@ -14,7 +14,7 @@ import { parseFile, compareDatasets, cleanupOldFiles } from "./file-comparison-h
 import { checkSftpFiles, testSftpConnection } from "./sftp-helper";
 import { insertSftpConfigSchema } from "@shared/schema";
 import { executeAthenaQueryWithPagination } from "./athena-helper";
-import OpenAI from "openai";
+import { analyzeData, getDefaultModelForProvider, type AIProvider } from "./ai-service";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -270,7 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Sensitive settings that require admin access
-  const sensitiveSettings = ['openai_api_key'];
+  const sensitiveSettings = ['openai_api_key', 'anthropic_api_key', 'gemini_api_key'];
 
   app.get("/api/settings/:key", requireAuth, async (req, res) => {
     try {
@@ -1091,16 +1091,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get AI settings
-      const apiKeySetting = await storage.getSetting('openai_api_key');
+      const providerSetting = await storage.getSetting('ai_provider');
       const modelSetting = await storage.getSetting('ai_model');
       const promptSetting = await storage.getSetting('ai_analysis_prompt');
+      const ollamaUrlSetting = await storage.getSetting('ollama_url');
 
-      const apiKey = apiKeySetting?.value;
-      if (!apiKey) {
-        return res.status(400).json({ message: "OpenAI API key not configured. Please configure it in Administration > AI Configuration." });
+      const provider = (providerSetting?.value || 'openai') as AIProvider;
+      const model = modelSetting?.value || getDefaultModelForProvider(provider);
+      
+      // Get API key for the selected provider
+      let apiKey: string | undefined;
+      if (provider === 'openai') {
+        const keySetting = await storage.getSetting('openai_api_key');
+        apiKey = keySetting?.value;
+      } else if (provider === 'anthropic') {
+        const keySetting = await storage.getSetting('anthropic_api_key');
+        apiKey = keySetting?.value;
+      } else if (provider === 'gemini') {
+        const keySetting = await storage.getSetting('gemini_api_key');
+        apiKey = keySetting?.value;
       }
 
-      const model = modelSetting?.value || 'gpt-4o';
+      // Validate API key (not required for Ollama)
+      if (provider !== 'ollama' && !apiKey) {
+        const providerNames: Record<string, string> = {
+          openai: 'OpenAI',
+          anthropic: 'Anthropic',
+          gemini: 'Google Gemini',
+        };
+        return res.status(400).json({ 
+          message: `${providerNames[provider] || provider} API key not configured. Please configure it in Administration > AI Configuration.` 
+        });
+      }
+
       const systemPrompt = promptSetting?.value || `You are a data analyst assistant. Analyze the following data and provide insights:
 
 1. Summarize the key findings from the data
@@ -1110,41 +1133,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 Be concise and focus on the most important insights.`;
 
-      // Prepare data summary for analysis (limit to prevent token overflow)
-      const maxRows = 100;
-      const sampleData = data.slice(0, maxRows);
-      const dataContext = `Source: ${sourceName || 'Unknown'}
-Total Rows: ${data.length}
-Sample Data (first ${Math.min(data.length, maxRows)} rows):
-${JSON.stringify(sampleData, null, 2)}`;
-
-      // Initialize OpenAI client
-      const openai = new OpenAI({ apiKey });
-
-      const completion = await openai.chat.completions.create({
-        model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Please analyze the following data:\n\n${dataContext}` },
-        ],
-        max_tokens: 2000,
-        temperature: 0.7,
+      const analysis = await analyzeData({
+        data,
+        sourceName,
+        systemPrompt,
+        config: {
+          provider,
+          apiKey,
+          model,
+          ollamaUrl: ollamaUrlSetting?.value || 'http://localhost:11434',
+        },
       });
-
-      const analysis = completion.choices[0]?.message?.content || "Unable to generate analysis.";
 
       res.json({
         analysis,
+        provider,
         model,
         sourceName,
-        rowsAnalyzed: Math.min(data.length, maxRows),
+        rowsAnalyzed: Math.min(data.length, 100),
         totalRows: data.length,
       });
     } catch (error: any) {
       console.error("AI analysis error:", error);
       res.status(500).json({ 
         message: error.message || "Failed to analyze data",
-        details: error.code === 'invalid_api_key' ? 'Invalid OpenAI API key' : undefined
       });
     }
   });
