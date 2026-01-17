@@ -33,21 +33,25 @@ async function seed() {
     });
     console.log("✓ Set default display limit to 10000");
 
-    // Set default MSISDN lookup table configurations
-    const msisdnTables = [
-      { key: "msisdn_table_sf", value: "vw_sf_all_segment_hierarchy", label: "SF" },
-      { key: "msisdn_table_aria", value: "vw_aria_hierarchy_all_status_reverse", label: "Aria" },
-      { key: "msisdn_table_matrix", value: "vw_matrixx_plan", label: "Matrix" },
-      { key: "msisdn_table_trufinder", value: "vw_true_finder_raw", label: "Trufinder" },
-      { key: "msisdn_table_nokia", value: "vw_nokia_raw", label: "Nokia" },
+    // Set default Explorer configurations (table and column for each data source)
+    const explorerConfigs = [
+      { table: "explorer_table_sf", column: "explorer_column_sf", tableValue: "vw_sf_all_segment_hierarchy", columnValue: "msisdn", label: "SF" },
+      { table: "explorer_table_aria", column: "explorer_column_aria", tableValue: "vw_aria_hierarchy_all_status_reverse", columnValue: "msisdn", label: "Aria" },
+      { table: "explorer_table_matrix", column: "explorer_column_matrix", tableValue: "vw_matrixx_plan", columnValue: "msisdn", label: "Matrix" },
+      { table: "explorer_table_trufinder", column: "explorer_column_trufinder", tableValue: "vw_true_finder_raw", columnValue: "msisdn", label: "Trufinder" },
+      { table: "explorer_table_nokia", column: "explorer_column_nokia", tableValue: "vw_nokia_raw", columnValue: "msisdn", label: "Nokia" },
     ];
 
-    for (const table of msisdnTables) {
+    for (const config of explorerConfigs) {
       await storage.upsertSetting({
-        key: table.key,
-        value: table.value,
+        key: config.table,
+        value: config.tableValue,
       });
-      console.log(`✓ Set MSISDN ${table.label} table to ${table.value}`);
+      await storage.upsertSetting({
+        key: config.column,
+        value: config.columnValue,
+      });
+      console.log(`✓ Set Explorer ${config.label}: table=${config.tableValue}, column=${config.columnValue}`);
     }
 
     console.log("Seed completed successfully!");

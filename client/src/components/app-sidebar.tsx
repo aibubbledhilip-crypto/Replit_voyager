@@ -61,6 +61,11 @@ const adminItems: MenuItem[] = [
     icon: LayoutDashboard,
   },
   {
+    title: "Explorer Config",
+    url: "/admin/explorer-config",
+    icon: Search,
+  },
+  {
     title: "SFTP Configuration",
     url: "/admin/sftp-config",
     icon: Server,

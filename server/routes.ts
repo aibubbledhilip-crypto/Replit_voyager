@@ -255,11 +255,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const defaultSettings: Record<string, string> = {
     row_limit: '1000',
     display_limit: '10000',
-    msisdn_table_sf: 'vw_sf_all_segment_hierarchy',
-    msisdn_table_aria: 'vw_aria_hierarchy_all_status_reverse',
-    msisdn_table_matrix: 'vw_matrixx_plan',
-    msisdn_table_trufinder: 'vw_true_finder_raw',
-    msisdn_table_nokia: 'vw_nokia_raw',
+    explorer_table_sf: 'vw_sf_all_segment_hierarchy',
+    explorer_column_sf: 'msisdn',
+    explorer_table_aria: 'vw_aria_hierarchy_all_status_reverse',
+    explorer_column_aria: 'msisdn',
+    explorer_table_matrix: 'vw_matrixx_plan',
+    explorer_column_matrix: 'msisdn',
+    explorer_table_trufinder: 'vw_true_finder_raw',
+    explorer_column_trufinder: 'msisdn',
+    explorer_table_nokia: 'vw_nokia_raw',
+    explorer_column_nokia: 'msisdn',
   };
 
   app.get("/api/settings/:key", requireAuth, async (req, res) => {
@@ -603,18 +608,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const displayLimitSetting = await storage.getSetting('display_limit');
       const displayLimit = displayLimitSetting ? parseInt(displayLimitSetting.value) : 10000;
 
-      // Get MSISDN table configurations from settings
-      const sfTableSetting = await storage.getSetting('msisdn_table_sf');
-      const ariaTableSetting = await storage.getSetting('msisdn_table_aria');
-      const matrixTableSetting = await storage.getSetting('msisdn_table_matrix');
-      const trufinderTableSetting = await storage.getSetting('msisdn_table_trufinder');
-      const nokiaTableSetting = await storage.getSetting('msisdn_table_nokia');
+      // Get Explorer configurations from settings (table and column for each data source)
+      const sfTableSetting = await storage.getSetting('explorer_table_sf');
+      const sfColumnSetting = await storage.getSetting('explorer_column_sf');
+      const ariaTableSetting = await storage.getSetting('explorer_table_aria');
+      const ariaColumnSetting = await storage.getSetting('explorer_column_aria');
+      const matrixTableSetting = await storage.getSetting('explorer_table_matrix');
+      const matrixColumnSetting = await storage.getSetting('explorer_column_matrix');
+      const trufinderTableSetting = await storage.getSetting('explorer_table_trufinder');
+      const trufinderColumnSetting = await storage.getSetting('explorer_column_trufinder');
+      const nokiaTableSetting = await storage.getSetting('explorer_table_nokia');
+      const nokiaColumnSetting = await storage.getSetting('explorer_column_nokia');
 
       const sfTable = sfTableSetting?.value || 'vw_sf_all_segment_hierarchy';
+      const sfColumn = sfColumnSetting?.value || 'msisdn';
       const ariaTable = ariaTableSetting?.value || 'vw_aria_hierarchy_all_status_reverse';
+      const ariaColumn = ariaColumnSetting?.value || 'msisdn';
       const matrixTable = matrixTableSetting?.value || 'vw_matrixx_plan';
+      const matrixColumn = matrixColumnSetting?.value || 'msisdn';
       const trufinderTable = trufinderTableSetting?.value || 'vw_true_finder_raw';
+      const trufinderColumn = trufinderColumnSetting?.value || 'msisdn';
       const nokiaTable = nokiaTableSetting?.value || 'vw_nokia_raw';
+      const nokiaColumn = nokiaColumnSetting?.value || 'msisdn';
 
       // Initialize Athena client
       const athenaClient = new AthenaClient({
@@ -627,27 +642,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION || 's3://dvsum-staging-prod';
 
-      // Define all queries using sanitized MSISDN and configured table names
+      // Define all queries using sanitized search value and configured table/column names
       const queries = [
         {
           name: 'SF',
-          query: `select * from "dvsum-s3-glue-prod".${sfTable} where msisdn = '${sanitizedMsisdn}'`,
+          query: `select * from "dvsum-s3-glue-prod".${sfTable} where ${sfColumn} = '${sanitizedMsisdn}'`,
         },
         {
           name: 'Aria',
-          query: `select * from "dvsum-s3-glue-prod".${ariaTable} where msisdn = '${sanitizedMsisdn}'`,
+          query: `select * from "dvsum-s3-glue-prod".${ariaTable} where ${ariaColumn} = '${sanitizedMsisdn}'`,
         },
         {
           name: 'Matrix',
-          query: `select * from "dvsum-s3-glue-prod".${matrixTable} where msisdn = '${sanitizedMsisdn}'`,
+          query: `select * from "dvsum-s3-glue-prod".${matrixTable} where ${matrixColumn} = '${sanitizedMsisdn}'`,
         },
         {
           name: 'Trufinder',
-          query: `select * from "dvsum-s3-glue-prod".${trufinderTable} where msisdn = '${sanitizedMsisdn}'`,
+          query: `select * from "dvsum-s3-glue-prod".${trufinderTable} where ${trufinderColumn} = '${sanitizedMsisdn}'`,
         },
         {
           name: 'Nokia',
-          query: `select * from "dvsum-s3-glue-prod".${nokiaTable} where msisdn = '${sanitizedMsisdn}'`,
+          query: `select * from "dvsum-s3-glue-prod".${nokiaTable} where ${nokiaColumn} = '${sanitizedMsisdn}'`,
         },
       ];
 

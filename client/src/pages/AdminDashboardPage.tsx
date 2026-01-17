@@ -2,7 +2,6 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import StatsCard from "@/components/StatsCard";
 import QueryLimitControl from "@/components/QueryLimitControl";
 import UserManagementTable from "@/components/UserManagementTable";
-import MsisdnTableConfig from "@/components/MsisdnTableConfig";
 import { Activity, Users, Clock, Database } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
@@ -29,31 +28,6 @@ export default function AdminDashboardPage() {
   const { data: displayLimitSetting } = useQuery({
     queryKey: ['/api/settings', 'display_limit'],
     queryFn: () => apiRequest('/api/settings/display_limit'),
-  });
-
-  const { data: msisdnTablesSf } = useQuery({
-    queryKey: ['/api/settings', 'msisdn_table_sf'],
-    queryFn: () => apiRequest('/api/settings/msisdn_table_sf'),
-  });
-
-  const { data: msisdnTablesAria } = useQuery({
-    queryKey: ['/api/settings', 'msisdn_table_aria'],
-    queryFn: () => apiRequest('/api/settings/msisdn_table_aria'),
-  });
-
-  const { data: msisdnTablesMatrix } = useQuery({
-    queryKey: ['/api/settings', 'msisdn_table_matrix'],
-    queryFn: () => apiRequest('/api/settings/msisdn_table_matrix'),
-  });
-
-  const { data: msisdnTablesTrufinder } = useQuery({
-    queryKey: ['/api/settings', 'msisdn_table_trufinder'],
-    queryFn: () => apiRequest('/api/settings/msisdn_table_trufinder'),
-  });
-
-  const { data: msisdnTablesNokia } = useQuery({
-    queryKey: ['/api/settings', 'msisdn_table_nokia'],
-    queryFn: () => apiRequest('/api/settings/msisdn_table_nokia'),
   });
 
   const updateExportLimitMutation = useMutation({
@@ -95,39 +69,6 @@ export default function AdminDashboardPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to update display limit",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateMsisdnTablesMutation = useMutation({
-    mutationFn: async (tables: { sf: string; aria: string; matrix: string; trufinder: string; nokia: string }) => {
-      const updates = [
-        { key: 'msisdn_table_sf', value: tables.sf },
-        { key: 'msisdn_table_aria', value: tables.aria },
-        { key: 'msisdn_table_matrix', value: tables.matrix },
-        { key: 'msisdn_table_trufinder', value: tables.trufinder },
-        { key: 'msisdn_table_nokia', value: tables.nokia },
-      ];
-      
-      for (const update of updates) {
-        await apiRequest('/api/settings', {
-          method: 'PUT',
-          body: JSON.stringify(update),
-        });
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
-      toast({
-        title: "Success",
-        description: "MSISDN lookup tables updated successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update MSISDN tables",
         variant: "destructive",
       });
     },
@@ -188,18 +129,6 @@ export default function AdminDashboardPage() {
         exportLimit={exportLimitSetting ? parseInt(exportLimitSetting.value) : 1000}
         onUpdateDisplayLimit={(limit) => updateDisplayLimitMutation.mutate(limit)}
         onUpdateExportLimit={(limit) => updateExportLimitMutation.mutate(limit)}
-      />
-
-      <MsisdnTableConfig 
-        tables={{
-          sf: msisdnTablesSf?.value || 'vw_sf_all_segment_hierarchy',
-          aria: msisdnTablesAria?.value || 'vw_aria_hierarchy_all_status_reverse',
-          matrix: msisdnTablesMatrix?.value || 'vw_matrixx_plan',
-          trufinder: msisdnTablesTrufinder?.value || 'vw_true_finder_raw',
-          nokia: msisdnTablesNokia?.value || 'vw_nokia_raw',
-        }}
-        onSave={(tables) => updateMsisdnTablesMutation.mutate(tables)}
-        isLoading={updateMsisdnTablesMutation.isPending}
       />
 
       <UserManagementTable users={formattedUsers} />
