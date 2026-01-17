@@ -255,6 +255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const defaultSettings: Record<string, string> = {
     row_limit: '1000',
     display_limit: '10000',
+    athena_database: 'dvsum-s3-glue-prod',
     explorer_table_sf: 'vw_sf_all_segment_hierarchy',
     explorer_column_sf: 'msisdn',
     explorer_table_aria: 'vw_aria_hierarchy_all_status_reverse',
@@ -365,7 +366,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION || 's3://dvsum-staging-prod';
-      const databaseName = 'dvsum-s3-glue-prod';
+      
+      // Get Athena database name from settings
+      const athenaDbSetting = await storage.getSetting('athena_database');
+      const databaseName = athenaDbSetting?.value || 'dvsum-s3-glue-prod';
 
       // Helper function to execute a query and get results
       const executeSchemaQuery = async (query: string): Promise<string[][]> => {
@@ -447,7 +451,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION || 's3://dvsum-staging-prod';
-      const databaseName = 'dvsum-s3-glue-prod';
+      
+      // Get Athena database name from settings
+      const athenaDbSetting = await storage.getSetting('athena_database');
+      const databaseName = athenaDbSetting?.value || 'dvsum-s3-glue-prod';
 
       const startCommand = new StartQueryExecutionCommand({
         QueryString: `SHOW COLUMNS IN \`${databaseName}\`.\`${tableName}\``,
@@ -631,6 +638,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const nokiaTable = nokiaTableSetting?.value || 'vw_nokia_raw';
       const nokiaColumn = nokiaColumnSetting?.value || 'msisdn';
 
+      // Get Athena database name from settings
+      const athenaDbSetting = await storage.getSetting('athena_database');
+      const databaseName = athenaDbSetting?.value || 'dvsum-s3-glue-prod';
+
       // Initialize Athena client
       const athenaClient = new AthenaClient({
         region: process.env.AWS_REGION || 'us-east-1',
@@ -646,23 +657,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const queries = [
         {
           name: 'SF',
-          query: `select * from "dvsum-s3-glue-prod".${sfTable} where ${sfColumn} = '${sanitizedMsisdn}'`,
+          query: `select * from "${databaseName}".${sfTable} where ${sfColumn} = '${sanitizedMsisdn}'`,
         },
         {
           name: 'Aria',
-          query: `select * from "dvsum-s3-glue-prod".${ariaTable} where ${ariaColumn} = '${sanitizedMsisdn}'`,
+          query: `select * from "${databaseName}".${ariaTable} where ${ariaColumn} = '${sanitizedMsisdn}'`,
         },
         {
           name: 'Matrix',
-          query: `select * from "dvsum-s3-glue-prod".${matrixTable} where ${matrixColumn} = '${sanitizedMsisdn}'`,
+          query: `select * from "${databaseName}".${matrixTable} where ${matrixColumn} = '${sanitizedMsisdn}'`,
         },
         {
           name: 'Trufinder',
-          query: `select * from "dvsum-s3-glue-prod".${trufinderTable} where ${trufinderColumn} = '${sanitizedMsisdn}'`,
+          query: `select * from "${databaseName}".${trufinderTable} where ${trufinderColumn} = '${sanitizedMsisdn}'`,
         },
         {
           name: 'Nokia',
-          query: `select * from "dvsum-s3-glue-prod".${nokiaTable} where ${nokiaColumn} = '${sanitizedMsisdn}'`,
+          query: `select * from "${databaseName}".${nokiaTable} where ${nokiaColumn} = '${sanitizedMsisdn}'`,
         },
       ];
 

@@ -33,6 +33,13 @@ async function seed() {
     });
     console.log("✓ Set default display limit to 10000");
 
+    // Set default Athena database name
+    await storage.upsertSetting({
+      key: "athena_database",
+      value: "dvsum-s3-glue-prod",
+    });
+    console.log("✓ Set default Athena database to dvsum-s3-glue-prod");
+
     // Set default Explorer configurations (table and column for each data source)
     const explorerConfigs = [
       { table: "explorer_table_sf", column: "explorer_column_sf", tableValue: "vw_sf_all_segment_hierarchy", columnValue: "msisdn", label: "SF" },

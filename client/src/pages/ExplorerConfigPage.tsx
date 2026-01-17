@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Save, Search } from "lucide-react";
+import { Save, Search, Database } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -32,6 +32,11 @@ const dataSourceLabels = {
 
 export default function ExplorerConfigPage() {
   const { toast } = useToast();
+
+  const { data: athenaDatabase } = useQuery({
+    queryKey: ['/api/settings', 'athena_database'],
+    queryFn: () => apiRequest('/api/settings/athena_database'),
+  });
 
   const { data: sfTable } = useQuery({
     queryKey: ['/api/settings', 'explorer_table_sf'],
@@ -74,6 +79,7 @@ export default function ExplorerConfigPage() {
     queryFn: () => apiRequest('/api/settings/explorer_column_nokia'),
   });
 
+  const [databaseName, setDatabaseName] = useState('dvsum-s3-glue-prod');
   const [config, setConfig] = useState<ExplorerConfig>({
     sf: { table: '', column: '' },
     aria: { table: '', column: '' },
@@ -81,6 +87,10 @@ export default function ExplorerConfigPage() {
     trufinder: { table: '', column: '' },
     nokia: { table: '', column: '' },
   });
+
+  useEffect(() => {
+    setDatabaseName(athenaDatabase?.value || 'dvsum-s3-glue-prod');
+  }, [athenaDatabase]);
 
   useEffect(() => {
     setConfig({
@@ -106,6 +116,29 @@ export default function ExplorerConfigPage() {
       },
     });
   }, [sfTable, sfColumn, ariaTable, ariaColumn, matrixTable, matrixColumn, trufinderTable, trufinderColumn, nokiaTable, nokiaColumn]);
+
+  const updateDatabaseMutation = useMutation({
+    mutationFn: async (dbName: string) => {
+      await apiRequest('/api/settings', {
+        method: 'PUT',
+        body: JSON.stringify({ key: 'athena_database', value: dbName }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
+      toast({
+        title: "Success",
+        description: "Athena database updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update database",
+        variant: "destructive",
+      });
+    },
+  });
 
   const updateConfigMutation = useMutation({
     mutationFn: async (newConfig: ExplorerConfig) => {
@@ -162,6 +195,42 @@ export default function ExplorerConfigPage() {
         <h1 className="text-3xl font-semibold mb-2">Explorer Configuration</h1>
         <p className="text-muted-foreground">Configure the data sources used by the Explorer feature</p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Database className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <CardTitle>Athena Database</CardTitle>
+              <CardDescription>
+                Configure the AWS Athena database name used for all queries
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4 items-end">
+            <div className="flex-1 space-y-2">
+              <Label htmlFor="athena-database">Database Name</Label>
+              <Input
+                id="athena-database"
+                data-testid="input-athena-database"
+                value={databaseName}
+                onChange={(e) => setDatabaseName(e.target.value)}
+                placeholder="Enter Athena database name"
+              />
+            </div>
+            <Button 
+              onClick={() => updateDatabaseMutation.mutate(databaseName)}
+              disabled={updateDatabaseMutation.isPending}
+              data-testid="button-save-database"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
