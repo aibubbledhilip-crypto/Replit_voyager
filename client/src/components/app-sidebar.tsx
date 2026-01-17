@@ -30,7 +30,7 @@ interface MenuCategory {
 
 const nexusGatewayItems: MenuItem[] = [
   {
-    title: "Query Execution",
+    title: "Executor",
     url: "/",
     icon: Database,
   },
