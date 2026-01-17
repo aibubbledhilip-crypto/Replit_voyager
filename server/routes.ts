@@ -14,6 +14,7 @@ import { parseFile, compareDatasets, cleanupOldFiles } from "./file-comparison-h
 import { checkSftpFiles, testSftpConnection } from "./sftp-helper";
 import { insertSftpConfigSchema } from "@shared/schema";
 import { executeAthenaQueryWithPagination } from "./athena-helper";
+import OpenAI from "openai";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1056,6 +1057,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
+    }
+  });
+
+  // AI Analysis endpoint
+  app.post("/api/ai/analyze", requireAuth, async (req, res) => {
+    try {
+      const { data, sourceName } = req.body;
+      
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        return res.status(400).json({ message: "Data is required for analysis" });
+      }
+
+      // Get AI settings
+      const apiKeySetting = await storage.getSetting('openai_api_key');
+      const modelSetting = await storage.getSetting('ai_model');
+      const promptSetting = await storage.getSetting('ai_analysis_prompt');
+
+      const apiKey = apiKeySetting?.value;
+      if (!apiKey) {
+        return res.status(400).json({ message: "OpenAI API key not configured. Please configure it in Administration > AI Configuration." });
+      }
+
+      const model = modelSetting?.value || 'gpt-4o';
+      const systemPrompt = promptSetting?.value || `You are a data analyst assistant. Analyze the following data and provide insights:
+
+1. Summarize the key findings from the data
+2. Identify any patterns or anomalies
+3. Provide actionable recommendations based on the data
+4. Highlight any data quality issues if present
+
+Be concise and focus on the most important insights.`;
+
+      // Prepare data summary for analysis (limit to prevent token overflow)
+      const maxRows = 100;
+      const sampleData = data.slice(0, maxRows);
+      const dataContext = `Source: ${sourceName || 'Unknown'}
+Total Rows: ${data.length}
+Sample Data (first ${Math.min(data.length, maxRows)} rows):
+${JSON.stringify(sampleData, null, 2)}`;
+
+      // Initialize OpenAI client
+      const openai = new OpenAI({ apiKey });
+
+      const completion = await openai.chat.completions.create({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Please analyze the following data:\n\n${dataContext}` },
+        ],
+        max_tokens: 2000,
+        temperature: 0.7,
+      });
+
+      const analysis = completion.choices[0]?.message?.content || "Unable to generate analysis.";
+
+      res.json({
+        analysis,
+        model,
+        sourceName,
+        rowsAnalyzed: Math.min(data.length, maxRows),
+        totalRows: data.length,
+      });
+    } catch (error: any) {
+      console.error("AI analysis error:", error);
+      res.status(500).json({ 
+        message: error.message || "Failed to analyze data",
+        details: error.code === 'invalid_api_key' ? 'Invalid OpenAI API key' : undefined
+      });
     }
   });
 

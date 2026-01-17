@@ -16,6 +16,7 @@ import UsageLogsPage from "@/pages/UsageLogsPage";
 import SftpConfigPage from "@/pages/SftpConfigPage";
 import SftpMonitorPage from "@/pages/SftpMonitorPage";
 import ExplorerConfigPage from "@/pages/ExplorerConfigPage";
+import AIConfigPage from "@/pages/AIConfigPage";
 import NotFound from "@/pages/not-found";
 import { apiRequest } from "@/lib/api";
 
@@ -83,6 +84,7 @@ function AuthenticatedApp() {
                 <Route path="/admin/logs" component={UsageLogsPage} />
                 <Route path="/admin/sftp-config" component={SftpConfigPage} />
                 <Route path="/admin/explorer-config" component={ExplorerConfigPage} />
+                <Route path="/admin/ai-config" component={AIConfigPage} />
                 <Route path="/sftp-monitor" component={SftpMonitorPage} />
                 <Route component={NotFound} />
               </Switch>

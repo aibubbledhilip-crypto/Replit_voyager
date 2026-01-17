@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Database, FileText, Search, GitCompare, Server, Activity, LayoutDashboard, ChevronDown } from "lucide-react";
+import { Database, FileText, Search, GitCompare, Server, Activity, LayoutDashboard, ChevronDown, Brain } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -64,6 +64,11 @@ const adminItems: MenuItem[] = [
     title: "Explorer Config",
     url: "/admin/explorer-config",
     icon: Search,
+  },
+  {
+    title: "AI Configuration",
+    url: "/admin/ai-config",
+    icon: Brain,
   },
   {
     title: "SFTP Configuration",

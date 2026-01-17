@@ -3,12 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Search, Loader2, Download } from "lucide-react";
+import { Search, Loader2, Download, Brain, X } from "lucide-react";
 import ResultsTable from "@/components/ResultsTable";
 import { apiRequest } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import * as XLSX from "xlsx";
 
 interface QueryResult {
@@ -28,10 +30,22 @@ interface LookupResults {
   rowLimit: number;
 }
 
+interface AIAnalysisResult {
+  analysis: string;
+  model: string;
+  sourceName: string;
+  rowsAnalyzed: number;
+  totalRows: number;
+}
+
 export default function ExplorerPage() {
   const [msisdn, setMsisdn] = useState("");
   const [results, setResults] = useState<LookupResults | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
+  const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("");
   const { toast } = useToast();
 
   const handleLookup = async (e: React.FormEvent) => {
@@ -55,6 +69,9 @@ export default function ExplorerPage() {
       });
 
       setResults(response);
+      if (response.results.length > 0) {
+        setActiveTab(response.results[0].name);
+      }
       
       const successCount = response.results.filter((r: QueryResult) => r.status === 'success').length;
       toast({
@@ -119,6 +136,44 @@ export default function ExplorerPage() {
       title: "Export Complete",
       description: `Downloaded ${fileName}`,
     });
+  };
+
+  const handleAIAnalyze = async () => {
+    if (!results) return;
+
+    const currentSource = results.results.find(r => r.name === activeTab);
+    if (!currentSource || currentSource.status !== 'success' || currentSource.data.length === 0) {
+      toast({
+        title: "No Data to Analyze",
+        description: "Select a tab with data to analyze",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAnalysisResult(null);
+
+    try {
+      const response = await apiRequest('/api/ai/analyze', {
+        method: 'POST',
+        body: JSON.stringify({
+          data: currentSource.data,
+          sourceName: currentSource.name,
+        }),
+      });
+
+      setAnalysisResult(response);
+      setShowAnalysisDialog(true);
+    } catch (error: any) {
+      toast({
+        title: "Analysis Failed",
+        description: error.message || "Failed to analyze data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   return (
@@ -200,11 +255,33 @@ export default function ExplorerPage() {
                   <Download className="h-4 w-4 mr-2" />
                   Export Excel
                 </Button>
+                <Button
+                  variant="default"
+                  onClick={handleAIAnalyze}
+                  disabled={isAnalyzing}
+                  data-testid="button-ai-analyze"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="h-4 w-4 mr-2" />
+                      AI Analyze
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue={results.results[0]?.name} className="w-full">
+            <Tabs 
+              defaultValue={results.results[0]?.name} 
+              className="w-full"
+              onValueChange={(value) => setActiveTab(value)}
+            >
               <TabsList className="w-full justify-start flex-wrap h-auto">
                 {results.results.map((result) => (
                   <TabsTrigger 
@@ -261,6 +338,27 @@ export default function ExplorerPage() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={showAnalysisDialog} onOpenChange={setShowAnalysisDialog}>
+        <DialogContent className="max-w-3xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5" />
+              AI Analysis - {analysisResult?.sourceName}
+            </DialogTitle>
+            <DialogDescription>
+              Analyzed {analysisResult?.rowsAnalyzed} of {analysisResult?.totalRows} rows using {analysisResult?.model}
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            <div className="prose prose-sm dark:prose-invert max-w-none p-4">
+              <pre className="whitespace-pre-wrap text-sm font-normal">
+                {analysisResult?.analysis}
+              </pre>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
