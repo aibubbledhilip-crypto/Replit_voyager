@@ -9,7 +9,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import Header from "@/components/Header";
 import LoginPage from "@/components/LoginPage";
 import QueryExecutionPage from "@/pages/QueryExecutionPage";
-import MsisdnLookupPage from "@/pages/MsisdnLookupPage";
+import ExplorerPage from "@/pages/ExplorerPage";
 import FileComparisonPage from "@/pages/FileComparisonPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import UsageLogsPage from "@/pages/UsageLogsPage";
@@ -30,8 +30,8 @@ function AuthenticatedApp() {
     queryKey: ['/api/auth/me'],
   });
   
-  // Query Execution and MSISDN Lookup pages use full width
-  const isFullWidthPage = location === "/" || location === "/msisdn-lookup";
+  // Query Execution and Explorer pages use full width
+  const isFullWidthPage = location === "/" || location === "/explorer";
 
   const handleLogout = async () => {
     try {
@@ -76,7 +76,7 @@ function AuthenticatedApp() {
             <div className={`p-6 ${isFullWidthPage ? 'h-full' : 'max-w-7xl mx-auto'}`}>
               <Switch>
                 <Route path="/" component={QueryExecutionPage} />
-                <Route path="/msisdn-lookup" component={MsisdnLookupPage} />
+                <Route path="/explorer" component={ExplorerPage} />
                 <Route path="/file-comparison" component={FileComparisonPage} />
                 <Route path="/admin" component={AdminDashboardPage} />
                 <Route path="/admin/logs" component={UsageLogsPage} />

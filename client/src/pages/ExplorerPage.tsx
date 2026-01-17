@@ -28,7 +28,7 @@ interface LookupResults {
   rowLimit: number;
 }
 
-export default function MsisdnLookupPage() {
+export default function ExplorerPage() {
   const [msisdn, setMsisdn] = useState("");
   const [results, setResults] = useState<LookupResults | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -125,7 +125,7 @@ export default function MsisdnLookupPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>MSISDN Lookup</CardTitle>
+          <CardTitle>Explorer</CardTitle>
           <CardDescription>
             Search across all data sources for a specific MSISDN
           </CardDescription>

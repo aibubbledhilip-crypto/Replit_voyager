@@ -35,8 +35,8 @@ const nexusGatewayItems: MenuItem[] = [
     icon: Database,
   },
   {
-    title: "MSISDN Lookup",
-    url: "/msisdn-lookup",
+    title: "Explorer",
+    url: "/explorer",
     icon: Search,
   },
 ];
