@@ -1,4 +1,4 @@
-import { Home, Database, FileText, Settings, Shield, Search, GitCompare, Server, Activity } from "lucide-react";
+import { Database, FileText, Settings, Shield, Search, GitCompare, Server, Activity, LayoutDashboard, Zap } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -10,12 +10,18 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-const adminMenuItems = [
-  {
-    title: "Dashboard",
-    url: "/admin",
-    icon: Home,
-  },
+interface MenuItem {
+  title: string;
+  url: string;
+  icon: any;
+}
+
+interface MenuCategory {
+  label: string;
+  items: MenuItem[];
+}
+
+const nexusGatewayItems: MenuItem[] = [
   {
     title: "Query Execution",
     url: "/",
@@ -26,6 +32,9 @@ const adminMenuItems = [
     url: "/msisdn-lookup",
     icon: Search,
   },
+];
+
+const toolsItems: MenuItem[] = [
   {
     title: "File Comparison",
     url: "/file-comparison",
@@ -35,6 +44,14 @@ const adminMenuItems = [
     title: "SFTP Monitor",
     url: "/sftp-monitor",
     icon: Activity,
+  },
+];
+
+const adminItems: MenuItem[] = [
+  {
+    title: "Dashboard",
+    url: "/admin",
+    icon: LayoutDashboard,
   },
   {
     title: "SFTP Configuration",
@@ -48,56 +65,51 @@ const adminMenuItems = [
   },
 ];
 
-const userMenuItems = [
-  {
-    title: "Query Execution",
-    url: "/",
-    icon: Database,
-  },
-  {
-    title: "MSISDN Lookup",
-    url: "/msisdn-lookup",
-    icon: Search,
-  },
-  {
-    title: "File Comparison",
-    url: "/file-comparison",
-    icon: GitCompare,
-  },
-  {
-    title: "SFTP Monitor",
-    url: "/sftp-monitor",
-    icon: Activity,
-  },
-];
-
 interface AppSidebarProps {
   userRole?: 'admin' | 'user';
 }
 
 export function AppSidebar({ userRole = 'user' }: AppSidebarProps) {
-  const items = userRole === 'admin' ? adminMenuItems : userMenuItems;
+  const categories: MenuCategory[] = [
+    {
+      label: "Nexus Gateway",
+      items: nexusGatewayItems,
+    },
+    {
+      label: "Tools",
+      items: toolsItems,
+    },
+  ];
+
+  if (userRole === 'admin') {
+    categories.push({
+      label: "Administration",
+      items: adminItems,
+    });
+  }
 
   return (
     <Sidebar data-testid="sidebar-navigation">
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url} data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {categories.map((category) => (
+          <SidebarGroup key={category.label}>
+            <SidebarGroupLabel>{category.label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {category.items.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <a href={item.url} data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
     </Sidebar>
   );
