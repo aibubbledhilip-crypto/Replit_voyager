@@ -32,9 +32,9 @@ const PROVIDER_MODELS: Record<AIProvider, { value: string; label: string }[]> = 
     { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
   ],
   gemini: [
-    { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro (Recommended)" },
-    { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash (Faster)" },
-    { value: "gemini-pro", label: "Gemini Pro" },
+    { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash (Recommended)" },
+    { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash" },
+    { value: "gemini-1.5-pro-latest", label: "Gemini 1.5 Pro" },
   ],
   ollama: [
     { value: "llama3.2", label: "Llama 3.2" },
