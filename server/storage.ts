@@ -1,26 +1,46 @@
 import { db } from "./db";
-import { users, queryLogs, settings, exportJobs, sftpConfigs, savedQueries, type User, type InsertUser, type QueryLog, type InsertQueryLog, type Setting, type InsertSetting, type ExportJob, type InsertExportJob, type SftpConfig, type InsertSftpConfig, type SavedQuery, type InsertSavedQuery } from "@shared/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { 
+  users, queryLogs, settings, exportJobs, sftpConfigs, savedQueries,
+  organizations, subscriptionPlans, organizationSubscriptions, 
+  organizationMembers, organizationInvitations, organizationAwsConfigs,
+  organizationAiConfigs, auditLogs,
+  type User, type InsertUser, type QueryLog, type InsertQueryLog, 
+  type Setting, type InsertSetting, type ExportJob, type InsertExportJob, 
+  type SftpConfig, type InsertSftpConfig, type SavedQuery, type InsertSavedQuery,
+  type Organization, type InsertOrganization, type SubscriptionPlan, type InsertSubscriptionPlan,
+  type OrganizationSubscription, type InsertOrganizationSubscription,
+  type OrganizationMember, type InsertOrganizationMember,
+  type OrganizationInvitation, type InsertOrganizationInvitation,
+  type OrganizationAwsConfig, type InsertOrganizationAwsConfig,
+  type OrganizationAiConfig, type InsertOrganizationAiConfig,
+  type AuditLog, type InsertAuditLog
+} from "@shared/schema";
+import { eq, desc, and, or, isNull } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 const SALT_ROUNDS = 10;
+const DEFAULT_ORG_ID = 'default-org';
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserRole(userId: string, role: string): Promise<User | undefined>;
   updateUserStatus(userId: string, status: string): Promise<User | undefined>;
   updateUserPassword(userId: string, newPassword: string): Promise<User | undefined>;
   updateUserLastActive(userId: string): Promise<void>;
   getAllUsers(): Promise<User[]>;
+  getUsersByOrganization(organizationId: string): Promise<User[]>;
   
   createQueryLog(log: InsertQueryLog): Promise<QueryLog>;
   getAllQueryLogs(): Promise<QueryLog[]>;
   getQueryLogsByUser(userId: string): Promise<QueryLog[]>;
+  getQueryLogsByOrganization(organizationId: string): Promise<QueryLog[]>;
   
-  getSetting(key: string): Promise<Setting | undefined>;
+  getSetting(key: string, organizationId?: string): Promise<Setting | undefined>;
   upsertSetting(setting: InsertSetting): Promise<Setting>;
+  getSettingsByOrganization(organizationId: string): Promise<Setting[]>;
   
   createExportJob(job: InsertExportJob): Promise<ExportJob>;
   getExportJob(id: string): Promise<ExportJob | undefined>;
@@ -28,6 +48,7 @@ export interface IStorage {
   updateExportJobStatus(id: string, status: string, filePath?: string, errorMessage?: string): Promise<void>;
   getExportJobsByUser(userId: string): Promise<ExportJob[]>;
   getAllExportJobs(): Promise<ExportJob[]>;
+  getExportJobsByOrganization(organizationId: string): Promise<ExportJob[]>;
   
   getAllSftpConfigs(): Promise<SftpConfig[]>;
   getActiveSftpConfigs(): Promise<SftpConfig[]>;
@@ -35,10 +56,48 @@ export interface IStorage {
   createSftpConfig(config: InsertSftpConfig): Promise<SftpConfig>;
   updateSftpConfig(id: string, config: InsertSftpConfig): Promise<SftpConfig | undefined>;
   deleteSftpConfig(id: string): Promise<boolean>;
+  getSftpConfigsByOrganization(organizationId: string): Promise<SftpConfig[]>;
   
   getSavedQueriesByUser(userId: string): Promise<SavedQuery[]>;
   createSavedQuery(query: InsertSavedQuery): Promise<SavedQuery>;
   deleteSavedQuery(id: string, userId: string): Promise<boolean>;
+  getSavedQueriesByOrganization(organizationId: string): Promise<SavedQuery[]>;
+  
+  getOrganization(id: string): Promise<Organization | undefined>;
+  getOrganizationBySlug(slug: string): Promise<Organization | undefined>;
+  createOrganization(org: InsertOrganization): Promise<Organization>;
+  updateOrganization(id: string, org: Partial<InsertOrganization>): Promise<Organization | undefined>;
+  getAllOrganizations(): Promise<Organization[]>;
+  
+  getSubscriptionPlan(id: string): Promise<SubscriptionPlan | undefined>;
+  getSubscriptionPlanBySlug(slug: string): Promise<SubscriptionPlan | undefined>;
+  getAllSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+  getActiveSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+  
+  getOrganizationSubscription(organizationId: string): Promise<OrganizationSubscription | undefined>;
+  createOrganizationSubscription(sub: InsertOrganizationSubscription): Promise<OrganizationSubscription>;
+  updateOrganizationSubscription(id: string, sub: Partial<InsertOrganizationSubscription>): Promise<OrganizationSubscription | undefined>;
+  
+  getOrganizationMember(organizationId: string, userId: string): Promise<OrganizationMember | undefined>;
+  getOrganizationMembers(organizationId: string): Promise<OrganizationMember[]>;
+  getUserOrganizations(userId: string): Promise<Organization[]>;
+  addOrganizationMember(member: InsertOrganizationMember): Promise<OrganizationMember>;
+  updateMemberRole(organizationId: string, userId: string, role: string): Promise<OrganizationMember | undefined>;
+  removeOrganizationMember(organizationId: string, userId: string): Promise<boolean>;
+  
+  createOrganizationInvitation(invitation: InsertOrganizationInvitation): Promise<OrganizationInvitation>;
+  getInvitationByToken(token: string): Promise<OrganizationInvitation | undefined>;
+  getOrganizationInvitations(organizationId: string): Promise<OrganizationInvitation[]>;
+  acceptInvitation(token: string): Promise<OrganizationInvitation | undefined>;
+  
+  getOrganizationAwsConfig(organizationId: string): Promise<OrganizationAwsConfig | undefined>;
+  upsertOrganizationAwsConfig(config: InsertOrganizationAwsConfig): Promise<OrganizationAwsConfig>;
+  
+  getOrganizationAiConfig(organizationId: string): Promise<OrganizationAiConfig | undefined>;
+  upsertOrganizationAiConfig(config: InsertOrganizationAiConfig): Promise<OrganizationAiConfig>;
+  
+  createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
+  getAuditLogsByOrganization(organizationId: string): Promise<AuditLog[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -52,9 +111,15 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    return result[0];
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const hashedPassword = await bcrypt.hash(insertUser.password, SALT_ROUNDS);
     const result = await db.insert(users).values({
+      email: insertUser.email,
       username: insertUser.username,
       password: hashedPassword,
       role: insertUser.role || 'user',
@@ -97,8 +162,21 @@ export class DbStorage implements IStorage {
     return await db.select().from(users);
   }
 
+  async getUsersByOrganization(organizationId: string): Promise<User[]> {
+    const members = await db.select().from(organizationMembers)
+      .where(eq(organizationMembers.organizationId, organizationId));
+    const userIds = members.map((m: OrganizationMember) => m.userId);
+    if (userIds.length === 0) return [];
+    const result = await db.select().from(users)
+      .where(or(...userIds.map((id: string) => eq(users.id, id))));
+    return result;
+  }
+
   async createQueryLog(log: InsertQueryLog): Promise<QueryLog> {
-    const result = await db.insert(queryLogs).values(log).returning();
+    const result = await db.insert(queryLogs).values({
+      ...log,
+      organizationId: log.organizationId || DEFAULT_ORG_ID,
+    }).returning();
     return result[0];
   }
 
@@ -112,27 +190,54 @@ export class DbStorage implements IStorage {
       .orderBy(desc(queryLogs.createdAt));
   }
 
-  async getSetting(key: string): Promise<Setting | undefined> {
-    const result = await db.select().from(settings).where(eq(settings.key, key)).limit(1);
-    return result[0];
+  async getQueryLogsByOrganization(organizationId: string): Promise<QueryLog[]> {
+    return await db.select().from(queryLogs)
+      .where(eq(queryLogs.organizationId, organizationId))
+      .orderBy(desc(queryLogs.createdAt));
+  }
+
+  async getSetting(key: string, organizationId?: string): Promise<Setting | undefined> {
+    const orgId = organizationId || DEFAULT_ORG_ID;
+    const result = await db.select().from(settings)
+      .where(and(eq(settings.key, key), eq(settings.organizationId, orgId)))
+      .limit(1);
+    if (result[0]) return result[0];
+    const globalResult = await db.select().from(settings)
+      .where(and(eq(settings.key, key), isNull(settings.organizationId)))
+      .limit(1);
+    return globalResult[0];
   }
 
   async upsertSetting(setting: InsertSetting): Promise<Setting> {
-    const existing = await this.getSetting(setting.key);
-    if (existing) {
+    const orgId = setting.organizationId || DEFAULT_ORG_ID;
+    const existing = await db.select().from(settings)
+      .where(and(eq(settings.key, setting.key), eq(settings.organizationId, orgId)))
+      .limit(1);
+    if (existing[0]) {
       const result = await db.update(settings)
         .set({ value: setting.value, updatedAt: new Date() })
-        .where(eq(settings.key, setting.key))
+        .where(eq(settings.id, existing[0].id))
         .returning();
       return result[0];
     } else {
-      const result = await db.insert(settings).values(setting).returning();
+      const result = await db.insert(settings).values({
+        ...setting,
+        organizationId: orgId,
+      }).returning();
       return result[0];
     }
   }
 
+  async getSettingsByOrganization(organizationId: string): Promise<Setting[]> {
+    return await db.select().from(settings)
+      .where(eq(settings.organizationId, organizationId));
+  }
+
   async createExportJob(job: InsertExportJob): Promise<ExportJob> {
-    const result = await db.insert(exportJobs).values(job).returning();
+    const result = await db.insert(exportJobs).values({
+      ...job,
+      organizationId: job.organizationId || DEFAULT_ORG_ID,
+    }).returning();
     return result[0];
   }
 
@@ -177,6 +282,12 @@ export class DbStorage implements IStorage {
     return await db.select().from(exportJobs).orderBy(desc(exportJobs.createdAt));
   }
 
+  async getExportJobsByOrganization(organizationId: string): Promise<ExportJob[]> {
+    return await db.select().from(exportJobs)
+      .where(eq(exportJobs.organizationId, organizationId))
+      .orderBy(desc(exportJobs.createdAt));
+  }
+
   async getAllSftpConfigs(): Promise<SftpConfig[]> {
     return await db.select().from(sftpConfigs).orderBy(desc(sftpConfigs.createdAt));
   }
@@ -193,7 +304,10 @@ export class DbStorage implements IStorage {
   }
 
   async createSftpConfig(config: InsertSftpConfig): Promise<SftpConfig> {
-    const result = await db.insert(sftpConfigs).values(config).returning();
+    const result = await db.insert(sftpConfigs).values({
+      ...config,
+      organizationId: config.organizationId || DEFAULT_ORG_ID,
+    }).returning();
     return result[0];
   }
 
@@ -212,6 +326,12 @@ export class DbStorage implements IStorage {
     return result.length > 0;
   }
 
+  async getSftpConfigsByOrganization(organizationId: string): Promise<SftpConfig[]> {
+    return await db.select().from(sftpConfigs)
+      .where(eq(sftpConfigs.organizationId, organizationId))
+      .orderBy(desc(sftpConfigs.createdAt));
+  }
+
   async getSavedQueriesByUser(userId: string): Promise<SavedQuery[]> {
     return await db.select().from(savedQueries)
       .where(eq(savedQueries.userId, userId))
@@ -219,7 +339,10 @@ export class DbStorage implements IStorage {
   }
 
   async createSavedQuery(query: InsertSavedQuery): Promise<SavedQuery> {
-    const result = await db.insert(savedQueries).values(query).returning();
+    const result = await db.insert(savedQueries).values({
+      ...query,
+      organizationId: query.organizationId || DEFAULT_ORG_ID,
+    }).returning();
     return result[0];
   }
 
@@ -228,6 +351,209 @@ export class DbStorage implements IStorage {
       .where(and(eq(savedQueries.id, id), eq(savedQueries.userId, userId)))
       .returning();
     return result.length > 0;
+  }
+
+  async getSavedQueriesByOrganization(organizationId: string): Promise<SavedQuery[]> {
+    return await db.select().from(savedQueries)
+      .where(eq(savedQueries.organizationId, organizationId))
+      .orderBy(desc(savedQueries.createdAt));
+  }
+
+  async getOrganization(id: string): Promise<Organization | undefined> {
+    const result = await db.select().from(organizations).where(eq(organizations.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getOrganizationBySlug(slug: string): Promise<Organization | undefined> {
+    const result = await db.select().from(organizations).where(eq(organizations.slug, slug)).limit(1);
+    return result[0];
+  }
+
+  async createOrganization(org: InsertOrganization): Promise<Organization> {
+    const result = await db.insert(organizations).values(org).returning();
+    return result[0];
+  }
+
+  async updateOrganization(id: string, org: Partial<InsertOrganization>): Promise<Organization | undefined> {
+    const result = await db.update(organizations)
+      .set({ ...org, updatedAt: new Date() })
+      .where(eq(organizations.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getAllOrganizations(): Promise<Organization[]> {
+    return await db.select().from(organizations).orderBy(desc(organizations.createdAt));
+  }
+
+  async getSubscriptionPlan(id: string): Promise<SubscriptionPlan | undefined> {
+    const result = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getSubscriptionPlanBySlug(slug: string): Promise<SubscriptionPlan | undefined> {
+    const result = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.slug, slug)).limit(1);
+    return result[0];
+  }
+
+  async getAllSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    return await db.select().from(subscriptionPlans).orderBy(subscriptionPlans.sortOrder);
+  }
+
+  async getActiveSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    return await db.select().from(subscriptionPlans)
+      .where(eq(subscriptionPlans.isActive, true))
+      .orderBy(subscriptionPlans.sortOrder);
+  }
+
+  async getOrganizationSubscription(organizationId: string): Promise<OrganizationSubscription | undefined> {
+    const result = await db.select().from(organizationSubscriptions)
+      .where(eq(organizationSubscriptions.organizationId, organizationId))
+      .limit(1);
+    return result[0];
+  }
+
+  async createOrganizationSubscription(sub: InsertOrganizationSubscription): Promise<OrganizationSubscription> {
+    const result = await db.insert(organizationSubscriptions).values(sub).returning();
+    return result[0];
+  }
+
+  async updateOrganizationSubscription(id: string, sub: Partial<InsertOrganizationSubscription>): Promise<OrganizationSubscription | undefined> {
+    const result = await db.update(organizationSubscriptions)
+      .set({ ...sub, updatedAt: new Date() })
+      .where(eq(organizationSubscriptions.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getOrganizationMember(organizationId: string, userId: string): Promise<OrganizationMember | undefined> {
+    const result = await db.select().from(organizationMembers)
+      .where(and(
+        eq(organizationMembers.organizationId, organizationId),
+        eq(organizationMembers.userId, userId)
+      ))
+      .limit(1);
+    return result[0];
+  }
+
+  async getOrganizationMembers(organizationId: string): Promise<OrganizationMember[]> {
+    return await db.select().from(organizationMembers)
+      .where(eq(organizationMembers.organizationId, organizationId));
+  }
+
+  async getUserOrganizations(userId: string): Promise<Organization[]> {
+    const members = await db.select().from(organizationMembers)
+      .where(eq(organizationMembers.userId, userId));
+    const orgIds = members.map((m: OrganizationMember) => m.organizationId);
+    if (orgIds.length === 0) return [];
+    const result = await db.select().from(organizations)
+      .where(or(...orgIds.map((id: string) => eq(organizations.id, id))));
+    return result;
+  }
+
+  async addOrganizationMember(member: InsertOrganizationMember): Promise<OrganizationMember> {
+    const result = await db.insert(organizationMembers).values(member).returning();
+    return result[0];
+  }
+
+  async updateMemberRole(organizationId: string, userId: string, role: string): Promise<OrganizationMember | undefined> {
+    const result = await db.update(organizationMembers)
+      .set({ role })
+      .where(and(
+        eq(organizationMembers.organizationId, organizationId),
+        eq(organizationMembers.userId, userId)
+      ))
+      .returning();
+    return result[0];
+  }
+
+  async removeOrganizationMember(organizationId: string, userId: string): Promise<boolean> {
+    const result = await db.delete(organizationMembers)
+      .where(and(
+        eq(organizationMembers.organizationId, organizationId),
+        eq(organizationMembers.userId, userId)
+      ))
+      .returning();
+    return result.length > 0;
+  }
+
+  async createOrganizationInvitation(invitation: InsertOrganizationInvitation): Promise<OrganizationInvitation> {
+    const result = await db.insert(organizationInvitations).values(invitation).returning();
+    return result[0];
+  }
+
+  async getInvitationByToken(token: string): Promise<OrganizationInvitation | undefined> {
+    const result = await db.select().from(organizationInvitations)
+      .where(eq(organizationInvitations.token, token))
+      .limit(1);
+    return result[0];
+  }
+
+  async getOrganizationInvitations(organizationId: string): Promise<OrganizationInvitation[]> {
+    return await db.select().from(organizationInvitations)
+      .where(eq(organizationInvitations.organizationId, organizationId))
+      .orderBy(desc(organizationInvitations.createdAt));
+  }
+
+  async acceptInvitation(token: string): Promise<OrganizationInvitation | undefined> {
+    const result = await db.update(organizationInvitations)
+      .set({ acceptedAt: new Date() })
+      .where(eq(organizationInvitations.token, token))
+      .returning();
+    return result[0];
+  }
+
+  async getOrganizationAwsConfig(organizationId: string): Promise<OrganizationAwsConfig | undefined> {
+    const result = await db.select().from(organizationAwsConfigs)
+      .where(eq(organizationAwsConfigs.organizationId, organizationId))
+      .limit(1);
+    return result[0];
+  }
+
+  async upsertOrganizationAwsConfig(config: InsertOrganizationAwsConfig): Promise<OrganizationAwsConfig> {
+    const existing = await this.getOrganizationAwsConfig(config.organizationId);
+    if (existing) {
+      const result = await db.update(organizationAwsConfigs)
+        .set({ ...config, updatedAt: new Date() })
+        .where(eq(organizationAwsConfigs.organizationId, config.organizationId))
+        .returning();
+      return result[0];
+    } else {
+      const result = await db.insert(organizationAwsConfigs).values(config).returning();
+      return result[0];
+    }
+  }
+
+  async getOrganizationAiConfig(organizationId: string): Promise<OrganizationAiConfig | undefined> {
+    const result = await db.select().from(organizationAiConfigs)
+      .where(eq(organizationAiConfigs.organizationId, organizationId))
+      .limit(1);
+    return result[0];
+  }
+
+  async upsertOrganizationAiConfig(config: InsertOrganizationAiConfig): Promise<OrganizationAiConfig> {
+    const existing = await this.getOrganizationAiConfig(config.organizationId);
+    if (existing) {
+      const result = await db.update(organizationAiConfigs)
+        .set({ ...config, updatedAt: new Date() })
+        .where(eq(organizationAiConfigs.organizationId, config.organizationId))
+        .returning();
+      return result[0];
+    } else {
+      const result = await db.insert(organizationAiConfigs).values(config).returning();
+      return result[0];
+    }
+  }
+
+  async createAuditLog(log: InsertAuditLog): Promise<AuditLog> {
+    const result = await db.insert(auditLogs).values(log).returning();
+    return result[0];
+  }
+
+  async getAuditLogsByOrganization(organizationId: string): Promise<AuditLog[]> {
+    return await db.select().from(auditLogs)
+      .where(eq(auditLogs.organizationId, organizationId))
+      .orderBy(desc(auditLogs.createdAt));
   }
 }
 
