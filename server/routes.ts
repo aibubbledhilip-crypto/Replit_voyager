@@ -324,6 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/settings/:key", requireAuth, async (req, res) => {
     try {
       const { key } = req.params;
+      const organizationId = req.session.organizationId;
       
       // Check if this is a sensitive setting
       if (sensitiveSettings.includes(key)) {
@@ -333,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(403).json({ message: "Admin access required" });
         }
         
-        const setting = await storage.getSetting(key);
+        const setting = await storage.getSetting(key, organizationId);
         if (!setting) {
           return res.json({ key, value: '', configured: false });
         }
@@ -342,7 +343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ key, value: maskedValue, configured: !!setting.value });
       }
       
-      const setting = await storage.getSetting(key);
+      const setting = await storage.getSetting(key, organizationId);
       if (!setting) {
         // Return default value if setting doesn't exist
         if (defaultSettings[key]) {
@@ -359,11 +360,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/settings", requireAuth, requireAdmin, async (req, res) => {
     try {
       const { key, value } = req.body;
+      const organizationId = req.session.organizationId;
+      
       if (!key || value === undefined) {
         return res.status(400).json({ message: "Key and value are required" });
       }
 
-      const setting = await storage.upsertSetting({ key, value });
+      const setting = await storage.upsertSetting({ key, value, organizationId });
       res.json(setting);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
