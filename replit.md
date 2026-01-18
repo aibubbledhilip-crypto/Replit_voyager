@@ -1,12 +1,20 @@
-# Voyager - AWS Athena Query Platform
+# Voyager - AWS Athena Query Platform (Multi-Tenant SaaS)
 
 ## Overview
-Voyager is a secure enterprise web application designed for querying AWS Athena databases. It incorporates robust role-based access control, comprehensive usage logging, and administrator-controlled query limits. The platform aims to provide a reliable and governed interface for data exploration and extraction within an enterprise environment.
+Voyager is a secure multi-tenant SaaS platform designed for querying AWS Athena databases. It incorporates robust role-based access control, organization-scoped data isolation, Stripe subscription billing, and administrator-controlled query limits. The platform aims to provide a reliable and governed interface for data exploration and extraction within an enterprise environment.
 
 ## User Preferences
 The user wants me to act as a coding agent.
 - I want iterative development.
 - I want to be asked before making major changes.
+
+## Recent Changes (January 2026)
+- Transformed from single-tenant to multi-tenant SaaS architecture
+- Added self-service signup with automatic organization creation
+- Integrated Stripe for subscription billing with four tiers (Free, Starter, Professional, Enterprise)
+- All tenant data is now organization-scoped with proper isolation
+- Fixed React redirect logic using useEffect instead of render-time setLocation
+- Security: bcrypt password hashing on registration, SFTP ownership verification
 
 ## System Architecture
 
@@ -15,7 +23,15 @@ The user wants me to act as a coding agent.
 - **Backend**: Express.js, Node.js, TypeScript
 - **Database**: PostgreSQL
 - **Authentication**: Express Session with bcrypt
+- **Billing**: Stripe subscription management
 - **AWS Integration**: AWS SDK v3 for Athena
+
+### Multi-Tenancy Design
+- **Organizations**: Each tenant is an organization with unique slug (name + random hex)
+- **Organization Members**: Users belong to organizations with roles (owner, admin, member)
+- **Data Isolation**: All tenant-scoped tables include organizationId foreign key
+- **Legacy Support**: Default organization 'default-org' for migrated data
+- **Subscription Tiers**: Free (10 queries/mo), Starter ($29, 100 queries/mo), Professional ($99, 1000 queries/mo), Enterprise (custom)
 
 ### UI/UX Decisions
 The application uses React, TypeScript, Tailwind CSS, and Shadcn UI for a modern and responsive user interface. Key UI enhancements include a full-width query execution page for better workspace, a schema browser sidebar for table/view navigation, and interactive interfaces for features like file comparison and SFTP monitoring.
