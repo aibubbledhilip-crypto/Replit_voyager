@@ -184,6 +184,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: user.id,
         username: user.username,
         role: user.role,
+        organizationId: req.session.organizationId,
+        isSuperAdmin: user.isSuperAdmin || false,
       });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -1773,6 +1775,197 @@ Be concise and focus on the most important insights. Use clear headings and bull
 
       const logs = await storage.getAuditLogsByOrganization(id);
       res.json(logs);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ============================================================
+  // SUPER ADMIN ROUTES (Platform-level management)
+  // ============================================================
+
+  // Get all organizations (super admin only)
+  app.get("/api/super-admin/organizations", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const organizations = await storage.getAllOrganizations();
+      
+      // Get subscription info for each org
+      const orgsWithDetails = await Promise.all(organizations.map(async (org) => {
+        const subscription = await storage.getOrganizationSubscription(org.id);
+        const plan = subscription ? await storage.getSubscriptionPlan(subscription.planId) : null;
+        const members = await storage.getOrganizationMembers(org.id);
+        return {
+          ...org,
+          memberCount: members.length,
+          subscription: subscription ? {
+            planName: plan?.name || 'Unknown',
+            status: subscription.status,
+          } : null,
+        };
+      }));
+      
+      res.json(orgsWithDetails);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get all users (super admin only)
+  app.get("/api/super-admin/users", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      
+      // Get organization info for each user
+      const usersWithDetails = await Promise.all(allUsers.map(async (user) => {
+        const orgs = await storage.getUserOrganizations(user.id);
+        return {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          role: user.role,
+          status: user.status,
+          isSuperAdmin: user.isSuperAdmin,
+          createdAt: user.createdAt,
+          lastActive: user.lastActive,
+          organizations: orgs.map(o => ({ id: o.id, name: o.name })),
+        };
+      }));
+      
+      res.json(usersWithDetails);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Update user super admin status (super admin only)
+  app.patch("/api/super-admin/users/:id/super-admin", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { isSuperAdmin } = req.body;
+      
+      if (typeof isSuperAdmin !== 'boolean') {
+        return res.status(400).json({ message: "isSuperAdmin must be a boolean" });
+      }
+      
+      // Prevent removing own super admin status
+      if (id === req.session.userId && !isSuperAdmin) {
+        return res.status(400).json({ message: "Cannot remove your own super admin status" });
+      }
+      
+      const user = await storage.updateUserSuperAdmin(id, isSuperAdmin);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({ id: user.id, isSuperAdmin: user.isSuperAdmin });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get organization details (super admin can view any org)
+  app.get("/api/super-admin/organizations/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const org = await storage.getOrganization(id);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      const members = await storage.getOrganizationMembers(id);
+      const subscription = await storage.getOrganizationSubscription(id);
+      const plan = subscription ? await storage.getSubscriptionPlan(subscription.planId) : null;
+      const settings = await storage.getSettingsByOrganization(id);
+      
+      // Get member details
+      const memberDetails = await Promise.all(members.map(async (member) => {
+        const user = await storage.getUser(member.userId);
+        return {
+          userId: member.userId,
+          email: user?.email,
+          username: user?.username,
+          role: member.role,
+          joinedAt: member.createdAt,
+        };
+      }));
+      
+      res.json({
+        ...org,
+        members: memberDetails,
+        subscription: subscription ? { ...subscription, plan } : null,
+        settings: settings.map(s => ({ key: s.key, value: s.key.includes('api_key') ? '***' : s.value })),
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Impersonate organization (super admin can switch to any org for support)
+  app.post("/api/super-admin/impersonate/:organizationId", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const { organizationId } = req.params;
+      
+      const org = await storage.getOrganization(organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      // Set the organization in session (super admin impersonation)
+      req.session.organizationId = organizationId;
+      
+      req.session.save((err) => {
+        if (err) {
+          return res.status(500).json({ message: "Failed to impersonate organization" });
+        }
+        res.json({ message: "Now impersonating organization", organization: org });
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Clear impersonation (return to super admin mode without org context)
+  app.post("/api/super-admin/stop-impersonation", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      req.session.organizationId = undefined;
+      
+      req.session.save((err) => {
+        if (err) {
+          return res.status(500).json({ message: "Failed to stop impersonation" });
+        }
+        res.json({ message: "Stopped impersonating, returned to super admin mode" });
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Platform statistics (super admin only)
+  app.get("/api/super-admin/stats", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const organizations = await storage.getAllOrganizations();
+      const allUsers = await storage.getAllUsers();
+      const queryLogs = await storage.getAllQueryLogs();
+      
+      // Count by status
+      const activeOrgs = organizations.filter(o => o.status === 'active').length;
+      const activeUsers = allUsers.filter(u => u.status === 'active').length;
+      
+      // Recent activity (last 7 days)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const recentQueries = queryLogs.filter(l => new Date(l.createdAt) > sevenDaysAgo).length;
+      
+      res.json({
+        totalOrganizations: organizations.length,
+        activeOrganizations: activeOrgs,
+        totalUsers: allUsers.length,
+        activeUsers,
+        superAdmins: allUsers.filter(u => u.isSuperAdmin).length,
+        totalQueries: queryLogs.length,
+        queriesLast7Days: recentQueries,
+      });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

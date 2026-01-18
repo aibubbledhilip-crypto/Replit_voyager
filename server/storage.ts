@@ -30,6 +30,7 @@ export interface IStorage {
   updateUserStatus(userId: string, status: string): Promise<User | undefined>;
   updateUserPassword(userId: string, newPassword: string): Promise<User | undefined>;
   updateUserLastActive(userId: string): Promise<void>;
+  updateUserSuperAdmin(userId: string, isSuperAdmin: boolean): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   getUsersByOrganization(organizationId: string): Promise<User[]>;
   
@@ -156,6 +157,14 @@ export class DbStorage implements IStorage {
     await db.update(users)
       .set({ lastActive: new Date() })
       .where(eq(users.id, userId));
+  }
+
+  async updateUserSuperAdmin(userId: string, isSuperAdmin: boolean): Promise<User | undefined> {
+    const result = await db.update(users)
+      .set({ isSuperAdmin })
+      .where(eq(users.id, userId))
+      .returning();
+    return result[0];
   }
 
   async getAllUsers(): Promise<User[]> {
@@ -455,7 +464,7 @@ export class DbStorage implements IStorage {
     const result = await db.select().from(organizations)
       .where(or(...orgIds.map((id: string) => eq(organizations.id, id))));
     // Return orgs in the same order as memberships
-    return orgIds.map(id => result.find(org => org.id === id)).filter(Boolean) as Organization[];
+    return orgIds.map((id: string) => result.find((org: Organization) => org.id === id)).filter(Boolean) as Organization[];
   }
 
   async addOrganizationMember(member: InsertOrganizationMember): Promise<OrganizationMember> {
