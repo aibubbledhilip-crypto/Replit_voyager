@@ -13,6 +13,7 @@ import QueryExecutionPage from "@/pages/QueryExecutionPage";
 import ExplorerPage from "@/pages/ExplorerPage";
 import FileComparisonPage from "@/pages/FileComparisonPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
+import UserManagementPage from "@/pages/UserManagementPage";
 import UsageLogsPage from "@/pages/UsageLogsPage";
 import SftpConfigPage from "@/pages/SftpConfigPage";
 import SftpMonitorPage from "@/pages/SftpMonitorPage";
@@ -114,6 +115,7 @@ function AuthenticatedApp() {
                 <Route path="/explorer" component={ExplorerPage} />
                 <Route path="/file-comparison" component={FileComparisonPage} />
                 <Route path="/admin" component={AdminDashboardPage} />
+                <Route path="/admin/users" component={UserManagementPage} />
                 <Route path="/admin/logs" component={UsageLogsPage} />
                 <Route path="/admin/sftp-config" component={SftpConfigPage} />
                 <Route path="/admin/explorer-config" component={ExplorerConfigPage} />

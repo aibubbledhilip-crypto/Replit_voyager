@@ -1,7 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import StatsCard from "@/components/StatsCard";
 import QueryLimitControl from "@/components/QueryLimitControl";
-import UserManagementTable from "@/components/UserManagementTable";
 import { Activity, Users, Clock, Database } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
@@ -82,18 +81,10 @@ export default function AdminDashboardPage() {
     : 0;
   const totalDataExtracted = logs.reduce((sum: number, log: any) => sum + log.rowsReturned, 0);
 
-  const formattedUsers = users.map((user: any) => ({
-    ...user,
-    email: `${user.username}@company.com`,
-    lastActive: user.lastActive 
-      ? new Date(user.lastActive).toLocaleString() 
-      : 'Never',
-  }));
-
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold mb-2">Admin Dashboard</h1>
+        <h1 className="text-3xl font-semibold mb-2" data-testid="text-admin-dashboard-title">Admin Dashboard</h1>
         <p className="text-muted-foreground">Overview of system usage and user activity</p>
       </div>
 
@@ -130,8 +121,6 @@ export default function AdminDashboardPage() {
         onUpdateDisplayLimit={(limit) => updateDisplayLimitMutation.mutate(limit)}
         onUpdateExportLimit={(limit) => updateExportLimitMutation.mutate(limit)}
       />
-
-      <UserManagementTable users={formattedUsers} />
     </div>
   );
 }

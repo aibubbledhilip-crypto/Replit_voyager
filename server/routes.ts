@@ -1080,7 +1080,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let configs;
       if (organizationId) {
         configs = await storage.getSftpConfigsByOrganization(organizationId);
-        configs = configs.filter(c => c.isActive);
+        configs = configs.filter(c => c.status === 'active');
       } else {
         configs = await storage.getActiveSftpConfigs();
       }
