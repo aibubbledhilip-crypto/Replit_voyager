@@ -53,17 +53,29 @@ function requireAuth(req: Request, res: Response, next: Function) {
   if (!req.session.userId) {
     return res.status(401).json({ message: "Unauthorized" });
   }
-  // Enforce organization context for tenant isolation
+  // Super admins can access without organization context (for platform management)
+  if (req.session.isSuperAdmin) {
+    return next();
+  }
+  // Regular users need organization context for tenant isolation
   if (!req.session.organizationId) {
     return res.status(403).json({ message: "Organization context required - please re-login" });
   }
   next();
 }
 
-// Middleware to check if user is admin
+// Middleware to check if user is org admin
 function requireAdmin(req: Request, res: Response, next: Function) {
   if (!req.session.userId || req.session.role !== 'admin') {
     return res.status(403).json({ message: "Forbidden - Admin access required" });
+  }
+  next();
+}
+
+// Middleware to check if user is super admin (platform-level)
+function requireSuperAdmin(req: Request, res: Response, next: Function) {
+  if (!req.session.userId || !req.session.isSuperAdmin) {
+    return res.status(403).json({ message: "Forbidden - Super Admin access required" });
   }
   next();
 }
@@ -105,7 +117,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userOrganizations = await storage.getUserOrganizations(user.id);
       const organizationId = userOrganizations[0]?.id;
       
-      if (!organizationId) {
+      // Super admins can log in without organization membership
+      if (!organizationId && !user.isSuperAdmin) {
         return res.status(403).json({ message: "User is not a member of any organization" });
       }
 
@@ -123,6 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.session.username = user.username;
         req.session.role = user.role;
         req.session.organizationId = organizationId;
+        req.session.isSuperAdmin = user.isSuperAdmin || false;
         
         // Generate new CSRF token for the new session
         req.session.csrfToken = undefined;
@@ -137,6 +151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             username: user.username,
             role: user.role,
             organizationId,
+            isSuperAdmin: user.isSuperAdmin || false,
           });
         });
       });

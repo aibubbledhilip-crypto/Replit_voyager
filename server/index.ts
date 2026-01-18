@@ -12,6 +12,7 @@ declare module 'express-session' {
     username?: string;
     role?: string;
     organizationId?: string;
+    isSuperAdmin?: boolean;
     csrfToken?: string;
   }
 }

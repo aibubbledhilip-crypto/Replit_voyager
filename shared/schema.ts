@@ -96,6 +96,7 @@ export const users = pgTable("users", {
   role: text("role").notNull().default('user'),
   status: text("status").notNull().default('active'),
   emailVerified: boolean("email_verified").notNull().default(false),
+  isSuperAdmin: boolean("is_super_admin").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   lastActive: timestamp("last_active"),
 });
