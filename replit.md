@@ -15,6 +15,7 @@ The user wants me to act as a coding agent.
 - All tenant data is now organization-scoped with proper isolation
 - Fixed React redirect logic using useEffect instead of render-time setLocation
 - Security: bcrypt password hashing on registration, SFTP ownership verification
+- **Super Admin Implementation**: Platform-level administrators can view all organizations/users, impersonate organizations for support, and manage super admin status
 
 ## System Architecture
 
@@ -46,6 +47,7 @@ The application uses React, TypeScript, Tailwind CSS, and Shadcn UI for a modern
 7.  **Usage Logging**: Comprehensive logging of all query executions, including user, query text, rows returned, execution time, and status.
 8.  **User Management**: Admin interface for creating users, assigning roles, managing user status, and configuring query row limits.
 9.  **Security**: Implements bcrypt for password hashing, HTTP-only and secure sessions, environment variable storage for AWS credentials, API-level role-based access control, input validation (e.g., for MSISDN), and temporary file cleanup. CSRF protection is used with synchronizer tokens.
+10. **Super Admin**: Platform-level administration with ability to view all organizations, all users, manage super admin status, impersonate organizations for support (with visual indicator), and platform statistics dashboard. Setup script: `npx tsx server/scripts/setup-super-admin.ts <email>`.
 
 ### System Design Choices
 -   The system is designed for enterprise use with a focus on security, scalability, and auditability.
