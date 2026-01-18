@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Database, FileText, Search, GitCompare, Server, Activity, LayoutDashboard, ChevronDown, Brain, CreditCard, Users } from "lucide-react";
+import { Database, FileText, Search, GitCompare, Server, Activity, LayoutDashboard, ChevronDown, Brain, CreditCard, Users, Settings } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -8,6 +8,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
 import {
   Collapsible,
@@ -18,8 +21,9 @@ import { cn } from "@/lib/utils";
 
 interface MenuItem {
   title: string;
-  url: string;
+  url?: string;
   icon: any;
+  children?: MenuItem[];
 }
 
 interface MenuCategory {
@@ -66,19 +70,25 @@ const adminItems: MenuItem[] = [
     icon: Users,
   },
   {
-    title: "Explorer Config",
-    url: "/admin/explorer-config",
-    icon: Search,
-  },
-  {
-    title: "AI Configuration",
-    url: "/admin/ai-config",
-    icon: Brain,
-  },
-  {
-    title: "SFTP Configuration",
-    url: "/admin/sftp-config",
-    icon: Server,
+    title: "Configurations",
+    icon: Settings,
+    children: [
+      {
+        title: "Explorer",
+        url: "/admin/explorer-config",
+        icon: Search,
+      },
+      {
+        title: "AI",
+        url: "/admin/ai-config",
+        icon: Brain,
+      },
+      {
+        title: "SFTP",
+        url: "/admin/sftp-config",
+        icon: Server,
+      },
+    ],
   },
   {
     title: "Usage Logs",
@@ -122,8 +132,16 @@ export function AppSidebar({ userRole = 'user' }: AppSidebarProps) {
     categories.reduce((acc, cat) => ({ ...acc, [cat.label]: cat.defaultOpen ?? true }), {})
   );
 
+  const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({
+    "Configurations": true,
+  });
+
   const toggleCategory = (label: string) => {
     setOpenCategories(prev => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  const toggleSubmenu = (title: string) => {
+    setOpenSubmenus(prev => ({ ...prev, [title]: !prev[title] }));
   };
 
   return (
@@ -154,12 +172,46 @@ export function AppSidebar({ userRole = 'user' }: AppSidebarProps) {
                   <SidebarMenu>
                     {category.items.map((item) => (
                       <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild>
-                          <a href={item.url} data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}>
-                            <item.icon />
-                            <span>{item.title}</span>
-                          </a>
-                        </SidebarMenuButton>
+                        {item.children ? (
+                          <Collapsible
+                            open={openSubmenus[item.title]}
+                            onOpenChange={() => toggleSubmenu(item.title)}
+                          >
+                            <CollapsibleTrigger asChild>
+                              <SidebarMenuButton data-testid={`toggle-${item.title.toLowerCase().replace(/\s+/g, '-')}`}>
+                                <item.icon className="h-4 w-4" />
+                                <span>{item.title}</span>
+                                <ChevronDown
+                                  className={cn(
+                                    "ml-auto h-4 w-4 transition-transform duration-200",
+                                    openSubmenus[item.title] ? "rotate-0" : "-rotate-90"
+                                  )}
+                                />
+                              </SidebarMenuButton>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <SidebarMenuSub>
+                                {item.children.map((child) => (
+                                  <SidebarMenuSubItem key={child.title}>
+                                    <SidebarMenuSubButton asChild>
+                                      <a href={child.url} data-testid={`link-${child.title.toLowerCase().replace(/\s+/g, '-')}-config`}>
+                                        <child.icon className="h-4 w-4" />
+                                        <span>{child.title}</span>
+                                      </a>
+                                    </SidebarMenuSubButton>
+                                  </SidebarMenuSubItem>
+                                ))}
+                              </SidebarMenuSub>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        ) : (
+                          <SidebarMenuButton asChild>
+                            <a href={item.url} data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}>
+                              <item.icon className="h-4 w-4" />
+                              <span>{item.title}</span>
+                            </a>
+                          </SidebarMenuButton>
+                        )}
                       </SidebarMenuItem>
                     ))}
                   </SidebarMenu>
