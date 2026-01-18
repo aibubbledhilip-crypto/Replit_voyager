@@ -164,7 +164,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User management routes (admin only)
   app.get("/api/users", requireAuth, requireAdmin, async (req, res) => {
     try {
-      const users = await storage.getAllUsers();
+      const organizationId = req.session.organizationId;
+      let users;
+      if (organizationId) {
+        // Get users that belong to this organization
+        users = await storage.getUsersByOrganization(organizationId);
+      } else {
+        // Fallback for legacy users without organization
+        users = await storage.getAllUsers();
+      }
       const usersWithoutPasswords = users.map(({ password, ...user }) => user);
       res.json(usersWithoutPasswords);
     } catch (error: any) {
@@ -174,6 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/users", requireAuth, requireAdmin, async (req, res) => {
     try {
+      const organizationId = req.session.organizationId;
       const userData = insertUserSchema.parse(req.body);
       const existingUser = await storage.getUserByUsername(userData.username);
       if (existingUser) {
@@ -181,6 +190,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = await storage.createUser(userData);
+      
+      // Add user to the admin's organization if they have one
+      if (organizationId) {
+        await storage.addOrganizationMember({
+          organizationId,
+          userId: user.id,
+          role: 'member',
+        });
+      }
+      
       const { password, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error: any) {
@@ -195,9 +214,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { role } = req.body;
+      const organizationId = req.session.organizationId;
 
       if (!['admin', 'user'].includes(role)) {
         return res.status(400).json({ message: "Invalid role" });
+      }
+
+      // Verify user belongs to admin's organization
+      if (organizationId) {
+        const member = await storage.getOrganizationMember(organizationId, id);
+        if (!member) {
+          return res.status(403).json({ message: "User not in your organization" });
+        }
       }
 
       const user = await storage.updateUserRole(id, role);
@@ -216,9 +244,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { status } = req.body;
+      const organizationId = req.session.organizationId;
 
       if (!['active', 'inactive'].includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
+      }
+
+      // Verify user belongs to admin's organization
+      if (organizationId) {
+        const member = await storage.getOrganizationMember(organizationId, id);
+        if (!member) {
+          return res.status(403).json({ message: "User not in your organization" });
+        }
       }
 
       const user = await storage.updateUserStatus(id, status);
@@ -237,9 +274,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { password } = req.body;
+      const organizationId = req.session.organizationId;
 
       if (!password || password.length < 6) {
         return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+
+      // Verify user belongs to admin's organization
+      if (organizationId) {
+        const member = await storage.getOrganizationMember(organizationId, id);
+        if (!member) {
+          return res.status(403).json({ message: "User not in your organization" });
+        }
       }
 
       const user = await storage.updateUserPassword(id, password);
