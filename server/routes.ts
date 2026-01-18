@@ -22,6 +22,29 @@ import { getStripePublishableKey } from "./stripeClient";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Audit logging helper for security-sensitive operations
+async function logAuditEvent(
+  req: Request,
+  action: string,
+  resourceType: string,
+  resourceId?: string,
+  details?: string
+) {
+  try {
+    await storage.createAuditLog({
+      organizationId: req.session.organizationId || null,
+      userId: req.session.userId || null,
+      action,
+      resourceType,
+      resourceId: resourceId || null,
+      details: details || null,
+      ipAddress: req.ip || req.headers['x-forwarded-for']?.toString() || null,
+    });
+  } catch (error) {
+    console.error('Failed to create audit log:', error);
+  }
+}
+
 // Configure multer for file uploads
 const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -101,15 +124,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const user = await storage.getUserByUsername(username);
       if (!user) {
+        // Audit log: failed login attempt (user not found)
+        await logAuditEvent(req, 'login_failed', 'auth', undefined, `Failed login attempt for username: ${username} (user not found)`);
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
       if (user.status !== 'active') {
+        // Audit log: failed login attempt (inactive account)
+        await logAuditEvent(req, 'login_failed', 'auth', user.id, `Failed login attempt for user ${username} (account inactive)`);
         return res.status(403).json({ message: "Account is inactive" });
       }
 
       const isValid = await bcrypt.compare(password, user.password);
       if (!isValid) {
+        // Audit log: failed login attempt (wrong password)
+        await logAuditEvent(req, 'login_failed', 'auth', user.id, `Failed login attempt for user ${username} (invalid password)`);
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
@@ -141,9 +170,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Generate new CSRF token for the new session
         req.session.csrfToken = undefined;
 
-        req.session.save((err) => {
+        req.session.save(async (err) => {
           if (err) {
             return res.status(500).json({ message: "Failed to save session" });
+          }
+          
+          // Audit log: successful login
+          try {
+            await storage.createAuditLog({
+              organizationId: organizationId || null,
+              userId: user.id,
+              action: 'login_success',
+              resourceType: 'auth',
+              resourceId: user.id,
+              details: `User ${user.username} logged in successfully`,
+              ipAddress: req.ip || req.headers['x-forwarded-for']?.toString() || null,
+            });
+          } catch (auditError) {
+            console.error('Failed to create login audit log:', auditError);
           }
 
           res.json({
@@ -212,14 +256,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users", requireAuth, requireAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
-      let users;
-      if (organizationId) {
-        // Get users that belong to this organization
-        users = await storage.getUsersByOrganization(organizationId);
-      } else {
-        // Fallback for legacy users without organization
-        users = await storage.getAllUsers();
+      
+      // Organization context is mandatory for user listing (security: prevent tenant data leak)
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
       }
+      
+      // Get users that belong to this organization only
+      const users = await storage.getUsersByOrganization(organizationId);
       const usersWithoutPasswords = users.map(({ password, ...user }) => user);
       res.json(usersWithoutPasswords);
     } catch (error: any) {
@@ -230,6 +274,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/users", requireAuth, requireAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
+      
+      // Organization context is mandatory (security: prevent orphan users)
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      
       const userData = insertUserSchema.parse(req.body);
       const existingUser = await storage.getUserByUsername(userData.username);
       if (existingUser) {
@@ -238,14 +288,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const user = await storage.createUser(userData);
       
-      // Add user to the admin's organization if they have one
-      if (organizationId) {
-        await storage.addOrganizationMember({
-          organizationId,
-          userId: user.id,
-          role: 'member',
-        });
-      }
+      // Add user to the admin's organization
+      await storage.addOrganizationMember({
+        organizationId,
+        userId: user.id,
+        role: 'member',
+      });
+      
+      // Audit log: user created
+      await logAuditEvent(req, 'user_created', 'user', user.id, `User "${user.username}" created`);
       
       const { password, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
@@ -267,18 +318,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid role" });
       }
 
-      // Verify user belongs to admin's organization
-      if (organizationId) {
-        const member = await storage.getOrganizationMember(organizationId, id);
-        if (!member) {
-          return res.status(403).json({ message: "User not in your organization" });
-        }
+      // Verify user belongs to admin's organization (mandatory check)
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      const member = await storage.getOrganizationMember(organizationId, id);
+      if (!member) {
+        return res.status(403).json({ message: "User not in your organization" });
       }
 
       const user = await storage.updateUserRole(id, role);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
+
+      // Audit log: user role change
+      await logAuditEvent(req, 'user_role_changed', 'user', id, `Role changed to ${role}`);
 
       const { password, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
@@ -297,18 +352,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid status" });
       }
 
-      // Verify user belongs to admin's organization
-      if (organizationId) {
-        const member = await storage.getOrganizationMember(organizationId, id);
-        if (!member) {
-          return res.status(403).json({ message: "User not in your organization" });
-        }
+      // Verify user belongs to admin's organization (mandatory check)
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      const member = await storage.getOrganizationMember(organizationId, id);
+      if (!member) {
+        return res.status(403).json({ message: "User not in your organization" });
       }
 
       const user = await storage.updateUserStatus(id, status);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
+
+      // Audit log: user status change
+      await logAuditEvent(req, 'user_status_changed', 'user', id, `Status changed to ${status}`);
 
       const { password, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
@@ -327,18 +386,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Password must be at least 6 characters" });
       }
 
-      // Verify user belongs to admin's organization
-      if (organizationId) {
-        const member = await storage.getOrganizationMember(organizationId, id);
-        if (!member) {
-          return res.status(403).json({ message: "User not in your organization" });
-        }
+      // Verify user belongs to admin's organization (mandatory check)
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      const member = await storage.getOrganizationMember(organizationId, id);
+      if (!member) {
+        return res.status(403).json({ message: "User not in your organization" });
       }
 
       const user = await storage.updateUserPassword(id, password);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
+
+      // Audit log: password change (don't log the password itself!)
+      await logAuditEvent(req, 'user_password_changed', 'user', id, 'Password was reset by admin');
 
       const { password: _, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
@@ -424,8 +487,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/saved-queries", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const organizationId = req.session.organizationId;
+      
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      
+      // Get queries for the user that belong to the organization
       const queries = await storage.getSavedQueriesByUser(userId);
-      res.json(queries);
+      // Filter to only queries in the user's organization
+      const orgQueries = queries.filter(q => q.organizationId === organizationId);
+      res.json(orgQueries);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -434,13 +506,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/saved-queries", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const organizationId = req.session.organizationId;
       const { name, query } = req.body;
+      
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
       
       if (!name || !query) {
         return res.status(400).json({ message: "Name and query are required" });
       }
       
-      const savedQuery = await storage.createSavedQuery({ userId, name, query });
+      const savedQuery = await storage.createSavedQuery({ userId, name, query, organizationId });
       res.json(savedQuery);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -450,7 +527,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/saved-queries/:id", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const organizationId = req.session.organizationId;
       const { id } = req.params;
+      
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      
+      // Get the saved query to verify organization ownership
+      const queries = await storage.getSavedQueriesByUser(userId);
+      const queryToDelete = queries.find(q => q.id === id);
+      
+      if (!queryToDelete) {
+        return res.status(404).json({ message: "Saved query not found" });
+      }
+      
+      // Verify organization ownership
+      if (queryToDelete.organizationId !== organizationId) {
+        return res.status(403).json({ message: "Not authorized to delete this query" });
+      }
       
       const deleted = await storage.deleteSavedQuery(id, userId);
       if (!deleted) {
@@ -1064,13 +1159,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/sftp/configs", requireAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
-      let configs;
-      if (organizationId) {
-        configs = await storage.getSftpConfigsByOrganization(organizationId);
-      } else {
-        // Fallback for legacy users without organization
-        configs = await storage.getAllSftpConfigs();
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
       }
+      const configs = await storage.getSftpConfigsByOrganization(organizationId);
       res.json(configs);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -1080,11 +1172,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/sftp/configs", requireAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
       const validatedData = insertSftpConfigSchema.parse({
         ...req.body,
-        organizationId: organizationId || req.body.organizationId
+        organizationId: organizationId
       });
       const newConfig = await storage.createSftpConfig(validatedData);
+      
+      // Audit log: SFTP config created
+      await logAuditEvent(req, 'sftp_config_created', 'sftp_config', newConfig.id, `SFTP config "${newConfig.name}" created`);
+      
       res.status(201).json(newConfig);
     } catch (error: any) {
       if (error.name === 'ZodError') {
@@ -1106,8 +1205,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "SFTP configuration not found" });
       }
       
-      // Verify organization ownership
-      if (organizationId && existingConfig.organizationId !== organizationId) {
+      // Verify organization ownership (mandatory check)
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      if (existingConfig.organizationId !== organizationId) {
         return res.status(403).json({ message: "Not authorized to modify this configuration" });
       }
       
@@ -1135,6 +1237,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "SFTP configuration not found" });
       }
       
+      // Audit log: SFTP config updated
+      await logAuditEvent(req, 'sftp_config_updated', 'sftp_config', id, `SFTP config "${updated.name}" updated`);
+      
       res.json(updated);
     } catch (error: any) {
       if (error.name === 'ZodError') {
@@ -1155,9 +1260,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "SFTP configuration not found" });
       }
       
-      if (organizationId && existingConfig.organizationId !== organizationId) {
+      // Verify organization ownership (mandatory check)
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      if (existingConfig.organizationId !== organizationId) {
         return res.status(403).json({ message: "Not authorized to delete this configuration" });
       }
+      
+      // Audit log: SFTP config deleted (log before deletion while we have the config data)
+      await logAuditEvent(req, 'sftp_config_deleted', 'sftp_config', id, `SFTP config "${existingConfig.name}" deleted`);
       
       const deleted = await storage.deleteSftpConfig(id);
       
@@ -1183,13 +1295,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/sftp/monitor", requireAuth, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
-      let configs;
-      if (organizationId) {
-        configs = await storage.getSftpConfigsByOrganization(organizationId);
-        configs = configs.filter(c => c.status === 'active');
-      } else {
-        configs = await storage.getActiveSftpConfigs();
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
       }
+      let configs = await storage.getSftpConfigsByOrganization(organizationId);
+      configs = configs.filter(c => c.status === 'active');
       
       // Check all SFTP servers in parallel
       const results = await Promise.all(
@@ -1223,10 +1333,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/sftp/monitor/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      const organizationId = req.session.organizationId;
+      
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      
       const config = await storage.getSftpConfigById(id);
       
       if (!config) {
         return res.status(404).json({ message: "SFTP configuration not found" });
+      }
+      
+      // Verify organization ownership
+      if (config.organizationId !== organizationId) {
+        return res.status(403).json({ message: "Not authorized to access this configuration" });
       }
       
       const result = await checkSftpFiles(config);
@@ -1927,6 +2048,10 @@ Be concise and focus on the most important insights. Use clear headings and bull
         return res.status(404).json({ message: "Organization not found" });
       }
       
+      // Audit log: Super admin impersonation started (CRITICAL security event)
+      await logAuditEvent(req, 'super_admin_impersonation_started', 'organization', organizationId, 
+        `Super admin started impersonating organization "${org.name}"`);
+      
       // Set the organization in session (super admin impersonation)
       req.session.organizationId = organizationId;
       
@@ -1944,6 +2069,14 @@ Be concise and focus on the most important insights. Use clear headings and bull
   // Clear impersonation (return to super admin mode without org context)
   app.post("/api/super-admin/stop-impersonation", requireAuth, requireSuperAdmin, async (req, res) => {
     try {
+      const prevOrgId = req.session.organizationId;
+      
+      // Audit log: Super admin impersonation ended
+      if (prevOrgId) {
+        await logAuditEvent(req, 'super_admin_impersonation_ended', 'organization', prevOrgId, 
+          'Super admin stopped impersonating organization');
+      }
+      
       // Clear the organization context to exit impersonation mode
       // Using delete to ensure the property is removed from the session
       delete req.session.organizationId;
