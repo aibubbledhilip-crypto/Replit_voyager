@@ -41,6 +41,13 @@ function AuthenticatedApp() {
   // Query Execution and Explorer pages use full width
   const isFullWidthPage = location === "/" || location === "/explorer";
 
+  // Redirect logged-in users away from login/signup pages
+  useEffect(() => {
+    if (user && (location === '/login' || location === '/signup')) {
+      setLocation('/');
+    }
+  }, [user, location, setLocation]);
+
   const handleLogout = async () => {
     try {
       await apiRequest('/api/auth/logout', { method: 'POST' });
@@ -61,10 +68,13 @@ function AuthenticatedApp() {
 
   // Handle public routes
   if (isPublicRoute) {
-    // If user is already logged in and on login/signup, redirect to home
+    // Wait for redirect effect to run
     if (user && (location === '/login' || location === '/signup')) {
-      setLocation('/');
-      return null;
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-muted-foreground">Redirecting...</div>
+        </div>
+      );
     }
     
     return (
