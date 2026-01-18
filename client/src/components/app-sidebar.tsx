@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Database, FileText, Search, GitCompare, Server, Activity, LayoutDashboard, ChevronDown, Brain } from "lucide-react";
+import { Database, FileText, Search, GitCompare, Server, Activity, LayoutDashboard, ChevronDown, Brain, CreditCard } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -79,6 +79,11 @@ const adminItems: MenuItem[] = [
     title: "Usage Logs",
     url: "/admin/logs",
     icon: FileText,
+  },
+  {
+    title: "Billing",
+    url: "/billing",
+    icon: CreditCard,
   },
 ];
 

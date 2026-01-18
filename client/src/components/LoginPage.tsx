@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "wouter";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -99,6 +100,15 @@ export default function LoginPage() {
             </Button>
           </form>
         </CardContent>
+        
+        <CardFooter className="flex justify-center pb-6">
+          <p className="text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/signup" className="text-primary hover:underline" data-testid="link-signup">
+              Sign up for free
+            </Link>
+          </p>
+        </CardFooter>
       </Card>
     </div>
   );

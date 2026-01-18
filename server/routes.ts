@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import bcrypt from "bcrypt";
 import { z } from "zod";
+import crypto from "crypto";
 import { insertUserSchema, insertQueryLogSchema } from "@shared/schema";
 import { AthenaClient, StartQueryExecutionCommand, GetQueryExecutionCommand, GetQueryResultsCommand } from "@aws-sdk/client-athena";
 import { ensureCsrfToken, verifyCsrfToken, getCsrfToken } from "./csrf";
@@ -15,6 +16,8 @@ import { checkSftpFiles, testSftpConnection } from "./sftp-helper";
 import { insertSftpConfigSchema } from "@shared/schema";
 import { executeAthenaQueryWithPagination } from "./athena-helper";
 import { analyzeData, getValidatedModel, type AIProvider } from "./ai-service";
+import { stripeService } from "./stripeService";
+import { getStripePublishableKey } from "./stripeClient";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -806,9 +809,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/logs", requireAuth, async (req, res) => {
     try {
       let logs;
-      if (req.session.role === 'admin') {
-        logs = await storage.getAllQueryLogs();
+      const organizationId = req.session.organizationId;
+      
+      if (organizationId && req.session.role === 'admin') {
+        // Admin sees all logs for their organization
+        logs = await storage.getQueryLogsByOrganization(organizationId);
+      } else if (organizationId) {
+        // Regular users see their own logs within the organization
+        logs = await storage.getQueryLogsByUser(req.session.userId!);
       } else {
+        // Fallback for legacy users without organization
         logs = await storage.getQueryLogsByUser(req.session.userId!);
       }
       res.json(logs);
@@ -944,10 +954,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // SFTP Configuration Routes (Admin only)
+  // SFTP Configuration Routes (Admin only, organization-scoped)
   app.get("/api/sftp/configs", requireAdmin, async (req, res) => {
     try {
-      const configs = await storage.getAllSftpConfigs();
+      const organizationId = req.session.organizationId;
+      let configs;
+      if (organizationId) {
+        configs = await storage.getSftpConfigsByOrganization(organizationId);
+      } else {
+        // Fallback for legacy users without organization
+        configs = await storage.getAllSftpConfigs();
+      }
       res.json(configs);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -956,7 +973,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/sftp/configs", requireAdmin, async (req, res) => {
     try {
-      const validatedData = insertSftpConfigSchema.parse(req.body);
+      const organizationId = req.session.organizationId;
+      const validatedData = insertSftpConfigSchema.parse({
+        ...req.body,
+        organizationId: organizationId || req.body.organizationId
+      });
       const newConfig = await storage.createSftpConfig(validatedData);
       res.status(201).json(newConfig);
     } catch (error: any) {
@@ -970,6 +991,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/sftp/configs/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
+      const organizationId = req.session.organizationId;
       const validatedData = insertSftpConfigSchema.parse(req.body);
       
       // Get existing config to preserve credentials if not provided
@@ -977,6 +999,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!existingConfig) {
         return res.status(404).json({ message: "SFTP configuration not found" });
       }
+      
+      // Verify organization ownership
+      if (organizationId && existingConfig.organizationId !== organizationId) {
+        return res.status(403).json({ message: "Not authorized to modify this configuration" });
+      }
+      
+      // Prevent organizationId tampering - always use existing organizationId
+      validatedData.organizationId = existingConfig.organizationId;
       
       // Preserve existing password if not provided (empty string means keep existing)
       if (!validatedData.password && existingConfig.password) {
@@ -1011,6 +1041,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/sftp/configs/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
+      const organizationId = req.session.organizationId;
+      
+      // Verify organization ownership before deleting
+      const existingConfig = await storage.getSftpConfigById(id);
+      if (!existingConfig) {
+        return res.status(404).json({ message: "SFTP configuration not found" });
+      }
+      
+      if (organizationId && existingConfig.organizationId !== organizationId) {
+        return res.status(403).json({ message: "Not authorized to delete this configuration" });
+      }
+      
       const deleted = await storage.deleteSftpConfig(id);
       
       if (!deleted) {
@@ -1034,7 +1076,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/sftp/monitor", requireAuth, async (req, res) => {
     try {
-      const configs = await storage.getActiveSftpConfigs();
+      const organizationId = req.session.organizationId;
+      let configs;
+      if (organizationId) {
+        configs = await storage.getSftpConfigsByOrganization(organizationId);
+        configs = configs.filter(c => c.isActive);
+      } else {
+        configs = await storage.getActiveSftpConfigs();
+      }
       
       // Check all SFTP servers in parallel
       const results = await Promise.all(
@@ -1181,6 +1230,462 @@ Be concise and focus on the most important insights. Use clear headings and bull
       res.status(500).json({ 
         message: error.message || "Failed to analyze data",
       });
+    }
+  });
+
+  // ============================================================
+  // SAAS ROUTES - Registration, Organizations, Billing
+  // ============================================================
+
+  // Registration schema
+  const registerSchema = z.object({
+    email: z.string().email("Invalid email address"),
+    username: z.string().min(3, "Username must be at least 3 characters"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    organizationName: z.string().min(2, "Organization name must be at least 2 characters"),
+  });
+
+  // Self-service registration
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const data = registerSchema.parse(req.body);
+      
+      // Check if email already exists
+      const existingUser = await storage.getUserByEmail(data.email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+
+      // Check if username already exists
+      const existingUsername = await storage.getUserByUsername(data.username);
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+
+      // Create organization slug
+      const slug = data.organizationName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') + '-' + crypto.randomBytes(4).toString('hex');
+
+      // Check if organization slug exists
+      const existingOrg = await storage.getOrganizationBySlug(slug);
+      if (existingOrg) {
+        return res.status(400).json({ message: "Organization name already taken" });
+      }
+
+      // Create organization
+      const organization = await storage.createOrganization({
+        name: data.organizationName,
+        slug,
+        status: 'active',
+      });
+
+      // Hash password before storing
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      
+      // Create user
+      const user = await storage.createUser({
+        email: data.email,
+        username: data.username,
+        password: hashedPassword,
+        role: 'admin',
+      });
+
+      // Add user as organization admin
+      await storage.addOrganizationMember({
+        organizationId: organization.id,
+        userId: user.id,
+        role: 'admin',
+      });
+
+      // Get free plan and create subscription
+      const freePlan = await storage.getSubscriptionPlanBySlug('free');
+      if (freePlan) {
+        await storage.createOrganizationSubscription({
+          organizationId: organization.id,
+          planId: freePlan.id,
+          status: 'active',
+          billingCycle: 'monthly',
+        });
+      }
+
+      // Create audit log
+      await storage.createAuditLog({
+        organizationId: organization.id,
+        userId: user.id,
+        action: 'organization_created',
+        resourceType: 'organization',
+        resourceId: organization.id,
+        details: JSON.stringify({ name: data.organizationName }),
+        ipAddress: req.ip,
+      });
+
+      // Auto-login after registration
+      req.session.regenerate((err) => {
+        if (err) {
+          return res.status(500).json({ message: "Registration successful but login failed" });
+        }
+
+        req.session.userId = user.id;
+        req.session.username = user.username;
+        req.session.role = user.role;
+        req.session.organizationId = organization.id;
+
+        req.session.save((err) => {
+          if (err) {
+            return res.status(500).json({ message: "Failed to save session" });
+          }
+
+          res.json({
+            user: {
+              id: user.id,
+              username: user.username,
+              email: user.email,
+              role: user.role,
+            },
+            organization: {
+              id: organization.id,
+              name: organization.name,
+              slug: organization.slug,
+            },
+          });
+        });
+      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Registration error:", error);
+      res.status(500).json({ message: error.message || "Registration failed" });
+    }
+  });
+
+  // Get current user's organizations with membership role
+  app.get("/api/organizations", requireAuth, async (req, res) => {
+    try {
+      const organizations = await storage.getUserOrganizations(req.session.userId!);
+      
+      // Include member role for each organization
+      const orgsWithRole = await Promise.all(
+        organizations.map(async (org) => {
+          const member = await storage.getOrganizationMember(org.id, req.session.userId!);
+          return {
+            ...org,
+            memberRole: member?.role || 'member'
+          };
+        })
+      );
+      
+      res.json(orgsWithRole);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get organization details
+  app.get("/api/organizations/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Check membership
+      const member = await storage.getOrganizationMember(id, req.session.userId!);
+      if (!member) {
+        return res.status(403).json({ message: "Not a member of this organization" });
+      }
+
+      const organization = await storage.getOrganization(id);
+      if (!organization) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+
+      const subscription = await storage.getOrganizationSubscription(id);
+      let plan = null;
+      if (subscription) {
+        plan = await storage.getSubscriptionPlan(subscription.planId);
+      }
+
+      res.json({
+        ...organization,
+        subscription,
+        plan,
+        memberRole: member.role,
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get organization members
+  app.get("/api/organizations/:id/members", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const member = await storage.getOrganizationMember(id, req.session.userId!);
+      if (!member) {
+        return res.status(403).json({ message: "Not a member of this organization" });
+      }
+
+      const members = await storage.getOrganizationMembers(id);
+      const users = await storage.getUsersByOrganization(id);
+      
+      const membersWithUsers = members.map(m => {
+        const user = users.find(u => u.id === m.userId);
+        return {
+          ...m,
+          user: user ? {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            status: user.status,
+          } : null,
+        };
+      });
+
+      res.json(membersWithUsers);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Invite user to organization
+  app.post("/api/organizations/:id/invitations", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { email, role } = req.body;
+      
+      const member = await storage.getOrganizationMember(id, req.session.userId!);
+      if (!member || member.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      // Generate invitation token
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
+
+      const invitation = await storage.createOrganizationInvitation({
+        organizationId: id,
+        email,
+        role: role || 'member',
+        token,
+        invitedBy: req.session.userId!,
+        expiresAt,
+      });
+
+      res.json({
+        invitation,
+        inviteLink: `${req.protocol}://${req.get('host')}/invite/${token}`,
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Accept invitation
+  app.post("/api/invitations/:token/accept", async (req, res) => {
+    try {
+      const { token } = req.params;
+      
+      const invitation = await storage.getInvitationByToken(token);
+      if (!invitation) {
+        return res.status(404).json({ message: "Invitation not found" });
+      }
+
+      if (invitation.acceptedAt) {
+        return res.status(400).json({ message: "Invitation already accepted" });
+      }
+
+      if (new Date() > new Date(invitation.expiresAt)) {
+        return res.status(400).json({ message: "Invitation expired" });
+      }
+
+      // Check if user exists or needs to register
+      const existingUser = await storage.getUserByEmail(invitation.email);
+      
+      if (existingUser) {
+        // Add to organization
+        await storage.addOrganizationMember({
+          organizationId: invitation.organizationId,
+          userId: existingUser.id,
+          role: invitation.role,
+        });
+        
+        await storage.acceptInvitation(token);
+
+        res.json({ 
+          message: "Invitation accepted", 
+          requiresRegistration: false,
+          organizationId: invitation.organizationId,
+        });
+      } else {
+        res.json({ 
+          message: "Please complete registration",
+          requiresRegistration: true,
+          email: invitation.email,
+          organizationId: invitation.organizationId,
+          token,
+        });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get subscription plans
+  app.get("/api/subscription-plans", async (req, res) => {
+    try {
+      const plans = await storage.getActiveSubscriptionPlans();
+      res.json(plans);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get Stripe publishable key
+  app.get("/api/stripe/publishable-key", async (req, res) => {
+    try {
+      const publishableKey = await getStripePublishableKey();
+      res.json({ publishableKey });
+    } catch (error: any) {
+      res.status(500).json({ message: "Stripe not configured" });
+    }
+  });
+
+  // Create checkout session
+  app.post("/api/stripe/checkout", requireAuth, async (req, res) => {
+    try {
+      const { priceId, organizationId } = req.body;
+      
+      const member = await storage.getOrganizationMember(organizationId, req.session.userId!);
+      if (!member || member.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const organization = await storage.getOrganization(organizationId);
+      if (!organization) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Get or create Stripe customer
+      let customerId = organization.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripeService.createCustomer(
+          user.email,
+          organization.id,
+          organization.name
+        );
+        customerId = customer.id;
+        await storage.updateOrganization(organization.id, { stripeCustomerId: customerId });
+      }
+
+      // Create checkout session
+      const session = await stripeService.createCheckoutSession(
+        customerId,
+        priceId,
+        `${req.protocol}://${req.get('host')}/billing?success=true`,
+        `${req.protocol}://${req.get('host')}/billing?canceled=true`,
+        organizationId
+      );
+
+      res.json({ url: session.url });
+    } catch (error: any) {
+      console.error("Checkout error:", error);
+      res.status(500).json({ message: error.message || "Failed to create checkout session" });
+    }
+  });
+
+  // Create customer portal session
+  app.post("/api/stripe/portal", requireAuth, async (req, res) => {
+    try {
+      const { organizationId } = req.body;
+      
+      const member = await storage.getOrganizationMember(organizationId, req.session.userId!);
+      if (!member || member.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const organization = await storage.getOrganization(organizationId);
+      if (!organization?.stripeCustomerId) {
+        return res.status(400).json({ message: "No billing information found" });
+      }
+
+      const session = await stripeService.createCustomerPortalSession(
+        organization.stripeCustomerId,
+        `${req.protocol}://${req.get('host')}/billing`
+      );
+
+      res.json({ url: session.url });
+    } catch (error: any) {
+      console.error("Portal error:", error);
+      res.status(500).json({ message: error.message || "Failed to create portal session" });
+    }
+  });
+
+  // Get organization subscription
+  app.get("/api/organizations/:id/subscription", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const member = await storage.getOrganizationMember(id, req.session.userId!);
+      if (!member) {
+        return res.status(403).json({ message: "Not a member of this organization" });
+      }
+
+      const subscription = await storage.getOrganizationSubscription(id);
+      if (!subscription) {
+        return res.json({ subscription: null, plan: null });
+      }
+
+      const plan = await storage.getSubscriptionPlan(subscription.planId);
+      res.json({ subscription, plan });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Update user's current organization in session
+  app.post("/api/auth/switch-organization", requireAuth, async (req, res) => {
+    try {
+      const { organizationId } = req.body;
+      
+      const member = await storage.getOrganizationMember(organizationId, req.session.userId!);
+      if (!member) {
+        return res.status(403).json({ message: "Not a member of this organization" });
+      }
+
+      req.session.organizationId = organizationId;
+      
+      req.session.save((err) => {
+        if (err) {
+          return res.status(500).json({ message: "Failed to switch organization" });
+        }
+        res.json({ message: "Organization switched", organizationId });
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get audit logs for organization (admin only)
+  app.get("/api/organizations/:id/audit-logs", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const member = await storage.getOrganizationMember(id, req.session.userId!);
+      if (!member || member.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const logs = await storage.getAuditLogsByOrganization(id);
+      res.json(logs);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
     }
   });
 

@@ -11,6 +11,8 @@ declare module 'express-session' {
     userId?: string;
     username?: string;
     role?: string;
+    organizationId?: string;
+    csrfToken?: string;
   }
 }
 

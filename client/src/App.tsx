@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, useLocation, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -8,6 +8,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import Header from "@/components/Header";
 import LoginPage from "@/components/LoginPage";
+import SignupPage from "@/pages/SignupPage";
 import QueryExecutionPage from "@/pages/QueryExecutionPage";
 import ExplorerPage from "@/pages/ExplorerPage";
 import FileComparisonPage from "@/pages/FileComparisonPage";
@@ -17,6 +18,7 @@ import SftpConfigPage from "@/pages/SftpConfigPage";
 import SftpMonitorPage from "@/pages/SftpMonitorPage";
 import ExplorerConfigPage from "@/pages/ExplorerConfigPage";
 import AIConfigPage from "@/pages/AIConfigPage";
+import BillingPage from "@/pages/BillingPage";
 import NotFound from "@/pages/not-found";
 import { apiRequest } from "@/lib/api";
 
@@ -27,10 +29,14 @@ interface AuthUser {
 }
 
 function AuthenticatedApp() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { data: user, isLoading } = useQuery<AuthUser>({
     queryKey: ['/api/auth/me'],
   });
+  
+  // Public routes that don't require authentication
+  const publicRoutes = ['/login', '/signup', '/invite'];
+  const isPublicRoute = publicRoutes.some(route => location.startsWith(route));
   
   // Query Execution and Explorer pages use full width
   const isFullWidthPage = location === "/" || location === "/explorer";
@@ -45,11 +51,28 @@ function AuthenticatedApp() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && !isPublicRoute) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
       </div>
+    );
+  }
+
+  // Handle public routes
+  if (isPublicRoute) {
+    // If user is already logged in and on login/signup, redirect to home
+    if (user && (location === '/login' || location === '/signup')) {
+      setLocation('/');
+      return null;
+    }
+    
+    return (
+      <Switch>
+        <Route path="/login" component={LoginPage} />
+        <Route path="/signup" component={SignupPage} />
+        <Route component={LoginPage} />
+      </Switch>
     );
   }
 
@@ -86,6 +109,7 @@ function AuthenticatedApp() {
                 <Route path="/admin/explorer-config" component={ExplorerConfigPage} />
                 <Route path="/admin/ai-config" component={AIConfigPage} />
                 <Route path="/sftp-monitor" component={SftpMonitorPage} />
+                <Route path="/billing" component={BillingPage} />
                 <Route component={NotFound} />
               </Switch>
             </div>
