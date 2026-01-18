@@ -197,19 +197,24 @@ export class DbStorage implements IStorage {
   }
 
   async getSetting(key: string, organizationId?: string): Promise<Setting | undefined> {
-    const orgId = organizationId || DEFAULT_ORG_ID;
+    // Strict org scoping - require organizationId for proper tenant isolation
+    if (!organizationId) {
+      console.warn(`getSetting called without organizationId for key: ${key}`);
+      return undefined;
+    }
     const result = await db.select().from(settings)
-      .where(and(eq(settings.key, key), eq(settings.organizationId, orgId)))
+      .where(and(eq(settings.key, key), eq(settings.organizationId, organizationId)))
       .limit(1);
-    if (result[0]) return result[0];
-    const globalResult = await db.select().from(settings)
-      .where(and(eq(settings.key, key), isNull(settings.organizationId)))
-      .limit(1);
-    return globalResult[0];
+    return result[0];
   }
 
   async upsertSetting(setting: InsertSetting): Promise<Setting> {
-    const orgId = setting.organizationId || DEFAULT_ORG_ID;
+    // Require organizationId for proper tenant isolation
+    const orgId = setting.organizationId;
+    if (!orgId) {
+      throw new Error("Organization ID is required for settings");
+    }
+    
     const existing = await db.select().from(settings)
       .where(and(eq(settings.key, setting.key), eq(settings.organizationId, orgId)))
       .limit(1);
@@ -443,12 +448,14 @@ export class DbStorage implements IStorage {
 
   async getUserOrganizations(userId: string): Promise<Organization[]> {
     const members = await db.select().from(organizationMembers)
-      .where(eq(organizationMembers.userId, userId));
+      .where(eq(organizationMembers.userId, userId))
+      .orderBy(organizationMembers.createdAt); // Deterministic order: oldest membership first
     const orgIds = members.map((m: OrganizationMember) => m.organizationId);
     if (orgIds.length === 0) return [];
     const result = await db.select().from(organizations)
       .where(or(...orgIds.map((id: string) => eq(organizations.id, id))));
-    return result;
+    // Return orgs in the same order as memberships
+    return orgIds.map(id => result.find(org => org.id === id)).filter(Boolean) as Organization[];
   }
 
   async addOrganizationMember(member: InsertOrganizationMember): Promise<OrganizationMember> {

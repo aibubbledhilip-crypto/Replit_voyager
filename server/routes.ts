@@ -53,6 +53,10 @@ function requireAuth(req: Request, res: Response, next: Function) {
   if (!req.session.userId) {
     return res.status(401).json({ message: "Unauthorized" });
   }
+  // Enforce organization context for tenant isolation
+  if (!req.session.organizationId) {
+    return res.status(403).json({ message: "Organization context required - please re-login" });
+  }
   next();
 }
 
@@ -97,6 +101,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
+      // Get user's organization (use first organization they belong to)
+      const userOrganizations = await storage.getUserOrganizations(user.id);
+      const organizationId = userOrganizations[0]?.id;
+      
+      if (!organizationId) {
+        return res.status(403).json({ message: "User is not a member of any organization" });
+      }
+
       // Update last active
       await storage.updateUserLastActive(user.id);
 
@@ -106,10 +118,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(500).json({ message: "Failed to create session" });
         }
 
-        // Set session data
+        // Set session data including organizationId for tenant isolation
         req.session.userId = user.id;
         req.session.username = user.username;
         req.session.role = user.role;
+        req.session.organizationId = organizationId;
         
         // Generate new CSRF token for the new session
         req.session.csrfToken = undefined;
@@ -123,6 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             id: user.id,
             username: user.username,
             role: user.role,
+            organizationId,
           });
         });
       });
@@ -416,19 +430,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Schema cache to avoid hammering Athena
-  let schemaCache: { 
+  // Schema cache per organization to avoid hammering Athena (tenant isolated)
+  const schemaCacheByOrg: Map<string, { 
     data: any; 
     timestamp: number;
-  } | null = null;
+  }> = new Map();
   const SCHEMA_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
   // Database schema endpoint - get tables only (columns fetched on demand)
   app.get("/api/query/schema", requireAuth, async (req, res) => {
     try {
-      // Return cached data if valid
-      if (schemaCache && (Date.now() - schemaCache.timestamp) < SCHEMA_CACHE_TTL) {
-        return res.json(schemaCache.data);
+      const organizationId = req.session.organizationId;
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      
+      // Return cached data for this organization if valid
+      const orgCache = schemaCacheByOrg.get(organizationId);
+      if (orgCache && (Date.now() - orgCache.timestamp) < SCHEMA_CACHE_TTL) {
+        return res.json(orgCache.data);
       }
 
       const athenaClient = new AthenaClient({
@@ -441,8 +461,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION || 's3://dvsum-staging-prod';
       
-      // Get Athena database name from settings
-      const athenaDbSetting = await storage.getSetting('athena_database');
+      // Get Athena database name from settings (organization-scoped)
+      const athenaDbSetting = await storage.getSetting('athena_database', req.session.organizationId);
       const databaseName = athenaDbSetting?.value || 'dvsum-s3-glue-prod';
 
       // Helper function to execute a query and get results
@@ -497,8 +517,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fetchedTables: tableNames.length,
       };
 
-      // Cache the result
-      schemaCache = { data: responseData, timestamp: Date.now() };
+      // Cache the result for this organization
+      schemaCacheByOrg.set(organizationId, { data: responseData, timestamp: Date.now() });
 
       res.json(responseData);
     } catch (error: any) {
@@ -526,8 +546,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION || 's3://dvsum-staging-prod';
       
-      // Get Athena database name from settings
-      const athenaDbSetting = await storage.getSetting('athena_database');
+      // Get Athena database name from settings (organization-scoped)
+      const athenaDbSetting = await storage.getSetting('athena_database', req.session.organizationId);
       const databaseName = athenaDbSetting?.value || 'dvsum-s3-glue-prod';
 
       const startCommand = new StartQueryExecutionCommand({
@@ -584,12 +604,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Query is required" });
       }
 
-      // Get row limit setting (used for export restriction, not display)
-      const exportLimitSetting = await storage.getSetting('row_limit');
+      // Get row limit setting (used for export restriction, not display) - organization-scoped
+      const organizationId = req.session.organizationId;
+      const exportLimitSetting = await storage.getSetting('row_limit', organizationId);
       const rowLimit = exportLimitSetting ? parseInt(exportLimitSetting.value) : 1000;
       
-      // Get display limit setting (for results shown in UI)
-      const displayLimitSetting = await storage.getSetting('display_limit');
+      // Get display limit setting (for results shown in UI) - organization-scoped
+      const displayLimitSetting = await storage.getSetting('display_limit', organizationId);
       const displayLimit = displayLimitSetting ? parseInt(displayLimitSetting.value) : 10000;
 
       // Initialize Athena client
@@ -681,25 +702,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const sanitizedMsisdn = validationResult.data;
 
+      // Get settings (organization-scoped)
+      const organizationId = req.session.organizationId;
+      
       // Get row limit setting (used for export restriction)
-      const exportLimitSetting = await storage.getSetting('row_limit');
+      const exportLimitSetting = await storage.getSetting('row_limit', organizationId);
       const rowLimit = exportLimitSetting ? parseInt(exportLimitSetting.value) : 1000;
       
       // Get display limit setting (for results shown in UI)
-      const displayLimitSetting = await storage.getSetting('display_limit');
+      const displayLimitSetting = await storage.getSetting('display_limit', organizationId);
       const displayLimit = displayLimitSetting ? parseInt(displayLimitSetting.value) : 10000;
 
       // Get Explorer configurations from settings (table and column for each data source)
-      const sfTableSetting = await storage.getSetting('explorer_table_sf');
-      const sfColumnSetting = await storage.getSetting('explorer_column_sf');
-      const ariaTableSetting = await storage.getSetting('explorer_table_aria');
-      const ariaColumnSetting = await storage.getSetting('explorer_column_aria');
-      const matrixTableSetting = await storage.getSetting('explorer_table_matrix');
-      const matrixColumnSetting = await storage.getSetting('explorer_column_matrix');
-      const trufinderTableSetting = await storage.getSetting('explorer_table_trufinder');
-      const trufinderColumnSetting = await storage.getSetting('explorer_column_trufinder');
-      const nokiaTableSetting = await storage.getSetting('explorer_table_nokia');
-      const nokiaColumnSetting = await storage.getSetting('explorer_column_nokia');
+      const sfTableSetting = await storage.getSetting('explorer_table_sf', organizationId);
+      const sfColumnSetting = await storage.getSetting('explorer_column_sf', organizationId);
+      const ariaTableSetting = await storage.getSetting('explorer_table_aria', organizationId);
+      const ariaColumnSetting = await storage.getSetting('explorer_column_aria', organizationId);
+      const matrixTableSetting = await storage.getSetting('explorer_table_matrix', organizationId);
+      const matrixColumnSetting = await storage.getSetting('explorer_column_matrix', organizationId);
+      const trufinderTableSetting = await storage.getSetting('explorer_table_trufinder', organizationId);
+      const trufinderColumnSetting = await storage.getSetting('explorer_column_trufinder', organizationId);
+      const nokiaTableSetting = await storage.getSetting('explorer_table_nokia', organizationId);
+      const nokiaColumnSetting = await storage.getSetting('explorer_column_nokia', organizationId);
 
       const sfTable = sfTableSetting?.value || 'vw_sf_all_segment_hierarchy';
       const sfColumn = sfColumnSetting?.value || 'msisdn';
@@ -712,8 +736,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const nokiaTable = nokiaTableSetting?.value || 'vw_nokia_raw';
       const nokiaColumn = nokiaColumnSetting?.value || 'msisdn';
 
-      // Get Athena database name from settings
-      const athenaDbSetting = await storage.getSetting('athena_database');
+      // Get Athena database name from settings (organization-scoped)
+      const athenaDbSetting = await storage.getSetting('athena_database', req.session.organizationId);
       const databaseName = athenaDbSetting?.value || 'dvsum-s3-glue-prod';
 
       // Initialize Athena client
@@ -1188,25 +1212,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Data is required for analysis" });
       }
 
-      // Get AI settings
-      const providerSetting = await storage.getSetting('ai_provider');
-      const modelSetting = await storage.getSetting('ai_model');
-      const promptSetting = await storage.getSetting('ai_analysis_prompt');
-      const ollamaUrlSetting = await storage.getSetting('ollama_url');
+      // Get AI settings (organization-scoped)
+      const organizationId = req.session.organizationId;
+      const providerSetting = await storage.getSetting('ai_provider', organizationId);
+      const modelSetting = await storage.getSetting('ai_model', organizationId);
+      const promptSetting = await storage.getSetting('ai_analysis_prompt', organizationId);
+      const ollamaUrlSetting = await storage.getSetting('ollama_url', organizationId);
 
       const provider = (providerSetting?.value || 'openai') as AIProvider;
       const model = getValidatedModel(provider, modelSetting?.value);
       
-      // Get API key for the selected provider
+      // Get API key for the selected provider (organization-scoped)
       let apiKey: string | undefined;
       if (provider === 'openai') {
-        const keySetting = await storage.getSetting('openai_api_key');
+        const keySetting = await storage.getSetting('openai_api_key', organizationId);
         apiKey = keySetting?.value;
       } else if (provider === 'anthropic') {
-        const keySetting = await storage.getSetting('anthropic_api_key');
+        const keySetting = await storage.getSetting('anthropic_api_key', organizationId);
         apiKey = keySetting?.value;
       } else if (provider === 'gemini') {
-        const keySetting = await storage.getSetting('gemini_api_key');
+        const keySetting = await storage.getSetting('gemini_api_key', organizationId);
         apiKey = keySetting?.value;
       }
 
