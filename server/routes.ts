@@ -180,12 +180,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
+      
+      // Check if super admin is impersonating an organization
+      let impersonating = null;
+      if (user.isSuperAdmin && req.session.organizationId) {
+        // Check if super admin is a member of this org
+        const membership = await storage.getOrganizationMember(req.session.organizationId, user.id);
+        if (!membership) {
+          // Super admin is impersonating (not a natural member)
+          const org = await storage.getOrganization(req.session.organizationId);
+          if (org) {
+            impersonating = { organizationId: org.id, organizationName: org.name };
+          }
+        }
+      }
+      
       res.json({
         id: user.id,
         username: user.username,
         role: user.role,
         organizationId: req.session.organizationId,
         isSuperAdmin: user.isSuperAdmin || false,
+        impersonating,
       });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -1928,10 +1944,13 @@ Be concise and focus on the most important insights. Use clear headings and bull
   // Clear impersonation (return to super admin mode without org context)
   app.post("/api/super-admin/stop-impersonation", requireAuth, requireSuperAdmin, async (req, res) => {
     try {
-      req.session.organizationId = undefined;
+      // Clear the organization context to exit impersonation mode
+      // Using delete to ensure the property is removed from the session
+      delete req.session.organizationId;
       
       req.session.save((err) => {
         if (err) {
+          console.error("Failed to save session after stopping impersonation:", err);
           return res.status(500).json({ message: "Failed to stop impersonation" });
         }
         res.json({ message: "Stopped impersonating, returned to super admin mode" });

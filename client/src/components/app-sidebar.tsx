@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Database, FileText, Search, GitCompare, Server, Activity, LayoutDashboard, ChevronDown, Brain, CreditCard, Users, Settings } from "lucide-react";
+import { Database, FileText, Search, GitCompare, Server, Activity, LayoutDashboard, ChevronDown, Brain, CreditCard, Users, Settings, Shield } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -104,9 +104,10 @@ const adminItems: MenuItem[] = [
 
 interface AppSidebarProps {
   userRole?: 'admin' | 'user';
+  isSuperAdmin?: boolean;
 }
 
-export function AppSidebar({ userRole = 'user' }: AppSidebarProps) {
+export function AppSidebar({ userRole = 'user', isSuperAdmin = false }: AppSidebarProps) {
   const categories: MenuCategory[] = [
     {
       label: "Nexus Gateway",
@@ -124,6 +125,20 @@ export function AppSidebar({ userRole = 'user' }: AppSidebarProps) {
     categories.push({
       label: "Administration",
       items: adminItems,
+      defaultOpen: true,
+    });
+  }
+
+  if (isSuperAdmin) {
+    categories.push({
+      label: "Platform",
+      items: [
+        {
+          title: "Super Admin",
+          url: "/super-admin",
+          icon: Shield,
+        },
+      ],
       defaultOpen: true,
     });
   }

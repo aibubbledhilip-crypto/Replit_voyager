@@ -20,6 +20,7 @@ import SftpMonitorPage from "@/pages/SftpMonitorPage";
 import ExplorerConfigPage from "@/pages/ExplorerConfigPage";
 import AIConfigPage from "@/pages/AIConfigPage";
 import BillingPage from "@/pages/BillingPage";
+import SuperAdminPage from "@/pages/SuperAdminPage";
 import NotFound from "@/pages/not-found";
 import { apiRequest } from "@/lib/api";
 
@@ -27,6 +28,8 @@ interface AuthUser {
   id: string;
   username: string;
   role: 'admin' | 'user';
+  isSuperAdmin?: boolean;
+  impersonating?: { organizationId: string; organizationName: string } | null;
 }
 
 function AuthenticatedApp() {
@@ -98,11 +101,13 @@ function AuthenticatedApp() {
   return (
     <SidebarProvider style={sidebarStyle as React.CSSProperties}>
       <div className="flex h-screen w-full">
-        <AppSidebar userRole={user.role} />
+        <AppSidebar userRole={user.role} isSuperAdmin={user.isSuperAdmin} />
         <div className="flex flex-col flex-1 overflow-hidden">
           <Header 
             userRole={user.role}
             userName={user.username}
+            isSuperAdmin={user.isSuperAdmin}
+            impersonating={user.impersonating}
             onLogout={handleLogout}
           />
           <div className="flex items-center p-2 border-b bg-background">
@@ -122,6 +127,7 @@ function AuthenticatedApp() {
                 <Route path="/admin/ai-config" component={AIConfigPage} />
                 <Route path="/sftp-monitor" component={SftpMonitorPage} />
                 <Route path="/billing" component={BillingPage} />
+                <Route path="/super-admin" component={SuperAdminPage} />
                 <Route component={NotFound} />
               </Switch>
             </div>
