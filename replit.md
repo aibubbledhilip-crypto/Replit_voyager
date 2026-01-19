@@ -7,6 +7,7 @@ Voyager is a secure multi-tenant SaaS platform designed for querying AWS Athena 
 The user wants me to act as a coding agent.
 - I want iterative development.
 - I want to be asked before making major changes.
+- When introducing database schema changes, always update `sql/fresh-database-setup.sql` with the corresponding SQL statements.
 
 ## Recent Changes (January 2026)
 - Transformed from single-tenant to multi-tenant SaaS architecture
