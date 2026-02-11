@@ -1,18 +1,6 @@
 import { useState } from "react";
 import { Database, FileText, Search, GitCompare, Server, Activity, LayoutDashboard, ChevronDown, Brain, CreditCard, Users, Settings, Shield } from "lucide-react";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
-} from "@/components/ui/sidebar";
-import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -160,82 +148,84 @@ export function AppSidebar({ userRole = 'user', isSuperAdmin = false }: AppSideb
   };
 
   return (
-    <Sidebar collapsible="none" data-testid="sidebar-navigation">
-      <SidebarContent>
-        {categories.map((category) => (
-          <SidebarGroup key={category.label}>
-            <Collapsible
-              open={openCategories[category.label]}
-              onOpenChange={() => toggleCategory(category.label)}
-            >
-              <CollapsibleTrigger asChild>
-                <button
-                  className="flex w-full items-center justify-between px-3 py-2 text-sm font-semibold text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors"
-                  data-testid={`toggle-${category.label.toLowerCase().replace(/\s+/g, '-')}`}
-                >
-                  <span>{category.label}</span>
-                  <ChevronDown
-                    className={cn(
-                      "h-4 w-4 transition-transform duration-200",
-                      openCategories[category.label] ? "rotate-0" : "-rotate-90"
-                    )}
-                  />
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {category.items.map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        {item.children ? (
-                          <Collapsible
-                            open={openSubmenus[item.title]}
-                            onOpenChange={() => toggleSubmenu(item.title)}
+    <nav className="flex flex-col h-full overflow-y-auto py-2" data-testid="sidebar-navigation">
+      {categories.map((category) => (
+        <div key={category.label} className="px-2 py-1">
+          <Collapsible
+            open={openCategories[category.label]}
+            onOpenChange={() => toggleCategory(category.label)}
+          >
+            <CollapsibleTrigger asChild>
+              <button
+                className="flex w-full items-center justify-between px-3 py-2 text-sm font-semibold text-foreground/70 hover:text-foreground transition-colors rounded-md"
+                data-testid={`toggle-${category.label.toLowerCase().replace(/\s+/g, '-')}`}
+              >
+                <span>{category.label}</span>
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 transition-transform duration-200",
+                    openCategories[category.label] ? "rotate-0" : "-rotate-90"
+                  )}
+                />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="mt-1 space-y-0.5">
+                {category.items.map((item) => (
+                  <div key={item.title}>
+                    {item.children ? (
+                      <Collapsible
+                        open={openSubmenus[item.title]}
+                        onOpenChange={() => toggleSubmenu(item.title)}
+                      >
+                        <CollapsibleTrigger asChild>
+                          <button
+                            className="flex w-full items-center gap-2 px-3 py-1.5 text-sm rounded-md hover-elevate transition-colors"
+                            data-testid={`toggle-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
                           >
-                            <CollapsibleTrigger asChild>
-                              <SidebarMenuButton data-testid={`toggle-${item.title.toLowerCase().replace(/\s+/g, '-')}`}>
-                                <item.icon className="h-4 w-4" />
-                                <span>{item.title}</span>
-                                <ChevronDown
-                                  className={cn(
-                                    "ml-auto h-4 w-4 transition-transform duration-200",
-                                    openSubmenus[item.title] ? "rotate-0" : "-rotate-90"
-                                  )}
-                                />
-                              </SidebarMenuButton>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                              <SidebarMenuSub>
-                                {item.children.map((child) => (
-                                  <SidebarMenuSubItem key={child.title}>
-                                    <SidebarMenuSubButton asChild>
-                                      <a href={child.url} data-testid={`link-${child.title.toLowerCase().replace(/\s+/g, '-')}-config`}>
-                                        <child.icon className="h-4 w-4" />
-                                        <span>{child.title}</span>
-                                      </a>
-                                    </SidebarMenuSubButton>
-                                  </SidebarMenuSubItem>
-                                ))}
-                              </SidebarMenuSub>
-                            </CollapsibleContent>
-                          </Collapsible>
-                        ) : (
-                          <SidebarMenuButton asChild>
-                            <a href={item.url} data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}>
-                              <item.icon className="h-4 w-4" />
-                              <span>{item.title}</span>
-                            </a>
-                          </SidebarMenuButton>
-                        )}
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </SidebarGroup>
-        ))}
-      </SidebarContent>
-    </Sidebar>
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.title}</span>
+                            <ChevronDown
+                              className={cn(
+                                "ml-auto h-4 w-4 transition-transform duration-200",
+                                openSubmenus[item.title] ? "rotate-0" : "-rotate-90"
+                              )}
+                            />
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="ml-4 mt-0.5 space-y-0.5 border-l pl-2">
+                            {item.children.map((child) => (
+                              <a
+                                key={child.title}
+                                href={child.url}
+                                className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover-elevate transition-colors"
+                                data-testid={`link-${child.title.toLowerCase().replace(/\s+/g, '-')}-config`}
+                              >
+                                <child.icon className="h-4 w-4" />
+                                <span>{child.title}</span>
+                              </a>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ) : (
+                      <a
+                        href={item.url}
+                        className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover-elevate transition-colors"
+                        data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+      ))}
+    </nav>
   );
 }

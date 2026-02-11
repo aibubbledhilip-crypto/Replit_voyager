@@ -1,4 +1,5 @@
-import { Database, LogOut, Eye, XCircle } from "lucide-react";
+import { useContext } from "react";
+import { Database, LogOut, Eye, XCircle, PanelLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,6 +14,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { SidebarToggleContext } from "@/App";
 
 interface HeaderProps {
   userRole?: 'admin' | 'user';
@@ -30,6 +32,7 @@ export default function Header({
   onLogout 
 }: HeaderProps) {
   const { toast } = useToast();
+  const { toggle } = useContext(SidebarToggleContext);
   const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase();
 
   const stopImpersonationMutation = useMutation({
@@ -68,8 +71,16 @@ export default function Header({
           </Button>
         </div>
       )}
-      <header className="h-16 border-b bg-card flex items-center justify-between gap-4 px-6" data-testid="header-main">
+      <header className="h-16 border-b bg-card flex items-center justify-between gap-4 px-4" data-testid="header-main">
         <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggle}
+            data-testid="button-sidebar-toggle"
+          >
+            <PanelLeft className="h-5 w-5" />
+          </Button>
           <div className="p-2 bg-primary rounded-md">
             <Database className="h-5 w-5 text-primary-foreground" />
           </div>

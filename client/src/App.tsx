@@ -1,11 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
 import { Switch, Route, useLocation, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+
+export const SidebarToggleContext = createContext<{
+  isOpen: boolean;
+  toggle: () => void;
+}>({ isOpen: true, toggle: () => {} });
 import Header from "@/components/Header";
 import LoginPage from "@/components/LoginPage";
 import SignupPage from "@/pages/SignupPage";
@@ -37,6 +41,8 @@ function AuthenticatedApp() {
   const { data: user, isLoading } = useQuery<AuthUser>({
     queryKey: ['/api/auth/me'],
   });
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const toggleSidebar = () => setSidebarOpen(prev => !prev);
   
   // Public routes that don't require authentication
   const publicRoutes = ['/login', '/signup', '/invite'];
@@ -94,12 +100,8 @@ function AuthenticatedApp() {
     return <LoginPage />;
   }
 
-  const sidebarStyle = {
-    "--sidebar-width": "250px",
-  };
-
   return (
-    <SidebarProvider style={sidebarStyle as React.CSSProperties}>
+    <SidebarToggleContext.Provider value={{ isOpen: sidebarOpen, toggle: toggleSidebar }}>
       <div className="flex flex-col h-screen w-full">
         <Header 
           userRole={user.role}
@@ -109,7 +111,15 @@ function AuthenticatedApp() {
           onLogout={handleLogout}
         />
         <div className="flex flex-1 min-h-0 w-full">
-          <AppSidebar userRole={user.role} isSuperAdmin={user.isSuperAdmin} />
+          <div
+            className="bg-sidebar border-r transition-[width] duration-200 ease-linear overflow-hidden shrink-0"
+            style={{ width: sidebarOpen ? '250px' : '0px' }}
+            data-testid="sidebar-wrapper"
+          >
+            <div className="w-[250px] h-full">
+              <AppSidebar userRole={user.role} isSuperAdmin={user.isSuperAdmin} />
+            </div>
+          </div>
           <main className="flex-1 overflow-auto min-w-0">
             <div className={`p-6 ${isFullWidthPage ? 'h-full' : 'max-w-7xl mx-auto'}`}>
               <Switch>
@@ -131,7 +141,7 @@ function AuthenticatedApp() {
           </main>
         </div>
       </div>
-    </SidebarProvider>
+    </SidebarToggleContext.Provider>
   );
 }
 
