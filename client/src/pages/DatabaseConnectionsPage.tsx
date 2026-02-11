@@ -191,6 +191,21 @@ export default function DatabaseConnectionsPage() {
     },
   });
 
+  const testInlineMutation = useMutation({
+    mutationFn: (data: Partial<DbConnection>) =>
+      apiRequest('/api/db-connections/test-inline', { method: 'POST', body: JSON.stringify(data) }),
+    onSuccess: (data: { success: boolean; message: string }) => {
+      if (data.success) {
+        toast({ title: "Connection successful", description: data.message });
+      } else {
+        toast({ title: "Connection failed", description: data.message, variant: "destructive" });
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Test failed", description: error.message, variant: "destructive" });
+    },
+  });
+
   const setDefaultMutation = useMutation({
     mutationFn: (id: string) =>
       apiRequest(`/api/db-connections/${id}/set-default`, { method: 'POST' }),
@@ -709,13 +724,30 @@ export default function DatabaseConnectionsPage() {
               <Label>Set as default connection</Label>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} data-testid="button-cancel">
-              Cancel
+          <DialogFooter className="flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => testInlineMutation.mutate(formData)}
+              disabled={testInlineMutation.isPending || !formData.type}
+              data-testid="button-test-connection"
+            >
+              {testInlineMutation.isPending ? (
+                <>Testing...</>
+              ) : (
+                <>
+                  <TestTube className="h-4 w-4 mr-1" />
+                  Test Connection
+                </>
+              )}
             </Button>
-            <Button onClick={handleSave} disabled={isMutating} data-testid="button-save-connection">
-              {isMutating ? "Saving..." : editingId ? "Update" : "Create"}
-            </Button>
+            <div className="flex gap-2 ml-auto">
+              <Button variant="outline" onClick={() => setDialogOpen(false)} data-testid="button-cancel">
+                Cancel
+              </Button>
+              <Button onClick={handleSave} disabled={isMutating} data-testid="button-save-connection">
+                {isMutating ? "Saving..." : editingId ? "Update" : "Create"}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

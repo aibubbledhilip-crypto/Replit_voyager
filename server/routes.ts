@@ -783,6 +783,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/db-connections/test-inline", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId;
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      const { type, host, port, database, username, password, ssl, awsAccessKeyId, awsSecretAccessKey, awsRegion, s3OutputLocation, projectId, credentialsJson, dataset, account, warehouse, schema, role } = req.body;
+      if (!type) {
+        return res.status(400).json({ success: false, message: "Database type is required" });
+      }
+      const connectionData = {
+        id: 'test-inline',
+        organizationId,
+        name: 'Test',
+        type,
+        host: host || null,
+        port: port ? parseInt(port) : null,
+        database: database || null,
+        username: username || null,
+        password: password || null,
+        ssl: ssl || false,
+        awsAccessKeyId: awsAccessKeyId || null,
+        awsSecretAccessKey: awsSecretAccessKey || null,
+        awsRegion: awsRegion || null,
+        s3OutputLocation: s3OutputLocation || null,
+        projectId: projectId || null,
+        credentialsJson: credentialsJson || null,
+        dataset: dataset || null,
+        account: account || null,
+        warehouse: warehouse || null,
+        schema: schema || null,
+        role: role || null,
+        isDefault: false,
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
+      const driver = getDriver(type);
+      const result = await driver.testConnection(connectionData);
+      res.json(result);
+    } catch (error: any) {
+      res.json({ success: false, message: error.message });
+    }
+  });
+
   app.post("/api/db-connections/:id/test", requireAuth, requireAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
