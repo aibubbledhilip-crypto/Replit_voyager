@@ -4,31 +4,37 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Save, Search, Database } from "lucide-react";
+import { Save, Search, Database, Trash2, Plus, RefreshCw } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface DataSourceConfig {
+  key: string;
+  label: string;
+  description: string;
   table: string;
   column: string;
 }
 
-interface ExplorerConfig {
-  sf: DataSourceConfig;
-  aria: DataSourceConfig;
-  matrix: DataSourceConfig;
-  trufinder: DataSourceConfig;
-  nokia: DataSourceConfig;
-}
-
-const dataSourceLabels = {
-  sf: { name: "SF", description: "Salesforce subscriber data" },
-  aria: { name: "Aria", description: "Aria billing hierarchy" },
-  matrix: { name: "Matrix", description: "Matrixx plan data" },
-  trufinder: { name: "Trufinder", description: "True Finder raw data" },
-  nokia: { name: "Nokia", description: "Nokia raw data" },
-};
+const DEFAULT_SOURCES: DataSourceConfig[] = [
+  { key: "sf", label: "SF", description: "Salesforce subscriber data", table: "vw_sf_all_segment_hierarchy", column: "msisdn" },
+  { key: "aria", label: "Aria", description: "Aria billing hierarchy", table: "vw_aria_hierarchy_all_status_reverse", column: "msisdn" },
+  { key: "matrix", label: "Matrix", description: "Matrixx plan data", table: "vw_matrixx_plan", column: "msisdn" },
+  { key: "trufinder", label: "Trufinder", description: "True Finder raw data", table: "vw_true_finder_raw", column: "msisdn" },
+  { key: "nokia", label: "Nokia", description: "Nokia raw data", table: "vw_nokia_raw", column: "msisdn" },
+];
 
 export default function ExplorerConfigPage() {
   const { toast } = useToast();
@@ -38,84 +44,68 @@ export default function ExplorerConfigPage() {
     queryFn: () => apiRequest('/api/settings/athena_database'),
   });
 
-  const { data: sfTable } = useQuery({
-    queryKey: ['/api/settings', 'explorer_table_sf'],
-    queryFn: () => apiRequest('/api/settings/explorer_table_sf'),
-  });
-  const { data: sfColumn } = useQuery({
-    queryKey: ['/api/settings', 'explorer_column_sf'],
-    queryFn: () => apiRequest('/api/settings/explorer_column_sf'),
-  });
-  const { data: ariaTable } = useQuery({
-    queryKey: ['/api/settings', 'explorer_table_aria'],
-    queryFn: () => apiRequest('/api/settings/explorer_table_aria'),
-  });
-  const { data: ariaColumn } = useQuery({
-    queryKey: ['/api/settings', 'explorer_column_aria'],
-    queryFn: () => apiRequest('/api/settings/explorer_column_aria'),
-  });
-  const { data: matrixTable } = useQuery({
-    queryKey: ['/api/settings', 'explorer_table_matrix'],
-    queryFn: () => apiRequest('/api/settings/explorer_table_matrix'),
-  });
-  const { data: matrixColumn } = useQuery({
-    queryKey: ['/api/settings', 'explorer_column_matrix'],
-    queryFn: () => apiRequest('/api/settings/explorer_column_matrix'),
-  });
-  const { data: trufinderTable } = useQuery({
-    queryKey: ['/api/settings', 'explorer_table_trufinder'],
-    queryFn: () => apiRequest('/api/settings/explorer_table_trufinder'),
-  });
-  const { data: trufinderColumn } = useQuery({
-    queryKey: ['/api/settings', 'explorer_column_trufinder'],
-    queryFn: () => apiRequest('/api/settings/explorer_column_trufinder'),
-  });
-  const { data: nokiaTable } = useQuery({
-    queryKey: ['/api/settings', 'explorer_table_nokia'],
-    queryFn: () => apiRequest('/api/settings/explorer_table_nokia'),
-  });
-  const { data: nokiaColumn } = useQuery({
-    queryKey: ['/api/settings', 'explorer_column_nokia'],
-    queryFn: () => apiRequest('/api/settings/explorer_column_nokia'),
+  const { data: allSettings, isLoading: settingsLoading } = useQuery<Array<{ key: string; value: string }>>({
+    queryKey: ['/api/settings'],
+    queryFn: () => apiRequest('/api/settings'),
   });
 
   const [databaseName, setDatabaseName] = useState('dvsum-s3-glue-prod');
-  const [config, setConfig] = useState<ExplorerConfig>({
-    sf: { table: '', column: '' },
-    aria: { table: '', column: '' },
-    matrix: { table: '', column: '' },
-    trufinder: { table: '', column: '' },
-    nokia: { table: '', column: '' },
-  });
+  const [dataSources, setDataSources] = useState<DataSourceConfig[]>([]);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newSource, setNewSource] = useState({ key: "", label: "", description: "", table: "", column: "" });
 
   useEffect(() => {
     setDatabaseName(athenaDatabase?.value || 'dvsum-s3-glue-prod');
   }, [athenaDatabase]);
 
   useEffect(() => {
-    setConfig({
-      sf: { 
-        table: sfTable?.value || 'vw_sf_all_segment_hierarchy', 
-        column: sfColumn?.value || 'msisdn' 
-      },
-      aria: { 
-        table: ariaTable?.value || 'vw_aria_hierarchy_all_status_reverse', 
-        column: ariaColumn?.value || 'msisdn' 
-      },
-      matrix: { 
-        table: matrixTable?.value || 'vw_matrixx_plan', 
-        column: matrixColumn?.value || 'msisdn' 
-      },
-      trufinder: { 
-        table: trufinderTable?.value || 'vw_true_finder_raw', 
-        column: trufinderColumn?.value || 'msisdn' 
-      },
-      nokia: { 
-        table: nokiaTable?.value || 'vw_nokia_raw', 
-        column: nokiaColumn?.value || 'msisdn' 
-      },
+    if (!allSettings) return;
+
+    const settingsMap = new Map<string, string>();
+    if (Array.isArray(allSettings)) {
+      allSettings.forEach((s: { key: string; value: string }) => {
+        settingsMap.set(s.key, s.value);
+      });
+    }
+
+    const explorerKeys = new Set<string>();
+    settingsMap.forEach((_, key) => {
+      const match = key.match(/^explorer_table_(.+)$/);
+      if (match) explorerKeys.add(match[1]);
     });
-  }, [sfTable, sfColumn, ariaTable, ariaColumn, matrixTable, matrixColumn, trufinderTable, trufinderColumn, nokiaTable, nokiaColumn]);
+
+    if (explorerKeys.size === 0) {
+      setDataSources(DEFAULT_SOURCES);
+      return;
+    }
+
+    const sources: DataSourceConfig[] = [];
+    explorerKeys.forEach((sourceKey) => {
+      const table = settingsMap.get(`explorer_table_${sourceKey}`) || '';
+      const column = settingsMap.get(`explorer_column_${sourceKey}`) || '';
+      const label = settingsMap.get(`explorer_label_${sourceKey}`) || sourceKey.toUpperCase();
+      const description = settingsMap.get(`explorer_desc_${sourceKey}`) || '';
+      sources.push({ key: sourceKey, label, description, table, column });
+    });
+
+    DEFAULT_SOURCES.forEach((defaultSrc) => {
+      if (!explorerKeys.has(defaultSrc.key)) {
+        sources.push(defaultSrc);
+      }
+    });
+
+    sources.sort((a, b) => {
+      const defaultOrder = DEFAULT_SOURCES.map(d => d.key);
+      const aIdx = defaultOrder.indexOf(a.key);
+      const bIdx = defaultOrder.indexOf(b.key);
+      if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+      if (aIdx !== -1) return -1;
+      if (bIdx !== -1) return 1;
+      return a.label.localeCompare(b.label);
+    });
+
+    setDataSources(sources);
+  }, [allSettings]);
 
   const updateDatabaseMutation = useMutation({
     mutationFn: async (dbName: string) => {
@@ -126,73 +116,108 @@ export default function ExplorerConfigPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
-      toast({
-        title: "Success",
-        description: "Athena database updated successfully",
-      });
+      toast({ title: "Success", description: "Athena database updated successfully" });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update database",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message || "Failed to update database", variant: "destructive" });
     },
   });
 
-  const updateConfigMutation = useMutation({
-    mutationFn: async (newConfig: ExplorerConfig) => {
-      const updates = [
-        { key: 'explorer_table_sf', value: newConfig.sf.table },
-        { key: 'explorer_column_sf', value: newConfig.sf.column },
-        { key: 'explorer_table_aria', value: newConfig.aria.table },
-        { key: 'explorer_column_aria', value: newConfig.aria.column },
-        { key: 'explorer_table_matrix', value: newConfig.matrix.table },
-        { key: 'explorer_column_matrix', value: newConfig.matrix.column },
-        { key: 'explorer_table_trufinder', value: newConfig.trufinder.table },
-        { key: 'explorer_column_trufinder', value: newConfig.trufinder.column },
-        { key: 'explorer_table_nokia', value: newConfig.nokia.table },
-        { key: 'explorer_column_nokia', value: newConfig.nokia.column },
-      ];
-      
-      for (const update of updates) {
-        await apiRequest('/api/settings', {
-          method: 'PUT',
-          body: JSON.stringify(update),
-        });
+  const saveConfigMutation = useMutation({
+    mutationFn: async (sources: DataSourceConfig[]) => {
+      for (const source of sources) {
+        const updates = [
+          { key: `explorer_table_${source.key}`, value: source.table },
+          { key: `explorer_column_${source.key}`, value: source.column },
+          { key: `explorer_label_${source.key}`, value: source.label },
+          { key: `explorer_desc_${source.key}`, value: source.description },
+        ];
+        for (const update of updates) {
+          await apiRequest('/api/settings', {
+            method: 'PUT',
+            body: JSON.stringify(update),
+          });
+        }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
-      toast({
-        title: "Success",
-        description: "Explorer configuration updated successfully",
-      });
+      toast({ title: "Success", description: "Explorer configuration saved successfully" });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update configuration",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message || "Failed to save configuration", variant: "destructive" });
+    },
+  });
+
+  const deleteSourceMutation = useMutation({
+    mutationFn: async (sourceKey: string) => {
+      const keysToDelete = [
+        `explorer_table_${sourceKey}`,
+        `explorer_column_${sourceKey}`,
+        `explorer_label_${sourceKey}`,
+        `explorer_desc_${sourceKey}`,
+      ];
+      for (const key of keysToDelete) {
+        await apiRequest(`/api/settings/${key}`, { method: 'DELETE' });
+      }
+    },
+    onSuccess: (_data, sourceKey) => {
+      setDataSources(prev => prev.filter(s => s.key !== sourceKey));
+      queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
+      toast({ title: "Success", description: "Data source removed successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to delete data source", variant: "destructive" });
     },
   });
 
   const handleSave = () => {
-    updateConfigMutation.mutate(config);
+    saveConfigMutation.mutate(dataSources);
   };
 
-  const updateDataSource = (key: keyof ExplorerConfig, field: 'table' | 'column', value: string) => {
-    setConfig(prev => ({
-      ...prev,
-      [key]: { ...prev[key], [field]: value }
-    }));
+  const updateDataSource = (key: string, field: keyof DataSourceConfig, value: string) => {
+    setDataSources(prev =>
+      prev.map(s => s.key === key ? { ...s, [field]: value } : s)
+    );
+  };
+
+  const handleAddSource = () => {
+    const sanitizedKey = newSource.key.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/^_+|_+$/g, '');
+    if (!sanitizedKey) {
+      toast({ title: "Error", description: "Please provide a valid key (letters, numbers, underscores)", variant: "destructive" });
+      return;
+    }
+    if (dataSources.some(s => s.key === sanitizedKey)) {
+      toast({ title: "Error", description: "A data source with this key already exists", variant: "destructive" });
+      return;
+    }
+    if (!newSource.table) {
+      toast({ title: "Error", description: "Table/View name is required", variant: "destructive" });
+      return;
+    }
+
+    const source: DataSourceConfig = {
+      key: sanitizedKey,
+      label: newSource.label || sanitizedKey.toUpperCase(),
+      description: newSource.description,
+      table: newSource.table,
+      column: newSource.column || 'msisdn',
+    };
+    setDataSources(prev => [...prev, source]);
+    setNewSource({ key: "", label: "", description: "", table: "", column: "" });
+    setShowAddForm(false);
+    toast({ title: "Added", description: `Data source "${source.label}" added. Click "Save Configuration" to persist.` });
+  };
+
+  const handleResetToDefaults = () => {
+    setDataSources(DEFAULT_SOURCES);
+    toast({ title: "Reset", description: "Data sources reset to defaults. Click \"Save Configuration\" to persist." });
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold mb-2">Explorer Configuration</h1>
+        <h1 className="text-3xl font-semibold mb-2" data-testid="text-explorer-config-title">Explorer Configuration</h1>
         <p className="text-muted-foreground">Configure the data sources used by the Explorer feature</p>
       </div>
 
@@ -209,8 +234,8 @@ export default function ExplorerConfigPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 items-end">
-            <div className="flex-1 space-y-2">
+          <div className="flex gap-4 items-end flex-wrap">
+            <div className="flex-1 min-w-[200px] space-y-2">
               <Label htmlFor="athena-database">Database Name</Label>
               <Input
                 id="athena-database"
@@ -220,7 +245,7 @@ export default function ExplorerConfigPage() {
                 placeholder="Enter Athena database name"
               />
             </div>
-            <Button 
+            <Button
               onClick={() => updateDatabaseMutation.mutate(databaseName)}
               disabled={updateDatabaseMutation.isPending}
               data-testid="button-save-database"
@@ -234,56 +259,210 @@ export default function ExplorerConfigPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <Search className="h-5 w-5 text-muted-foreground" />
-            <div>
-              <CardTitle>Data Source Configuration</CardTitle>
-              <CardDescription>
-                Configure the table name and WHERE condition column for each data source
-              </CardDescription>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Search className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <CardTitle>Data Source Configuration</CardTitle>
+                <CardDescription>
+                  Configure, add, or remove the table name and WHERE condition column for each data source
+                </CardDescription>
+              </div>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                variant="outline"
+                onClick={handleResetToDefaults}
+                data-testid="button-reset-defaults"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Reset to Defaults
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowAddForm(!showAddForm)}
+                data-testid="button-add-datasource"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Data Source
+              </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {(Object.keys(dataSourceLabels) as Array<keyof typeof dataSourceLabels>).map((key) => (
-            <div key={key} className="border rounded-lg p-4 space-y-4">
-              <div>
-                <h3 className="font-medium">{dataSourceLabels[key].name}</h3>
-                <p className="text-sm text-muted-foreground">{dataSourceLabels[key].description}</p>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor={`table-${key}`}>Table/View Name</Label>
-                  <Input
-                    id={`table-${key}`}
-                    data-testid={`input-explorer-table-${key}`}
-                    value={config[key].table}
-                    onChange={(e) => updateDataSource(key, 'table', e.target.value)}
-                    placeholder="Enter table or view name"
-                  />
+          {showAddForm && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">New Data Source</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="new-key">Key (unique identifier)</Label>
+                    <Input
+                      id="new-key"
+                      data-testid="input-new-source-key"
+                      value={newSource.key}
+                      onChange={(e) => setNewSource(prev => ({ ...prev, key: e.target.value }))}
+                      placeholder="e.g. hubspot, custom_crm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-label">Display Name</Label>
+                    <Input
+                      id="new-label"
+                      data-testid="input-new-source-label"
+                      value={newSource.label}
+                      onChange={(e) => setNewSource(prev => ({ ...prev, label: e.target.value }))}
+                      placeholder="e.g. HubSpot, Custom CRM"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`column-${key}`}>WHERE Condition Column</Label>
+                  <Label htmlFor="new-description">Description</Label>
                   <Input
-                    id={`column-${key}`}
-                    data-testid={`input-explorer-column-${key}`}
-                    value={config[key].column}
-                    onChange={(e) => updateDataSource(key, 'column', e.target.value)}
-                    placeholder="Enter column name for WHERE clause"
+                    id="new-description"
+                    data-testid="input-new-source-description"
+                    value={newSource.description}
+                    onChange={(e) => setNewSource(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Brief description of this data source"
                   />
                 </div>
-              </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="new-table">Table/View Name</Label>
+                    <Input
+                      id="new-table"
+                      data-testid="input-new-source-table"
+                      value={newSource.table}
+                      onChange={(e) => setNewSource(prev => ({ ...prev, table: e.target.value }))}
+                      placeholder="Enter table or view name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-column">WHERE Condition Column</Label>
+                    <Input
+                      id="new-column"
+                      data-testid="input-new-source-column"
+                      value={newSource.column}
+                      onChange={(e) => setNewSource(prev => ({ ...prev, column: e.target.value }))}
+                      placeholder="e.g. msisdn"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => { setShowAddForm(false); setNewSource({ key: "", label: "", description: "", table: "", column: "" }); }} data-testid="button-cancel-add">
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddSource} data-testid="button-confirm-add">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {settingsLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading configuration...</div>
+          ) : dataSources.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No data sources configured. Click "Add Data Source" or "Reset to Defaults" to get started.
             </div>
-          ))}
+          ) : (
+            dataSources.map((source) => (
+              <div key={source.key} className="border rounded-md p-4 space-y-4" data-testid={`datasource-card-${source.key}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor={`label-${source.key}`}>Display Name</Label>
+                        <Input
+                          id={`label-${source.key}`}
+                          data-testid={`input-explorer-label-${source.key}`}
+                          value={source.label}
+                          onChange={(e) => updateDataSource(source.key, 'label', e.target.value)}
+                          placeholder="Display name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`desc-${source.key}`}>Description</Label>
+                        <Input
+                          id={`desc-${source.key}`}
+                          data-testid={`input-explorer-desc-${source.key}`}
+                          value={source.description}
+                          onChange={(e) => updateDataSource(source.key, 'description', e.target.value)}
+                          placeholder="Brief description"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor={`table-${source.key}`}>Table/View Name</Label>
+                        <Input
+                          id={`table-${source.key}`}
+                          data-testid={`input-explorer-table-${source.key}`}
+                          value={source.table}
+                          onChange={(e) => updateDataSource(source.key, 'table', e.target.value)}
+                          placeholder="Enter table or view name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`column-${source.key}`}>WHERE Condition Column</Label>
+                        <Input
+                          id={`column-${source.key}`}
+                          data-testid={`input-explorer-column-${source.key}`}
+                          value={source.column}
+                          onChange={(e) => updateDataSource(source.key, 'column', e.target.value)}
+                          placeholder="Enter column name for WHERE clause"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive shrink-0 mt-6"
+                        data-testid={`button-delete-datasource-${source.key}`}
+                        disabled={deleteSourceMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Data Source</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to remove the "{source.label}" data source? This will delete its table and column configuration. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deleteSourceMutation.mutate(source.key)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          data-testid="button-confirm-delete"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            ))
+          )}
 
           <div className="flex justify-end pt-4">
-            <Button 
-              onClick={handleSave} 
-              disabled={updateConfigMutation.isPending}
+            <Button
+              onClick={handleSave}
+              disabled={saveConfigMutation.isPending || dataSources.length === 0}
               data-testid="button-save-explorer-config"
             >
               <Save className="h-4 w-4 mr-2" />
-              Save Configuration
+              {saveConfigMutation.isPending ? "Saving..." : "Save Configuration"}
             </Button>
           </div>
         </CardContent>

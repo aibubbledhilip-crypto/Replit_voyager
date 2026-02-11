@@ -431,6 +431,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Sensitive settings that require admin access
   const sensitiveSettings = ['openai_api_key', 'anthropic_api_key', 'gemini_api_key'];
 
+  app.get("/api/settings", requireAuth, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId;
+      
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      
+      const orgSettings = await storage.getSettingsByOrganization(organizationId);
+      res.json(orgSettings);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get("/api/settings/:key", requireAuth, async (req, res) => {
     try {
       const { key } = req.params;
@@ -857,32 +872,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const displayLimitSetting = await storage.getSetting('display_limit', organizationId);
       const displayLimit = displayLimitSetting ? parseInt(displayLimitSetting.value) : 10000;
 
-      // Get Explorer configurations from settings (table and column for each data source)
-      const sfTableSetting = await storage.getSetting('explorer_table_sf', organizationId);
-      const sfColumnSetting = await storage.getSetting('explorer_column_sf', organizationId);
-      const ariaTableSetting = await storage.getSetting('explorer_table_aria', organizationId);
-      const ariaColumnSetting = await storage.getSetting('explorer_column_aria', organizationId);
-      const matrixTableSetting = await storage.getSetting('explorer_table_matrix', organizationId);
-      const matrixColumnSetting = await storage.getSetting('explorer_column_matrix', organizationId);
-      const trufinderTableSetting = await storage.getSetting('explorer_table_trufinder', organizationId);
-      const trufinderColumnSetting = await storage.getSetting('explorer_column_trufinder', organizationId);
-      const nokiaTableSetting = await storage.getSetting('explorer_table_nokia', organizationId);
-      const nokiaColumnSetting = await storage.getSetting('explorer_column_nokia', organizationId);
-
-      const sfTable = sfTableSetting?.value || 'vw_sf_all_segment_hierarchy';
-      const sfColumn = sfColumnSetting?.value || 'msisdn';
-      const ariaTable = ariaTableSetting?.value || 'vw_aria_hierarchy_all_status_reverse';
-      const ariaColumn = ariaColumnSetting?.value || 'msisdn';
-      const matrixTable = matrixTableSetting?.value || 'vw_matrixx_plan';
-      const matrixColumn = matrixColumnSetting?.value || 'msisdn';
-      const trufinderTable = trufinderTableSetting?.value || 'vw_true_finder_raw';
-      const trufinderColumn = trufinderColumnSetting?.value || 'msisdn';
-      const nokiaTable = nokiaTableSetting?.value || 'vw_nokia_raw';
-      const nokiaColumn = nokiaColumnSetting?.value || 'msisdn';
-
       // Get Athena database name from settings (organization-scoped)
       const athenaDbSetting = await storage.getSetting('athena_database', req.session.organizationId);
       const databaseName = athenaDbSetting?.value || 'dvsum-s3-glue-prod';
+
+      // Dynamically build data source queries from settings
+      const allOrgSettings = organizationId 
+        ? await storage.getSettingsByOrganization(organizationId)
+        : [];
+      const settingsMap = new Map(allOrgSettings.map(s => [s.key, s.value]));
+
+      const explorerSourceKeys = new Set<string>();
+      settingsMap.forEach((_, key) => {
+        const match = key.match(/^explorer_table_(.+)$/);
+        if (match) explorerSourceKeys.add(match[1]);
+      });
+
+      const defaultSources: Record<string, { table: string; column: string; label: string }> = {
+        sf: { table: 'vw_sf_all_segment_hierarchy', column: 'msisdn', label: 'SF' },
+        aria: { table: 'vw_aria_hierarchy_all_status_reverse', column: 'msisdn', label: 'Aria' },
+        matrix: { table: 'vw_matrixx_plan', column: 'msisdn', label: 'Matrix' },
+        trufinder: { table: 'vw_true_finder_raw', column: 'msisdn', label: 'Trufinder' },
+        nokia: { table: 'vw_nokia_raw', column: 'msisdn', label: 'Nokia' },
+      };
+
+      // If no explorer settings exist, use defaults; otherwise use only configured sources
+      const sourceKeys = explorerSourceKeys.size > 0 
+        ? Array.from(explorerSourceKeys) 
+        : Object.keys(defaultSources);
+
+      const queries = sourceKeys.map(key => {
+        const table = settingsMap.get(`explorer_table_${key}`) || defaultSources[key]?.table || key;
+        const column = settingsMap.get(`explorer_column_${key}`) || defaultSources[key]?.column || 'msisdn';
+        const label = settingsMap.get(`explorer_label_${key}`) || defaultSources[key]?.label || key.toUpperCase();
+        return {
+          name: label,
+          query: `select * from "${databaseName}".${table} where ${column} = '${sanitizedMsisdn}'`,
+        };
+      });
 
       // Initialize Athena client
       const athenaClient = new AthenaClient({
@@ -894,30 +921,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION || 's3://dvsum-staging-prod';
-
-      // Define all queries using sanitized search value and configured table/column names
-      const queries = [
-        {
-          name: 'SF',
-          query: `select * from "${databaseName}".${sfTable} where ${sfColumn} = '${sanitizedMsisdn}'`,
-        },
-        {
-          name: 'Aria',
-          query: `select * from "${databaseName}".${ariaTable} where ${ariaColumn} = '${sanitizedMsisdn}'`,
-        },
-        {
-          name: 'Matrix',
-          query: `select * from "${databaseName}".${matrixTable} where ${matrixColumn} = '${sanitizedMsisdn}'`,
-        },
-        {
-          name: 'Trufinder',
-          query: `select * from "${databaseName}".${trufinderTable} where ${trufinderColumn} = '${sanitizedMsisdn}'`,
-        },
-        {
-          name: 'Nokia',
-          query: `select * from "${databaseName}".${nokiaTable} where ${nokiaColumn} = '${sanitizedMsisdn}'`,
-        },
-      ];
 
       const startTime = Date.now();
 
