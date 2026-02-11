@@ -483,6 +483,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/settings/:key", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { key } = req.params;
+      const organizationId = req.session.organizationId;
+      
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      
+      await storage.deleteSetting(key, organizationId);
+      res.json({ message: "Setting deleted" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Saved Queries routes
   app.get("/api/saved-queries", requireAuth, async (req, res) => {
     try {
