@@ -4,7 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import Header from "@/components/Header";
 import LoginPage from "@/components/LoginPage";
@@ -95,14 +95,14 @@ function AuthenticatedApp() {
   }
 
   const sidebarStyle = {
-    "--sidebar-width": "16rem",
+    "--sidebar-width": "250px",
   };
 
   return (
     <SidebarProvider style={sidebarStyle as React.CSSProperties}>
       <div className="flex h-screen w-full">
         <AppSidebar userRole={user.role} isSuperAdmin={user.isSuperAdmin} />
-        <div className="flex flex-col flex-1 overflow-hidden">
+        <div className="flex flex-col flex-1 min-w-0">
           <Header 
             userRole={user.role}
             userName={user.username}
@@ -110,9 +110,6 @@ function AuthenticatedApp() {
             impersonating={user.impersonating}
             onLogout={handleLogout}
           />
-          <div className="flex items-center p-2 border-b bg-background">
-            <SidebarTrigger data-testid="button-sidebar-toggle" />
-          </div>
           <main className="flex-1 overflow-auto">
             <div className={`p-6 ${isFullWidthPage ? 'h-full' : 'max-w-7xl mx-auto'}`}>
               <Switch>
