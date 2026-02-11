@@ -81,6 +81,11 @@ export default function QueryBuilder({
     queryKey: ['/api/saved-queries'],
   });
 
+  const { data: athenaDbSetting } = useQuery<{ key: string; value: string }>({
+    queryKey: ['/api/settings', 'athena_database'],
+    queryFn: () => apiRequest('/api/settings/athena_database'),
+  });
+
   const saveQueryMutation = useMutation({
     mutationFn: async (data: { name: string; query: string }) => {
       return apiRequest('/api/saved-queries', {
@@ -209,8 +214,8 @@ export default function QueryBuilder({
     
     let insertText = suggestion.label;
     if (suggestion.type === 'table') {
-      insertText = `"dvsum-s3-glue-prod".${suggestion.label}`;
-      // Trigger column loading for this table
+      const dbName = athenaDbSetting?.value;
+      insertText = dbName ? `"${dbName}".${suggestion.label}` : suggestion.label;
       onTableUsed?.(suggestion.label);
     }
     
@@ -294,12 +299,12 @@ export default function QueryBuilder({
           <CollapsibleContent className="space-y-2 pb-4">
             <div className="grid grid-cols-2 gap-4 text-sm bg-muted/30 p-4 rounded-md">
               <div>
-                <span className="text-muted-foreground">Region:</span>
-                <span className="ml-2 font-mono" data-testid="text-region">us-east-1</span>
+                <span className="text-muted-foreground">Database:</span>
+                <span className="ml-2 font-mono" data-testid="text-database">{athenaDbSetting?.value || <span className="text-muted-foreground italic">Not configured</span>}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">S3 Location:</span>
-                <span className="ml-2 font-mono truncate block" data-testid="text-s3-location">s3://dvsum-staging-prod</span>
+                <span className="text-muted-foreground">Status:</span>
+                <span className="ml-2" data-testid="text-connection-status">{connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}</span>
               </div>
             </div>
           </CollapsibleContent>

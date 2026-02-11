@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Save, Search, Database, Trash2, Plus, RefreshCw } from "lucide-react";
+import { Save, Search, Database, Trash2, Plus } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -28,13 +28,6 @@ interface DataSourceConfig {
   column: string;
 }
 
-const DEFAULT_SOURCES: DataSourceConfig[] = [
-  { key: "sf", label: "SF", description: "Salesforce subscriber data", table: "vw_sf_all_segment_hierarchy", column: "msisdn" },
-  { key: "aria", label: "Aria", description: "Aria billing hierarchy", table: "vw_aria_hierarchy_all_status_reverse", column: "msisdn" },
-  { key: "matrix", label: "Matrix", description: "Matrixx plan data", table: "vw_matrixx_plan", column: "msisdn" },
-  { key: "trufinder", label: "Trufinder", description: "True Finder raw data", table: "vw_true_finder_raw", column: "msisdn" },
-  { key: "nokia", label: "Nokia", description: "Nokia raw data", table: "vw_nokia_raw", column: "msisdn" },
-];
 
 export default function ExplorerConfigPage() {
   const { toast } = useToast();
@@ -49,13 +42,13 @@ export default function ExplorerConfigPage() {
     queryFn: () => apiRequest('/api/settings'),
   });
 
-  const [databaseName, setDatabaseName] = useState('dvsum-s3-glue-prod');
+  const [databaseName, setDatabaseName] = useState('');
   const [dataSources, setDataSources] = useState<DataSourceConfig[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newSource, setNewSource] = useState({ key: "", label: "", description: "", table: "", column: "" });
 
   useEffect(() => {
-    setDatabaseName(athenaDatabase?.value || 'dvsum-s3-glue-prod');
+    setDatabaseName(athenaDatabase?.value || '');
   }, [athenaDatabase]);
 
   useEffect(() => {
@@ -75,7 +68,7 @@ export default function ExplorerConfigPage() {
     });
 
     if (explorerKeys.size === 0) {
-      setDataSources(DEFAULT_SOURCES);
+      setDataSources([]);
       return;
     }
 
@@ -88,21 +81,7 @@ export default function ExplorerConfigPage() {
       sources.push({ key: sourceKey, label, description, table, column });
     });
 
-    DEFAULT_SOURCES.forEach((defaultSrc) => {
-      if (!explorerKeys.has(defaultSrc.key)) {
-        sources.push(defaultSrc);
-      }
-    });
-
-    sources.sort((a, b) => {
-      const defaultOrder = DEFAULT_SOURCES.map(d => d.key);
-      const aIdx = defaultOrder.indexOf(a.key);
-      const bIdx = defaultOrder.indexOf(b.key);
-      if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
-      if (aIdx !== -1) return -1;
-      if (bIdx !== -1) return 1;
-      return a.label.localeCompare(b.label);
-    });
+    sources.sort((a, b) => a.label.localeCompare(b.label));
 
     setDataSources(sources);
   }, [allSettings]);
@@ -195,13 +174,17 @@ export default function ExplorerConfigPage() {
       toast({ title: "Error", description: "Table/View name is required", variant: "destructive" });
       return;
     }
+    if (!newSource.column) {
+      toast({ title: "Error", description: "WHERE condition column is required", variant: "destructive" });
+      return;
+    }
 
     const source: DataSourceConfig = {
       key: sanitizedKey,
       label: newSource.label || sanitizedKey.toUpperCase(),
       description: newSource.description,
       table: newSource.table,
-      column: newSource.column || 'msisdn',
+      column: newSource.column,
     };
     setDataSources(prev => [...prev, source]);
     setNewSource({ key: "", label: "", description: "", table: "", column: "" });
@@ -209,9 +192,9 @@ export default function ExplorerConfigPage() {
     toast({ title: "Added", description: `Data source "${source.label}" added. Click "Save Configuration" to persist.` });
   };
 
-  const handleResetToDefaults = () => {
-    setDataSources(DEFAULT_SOURCES);
-    toast({ title: "Reset", description: "Data sources reset to defaults. Click \"Save Configuration\" to persist." });
+  const handleClearAll = () => {
+    setDataSources([]);
+    toast({ title: "Cleared", description: "All data sources cleared. Click \"Save Configuration\" to persist." });
   };
 
   return (
@@ -272,11 +255,12 @@ export default function ExplorerConfigPage() {
             <div className="flex gap-2 flex-wrap">
               <Button
                 variant="outline"
-                onClick={handleResetToDefaults}
-                data-testid="button-reset-defaults"
+                onClick={handleClearAll}
+                disabled={dataSources.length === 0}
+                data-testid="button-clear-all"
               >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Reset to Defaults
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear All
               </Button>
               <Button
                 variant="outline"

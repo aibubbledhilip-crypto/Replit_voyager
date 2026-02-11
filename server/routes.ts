@@ -411,21 +411,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Settings routes
-  // Default settings values for when settings don't exist
+  // Default settings values for non-configurable system defaults only
   const defaultSettings: Record<string, string> = {
     row_limit: '1000',
     display_limit: '10000',
-    athena_database: 'dvsum-s3-glue-prod',
-    explorer_table_sf: 'vw_sf_all_segment_hierarchy',
-    explorer_column_sf: 'msisdn',
-    explorer_table_aria: 'vw_aria_hierarchy_all_status_reverse',
-    explorer_column_aria: 'msisdn',
-    explorer_table_matrix: 'vw_matrixx_plan',
-    explorer_column_matrix: 'msisdn',
-    explorer_table_trufinder: 'vw_true_finder_raw',
-    explorer_column_trufinder: 'msisdn',
-    explorer_table_nokia: 'vw_nokia_raw',
-    explorer_column_nokia: 'msisdn',
   };
 
   // Sensitive settings that require admin access
@@ -618,11 +607,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
 
-      const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION || 's3://dvsum-staging-prod';
+      const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION;
+      if (!s3OutputLocation) {
+        return res.status(400).json({ message: "S3 output location not configured. Please set the AWS_S3_OUTPUT_LOCATION environment variable." });
+      }
       
       // Get Athena database name from settings (organization-scoped)
       const athenaDbSetting = await storage.getSetting('athena_database', req.session.organizationId);
-      const databaseName = athenaDbSetting?.value || 'dvsum-s3-glue-prod';
+      if (!athenaDbSetting?.value) {
+        return res.status(400).json({ message: "Athena database not configured. Please configure it in Admin > Explorer Configuration." });
+      }
+      const databaseName = athenaDbSetting.value;
 
       // Helper function to execute a query and get results
       const executeSchemaQuery = async (query: string): Promise<string[][]> => {
@@ -703,11 +698,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
 
-      const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION || 's3://dvsum-staging-prod';
+      const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION;
+      if (!s3OutputLocation) {
+        return res.status(400).json({ message: "S3 output location not configured." });
+      }
       
       // Get Athena database name from settings (organization-scoped)
       const athenaDbSetting = await storage.getSetting('athena_database', req.session.organizationId);
-      const databaseName = athenaDbSetting?.value || 'dvsum-s3-glue-prod';
+      if (!athenaDbSetting?.value) {
+        return res.status(400).json({ message: "Athena database not configured. Please configure it in Admin > Explorer Configuration." });
+      }
+      const databaseName = athenaDbSetting.value;
 
       const startCommand = new StartQueryExecutionCommand({
         QueryString: `SHOW COLUMNS IN \`${databaseName}\`.\`${tableName}\``,
@@ -781,7 +782,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
 
-      const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION || 's3://dvsum-staging-prod';
+      const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION;
+      if (!s3OutputLocation) {
+        return res.status(400).json({ message: "S3 output location not configured." });
+      }
 
       const startTime = Date.now();
 
@@ -874,9 +878,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get Athena database name from settings (organization-scoped)
       const athenaDbSetting = await storage.getSetting('athena_database', req.session.organizationId);
-      const databaseName = athenaDbSetting?.value || 'dvsum-s3-glue-prod';
+      if (!athenaDbSetting?.value) {
+        return res.status(400).json({ message: "Athena database not configured. Please configure it in Admin > Explorer Configuration." });
+      }
+      const databaseName = athenaDbSetting.value;
 
-      // Dynamically build data source queries from settings
+      // Dynamically build data source queries from configured settings only
       const allOrgSettings = organizationId 
         ? await storage.getSettingsByOrganization(organizationId)
         : [];
@@ -888,23 +895,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (match) explorerSourceKeys.add(match[1]);
       });
 
-      const defaultSources: Record<string, { table: string; column: string; label: string }> = {
-        sf: { table: 'vw_sf_all_segment_hierarchy', column: 'msisdn', label: 'SF' },
-        aria: { table: 'vw_aria_hierarchy_all_status_reverse', column: 'msisdn', label: 'Aria' },
-        matrix: { table: 'vw_matrixx_plan', column: 'msisdn', label: 'Matrix' },
-        trufinder: { table: 'vw_true_finder_raw', column: 'msisdn', label: 'Trufinder' },
-        nokia: { table: 'vw_nokia_raw', column: 'msisdn', label: 'Nokia' },
-      };
+      if (explorerSourceKeys.size === 0) {
+        return res.status(400).json({ message: "No data sources configured. Please configure them in Admin > Explorer Configuration." });
+      }
 
-      // If no explorer settings exist, use defaults; otherwise use only configured sources
-      const sourceKeys = explorerSourceKeys.size > 0 
-        ? Array.from(explorerSourceKeys) 
-        : Object.keys(defaultSources);
-
-      const queries = sourceKeys.map(key => {
-        const table = settingsMap.get(`explorer_table_${key}`) || defaultSources[key]?.table || key;
-        const column = settingsMap.get(`explorer_column_${key}`) || defaultSources[key]?.column || 'msisdn';
-        const label = settingsMap.get(`explorer_label_${key}`) || defaultSources[key]?.label || key.toUpperCase();
+      const queries = Array.from(explorerSourceKeys).map(key => {
+        const table = settingsMap.get(`explorer_table_${key}`);
+        const column = settingsMap.get(`explorer_column_${key}`);
+        const label = settingsMap.get(`explorer_label_${key}`) || key.toUpperCase();
+        if (!table || !column) {
+          throw new Error(`Data source "${key}" is missing table or column configuration. Please update it in Admin > Explorer Configuration.`);
+        }
         return {
           name: label,
           query: `select * from "${databaseName}".${table} where ${column} = '${sanitizedMsisdn}'`,
@@ -920,7 +921,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
 
-      const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION || 's3://dvsum-staging-prod';
+      const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION;
+      if (!s3OutputLocation) {
+        return res.status(400).json({ message: "S3 output location not configured." });
+      }
 
       const startTime = Date.now();
 
