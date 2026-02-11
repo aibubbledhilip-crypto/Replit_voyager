@@ -710,7 +710,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type,
         ...rest,
       });
-      await logAudit(organizationId, req.session.userId!, 'create', 'database_connection', connection.id, `Created ${type} connection: ${name}`, req);
+      await logAuditEvent(req, 'db_connection_created', 'database_connection', connection.id, `Created ${type} connection: ${name}`);
       res.json({
         ...maskConnectionCredentials(connection),
         hasCredentials: hasCredentials(connection),
@@ -752,7 +752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updated) {
         return res.status(404).json({ message: "Connection not found" });
       }
-      await logAudit(organizationId, req.session.userId!, 'update', 'database_connection', req.params.id, `Updated connection: ${updated.name}`, req);
+      await logAuditEvent(req, 'db_connection_updated', 'database_connection', req.params.id, `Updated connection: ${updated.name}`);
       res.json({
         ...maskConnectionCredentials(updated),
         hasCredentials: hasCredentials(updated),
@@ -776,7 +776,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!deleted) {
         return res.status(404).json({ message: "Connection not found" });
       }
-      await logAudit(organizationId, req.session.userId!, 'delete', 'database_connection', req.params.id, `Deleted connection: ${existing.name}`, req);
+      await logAuditEvent(req, 'db_connection_deleted', 'database_connection', req.params.id, `Deleted connection: ${existing.name}`);
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
