@@ -71,8 +71,13 @@ export default function QueryExecutionPage() {
   const isAthenaConnection = activeConnection?.type === 'athena';
   const shouldLoadSchema = !isLoadingConnections && (!hasConnections || isAthenaConnection);
 
+  const schemaUrl = activeConnectionId
+    ? `/api/query/schema?connectionId=${activeConnectionId}`
+    : '/api/query/schema';
+
   const { data: schema, isLoading: isLoadingSchema, error: schemaError, refetch: refetchSchema } = useQuery<SchemaResponse>({
-    queryKey: ['/api/query/schema'],
+    queryKey: ['/api/query/schema', activeConnectionId],
+    queryFn: () => apiRequest(schemaUrl),
     staleTime: 5 * 60 * 1000,
     retry: 1,
     enabled: shouldLoadSchema,
@@ -200,7 +205,7 @@ export default function QueryExecutionPage() {
               variant="ghost"
               size="icon"
               onClick={() => {
-                queryClient.invalidateQueries({ queryKey: ['/api/query/schema'] });
+                queryClient.invalidateQueries({ queryKey: ['/api/query/schema', activeConnectionId] });
                 refetchSchema();
               }}
               disabled={isLoadingSchema}

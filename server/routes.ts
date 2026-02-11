@@ -971,21 +971,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!organizationId) {
         return res.status(403).json({ message: "Organization context required" });
       }
+
+      const connectionId = req.query.connectionId as string | undefined;
+      const cacheKey = connectionId ? `${organizationId}:${connectionId}` : organizationId;
       
-      // Return cached data for this organization if valid
-      const orgCache = schemaCacheByOrg.get(organizationId);
+      // Return cached data if valid
+      const orgCache = schemaCacheByOrg.get(cacheKey);
       if (orgCache && (Date.now() - orgCache.timestamp) < SCHEMA_CACHE_TTL) {
         return res.json(orgCache.data);
       }
 
-      const { client: athenaClient, s3OutputLocation } = await getOrgAthenaClient(organizationId);
-      
-      // Get Athena database name from settings (organization-scoped)
-      const athenaDbSetting = await storage.getSetting('athena_database', req.session.organizationId);
-      if (!athenaDbSetting?.value) {
-        return res.status(400).json({ message: "Athena database not configured. Please configure it in Admin > Explorer Configuration." });
+      let athenaClient: AthenaClient;
+      let s3OutputLocation: string;
+      let databaseName: string;
+
+      if (connectionId) {
+        const connection = await storage.getDatabaseConnectionById(connectionId);
+        if (!connection || connection.organizationId !== organizationId) {
+          return res.status(404).json({ message: "Database connection not found" });
+        }
+        if (connection.type !== 'athena') {
+          return res.status(400).json({ message: "Schema browsing via this endpoint is only supported for Athena connections." });
+        }
+        if (!connection.awsAccessKeyId || !connection.awsSecretAccessKey) {
+          return res.status(400).json({ message: "AWS credentials not configured on this connection." });
+        }
+        if (!connection.s3OutputLocation) {
+          return res.status(400).json({ message: "S3 output location not configured on this connection." });
+        }
+        athenaClient = new AthenaClient({
+          region: connection.awsRegion || 'us-east-1',
+          credentials: {
+            accessKeyId: connection.awsAccessKeyId,
+            secretAccessKey: connection.awsSecretAccessKey,
+          },
+        });
+        s3OutputLocation = connection.s3OutputLocation;
+        databaseName = connection.database || '';
+        if (!databaseName) {
+          return res.status(400).json({ message: "Database name not configured on this Athena connection." });
+        }
+      } else {
+        const result = await getOrgAthenaClient(organizationId);
+        athenaClient = result.client;
+        s3OutputLocation = result.s3OutputLocation;
+        const athenaDbSetting = await storage.getSetting('athena_database', req.session.organizationId);
+        if (!athenaDbSetting?.value) {
+          return res.status(400).json({ message: "Athena database not configured. Please configure it in Admin > Explorer Configuration." });
+        }
+        databaseName = athenaDbSetting.value;
       }
-      const databaseName = athenaDbSetting.value;
 
       // Helper function to execute a query and get results
       const executeSchemaQuery = async (query: string): Promise<string[][]> => {
@@ -1040,7 +1075,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Cache the result for this organization
-      schemaCacheByOrg.set(organizationId, { data: responseData, timestamp: Date.now() });
+      schemaCacheByOrg.set(cacheKey, { data: responseData, timestamp: Date.now() });
 
       res.json(responseData);
     } catch (error: any) {
