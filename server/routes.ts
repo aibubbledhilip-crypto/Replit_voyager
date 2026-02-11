@@ -15,6 +15,7 @@ import { parseFile, compareDatasets, cleanupOldFiles } from "./file-comparison-h
 import { checkSftpFiles, testSftpConnection } from "./sftp-helper";
 import { insertSftpConfigSchema } from "@shared/schema";
 import { executeAthenaQueryWithPagination } from "./athena-helper";
+import { getDriver, maskConnectionCredentials, hasCredentials, DATABASE_TYPE_LABELS } from "./database-drivers";
 import { analyzeData, getValidatedModel, type AIProvider } from "./ai-service";
 import { stripeService } from "./stripeService";
 import { getStripePublishableKey } from "./stripeClient";
@@ -649,6 +650,174 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============================================================
+  // DATABASE CONNECTIONS routes (multi-database support)
+  // ============================================================
+
+  app.get("/api/db-connections", requireAuth, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId;
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      const connections = await storage.getDatabaseConnectionsByOrganization(organizationId);
+      const masked = connections.map(c => ({
+        ...maskConnectionCredentials(c),
+        hasCredentials: hasCredentials(c),
+      }));
+      res.json(masked);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/db-connections/types", requireAuth, async (req, res) => {
+    res.json(DATABASE_TYPE_LABELS);
+  });
+
+  app.get("/api/db-connections/:id", requireAuth, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId;
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      const connection = await storage.getDatabaseConnectionById(req.params.id);
+      if (!connection || connection.organizationId !== organizationId) {
+        return res.status(404).json({ message: "Connection not found" });
+      }
+      res.json({
+        ...maskConnectionCredentials(connection),
+        hasCredentials: hasCredentials(connection),
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/db-connections", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId;
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      const { name, type, ...rest } = req.body;
+      if (!name || !type) {
+        return res.status(400).json({ message: "Name and type are required" });
+      }
+      const connection = await storage.createDatabaseConnection({
+        organizationId,
+        name,
+        type,
+        ...rest,
+      });
+      await logAudit(organizationId, req.session.userId!, 'create', 'database_connection', connection.id, `Created ${type} connection: ${name}`, req);
+      res.json({
+        ...maskConnectionCredentials(connection),
+        hasCredentials: hasCredentials(connection),
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/db-connections/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId;
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      const existing = await storage.getDatabaseConnectionById(req.params.id);
+      if (!existing || existing.organizationId !== organizationId) {
+        return res.status(404).json({ message: "Connection not found" });
+      }
+      const updateData = { ...req.body };
+      if (updateData.password === '********') {
+        updateData.password = existing.password;
+      }
+      if (updateData.awsSecretAccessKey === '********') {
+        updateData.awsSecretAccessKey = existing.awsSecretAccessKey;
+      }
+      if (updateData.awsAccessKeyId && updateData.awsAccessKeyId.includes('****')) {
+        updateData.awsAccessKeyId = existing.awsAccessKeyId;
+      }
+      if (updateData.credentialsJson === '********') {
+        updateData.credentialsJson = existing.credentialsJson;
+      }
+      delete updateData.id;
+      delete updateData.organizationId;
+      delete updateData.createdAt;
+      delete updateData.updatedAt;
+      delete updateData.hasCredentials;
+      const updated = await storage.updateDatabaseConnection(req.params.id, updateData);
+      if (!updated) {
+        return res.status(404).json({ message: "Connection not found" });
+      }
+      await logAudit(organizationId, req.session.userId!, 'update', 'database_connection', req.params.id, `Updated connection: ${updated.name}`, req);
+      res.json({
+        ...maskConnectionCredentials(updated),
+        hasCredentials: hasCredentials(updated),
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/db-connections/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId;
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      const existing = await storage.getDatabaseConnectionById(req.params.id);
+      if (!existing || existing.organizationId !== organizationId) {
+        return res.status(404).json({ message: "Connection not found" });
+      }
+      const deleted = await storage.deleteDatabaseConnection(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Connection not found" });
+      }
+      await logAudit(organizationId, req.session.userId!, 'delete', 'database_connection', req.params.id, `Deleted connection: ${existing.name}`, req);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/db-connections/:id/test", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId;
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      const connection = await storage.getDatabaseConnectionById(req.params.id);
+      if (!connection || connection.organizationId !== organizationId) {
+        return res.status(404).json({ message: "Connection not found" });
+      }
+      const driver = getDriver(connection.type);
+      const result = await driver.testConnection(connection);
+      res.json(result);
+    } catch (error: any) {
+      res.json({ success: false, message: error.message });
+    }
+  });
+
+  app.post("/api/db-connections/:id/set-default", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId;
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      const connection = await storage.getDatabaseConnectionById(req.params.id);
+      if (!connection || connection.organizationId !== organizationId) {
+        return res.status(404).json({ message: "Connection not found" });
+      }
+      await storage.setDefaultDatabaseConnection(req.params.id, organizationId);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Saved Queries routes
   app.get("/api/saved-queries", requireAuth, async (req, res) => {
     try {
@@ -904,45 +1073,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Query execution route
+  // Query execution route (supports multi-database connections)
   app.post("/api/query/execute", requireAuth, async (req, res) => {
     try {
-      const { query } = req.body;
+      const { query, connectionId } = req.body;
       if (!query) {
         return res.status(400).json({ message: "Query is required" });
       }
 
-      // Get row limit setting (used for export restriction, not display) - organization-scoped
       const organizationId = req.session.organizationId;
-      const exportLimitSetting = await storage.getSetting('row_limit', organizationId);
-      const rowLimit = exportLimitSetting ? parseInt(exportLimitSetting.value) : 1000;
-      
-      // Get display limit setting (for results shown in UI) - organization-scoped
-      const displayLimitSetting = await storage.getSetting('display_limit', organizationId);
-      const displayLimit = displayLimitSetting ? parseInt(displayLimitSetting.value) : 10000;
-
       if (!organizationId) {
         return res.status(403).json({ message: "Organization context required" });
       }
 
-      const { client: athenaClient, s3OutputLocation } = await getOrgAthenaClient(organizationId);
+      const exportLimitSetting = await storage.getSetting('row_limit', organizationId);
+      const rowLimit = exportLimitSetting ? parseInt(exportLimitSetting.value) : 1000;
+      const displayLimitSetting = await storage.getSetting('display_limit', organizationId);
+      const displayLimit = displayLimitSetting ? parseInt(displayLimitSetting.value) : 10000;
 
-      const startTime = Date.now();
+      let columns: string[];
+      let data: Record<string, any>[];
+      let executionTime: number;
 
-      // Execute query with pagination support for large result sets
-      // Use displayLimit for fetching all results; rowLimit is only for export restriction
-      const result = await executeAthenaQueryWithPagination(
-        athenaClient,
-        query,
-        s3OutputLocation,
-        displayLimit
-      );
+      if (connectionId) {
+        const connection = await storage.getDatabaseConnectionById(connectionId);
+        if (!connection || connection.organizationId !== organizationId) {
+          return res.status(404).json({ message: "Database connection not found" });
+        }
+        const driver = getDriver(connection.type);
+        const result = await driver.executeQuery(connection, query, displayLimit);
+        columns = result.columns;
+        data = result.rows;
+        executionTime = result.executionTimeMs;
+      } else {
+        const { client: athenaClient, s3OutputLocation } = await getOrgAthenaClient(organizationId);
+        const startTime = Date.now();
+        const result = await executeAthenaQueryWithPagination(
+          athenaClient, query, s3OutputLocation, displayLimit
+        );
+        columns = result.columns;
+        data = result.data;
+        executionTime = Date.now() - startTime;
+      }
 
-      const columns = result.columns;
-      const data = result.data;
-      const executionTime = Date.now() - startTime;
-
-      // Log the query execution
       await storage.createQueryLog({
         userId: req.session.userId!,
         username: req.session.username!,
@@ -960,7 +1133,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         rowLimit,
       });
     } catch (error: any) {
-      // Log failed query
       try {
         await storage.createQueryLog({
           userId: req.session.userId!,
@@ -973,7 +1145,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (logError) {
         console.error('Failed to log error query:', logError);
       }
-
       res.status(500).json({ message: error.message });
     }
   });

@@ -3,7 +3,7 @@ import {
   users, queryLogs, settings, exportJobs, sftpConfigs, savedQueries,
   organizations, subscriptionPlans, organizationSubscriptions, 
   organizationMembers, organizationInvitations, organizationAwsConfigs,
-  organizationAiConfigs, auditLogs,
+  organizationAiConfigs, organizationDatabaseConnections, auditLogs,
   type User, type InsertUser, type QueryLog, type InsertQueryLog, 
   type Setting, type InsertSetting, type ExportJob, type InsertExportJob, 
   type SftpConfig, type InsertSftpConfig, type SavedQuery, type InsertSavedQuery,
@@ -13,6 +13,7 @@ import {
   type OrganizationInvitation, type InsertOrganizationInvitation,
   type OrganizationAwsConfig, type InsertOrganizationAwsConfig,
   type OrganizationAiConfig, type InsertOrganizationAiConfig,
+  type OrganizationDatabaseConnection, type InsertOrganizationDatabaseConnection,
   type AuditLog, type InsertAuditLog
 } from "@shared/schema";
 import { eq, desc, and, or, isNull } from "drizzle-orm";
@@ -97,6 +98,14 @@ export interface IStorage {
   
   getOrganizationAiConfig(organizationId: string): Promise<OrganizationAiConfig | undefined>;
   upsertOrganizationAiConfig(config: InsertOrganizationAiConfig): Promise<OrganizationAiConfig>;
+  
+  getDatabaseConnectionsByOrganization(organizationId: string): Promise<OrganizationDatabaseConnection[]>;
+  getDatabaseConnectionById(id: string): Promise<OrganizationDatabaseConnection | undefined>;
+  getDefaultDatabaseConnection(organizationId: string): Promise<OrganizationDatabaseConnection | undefined>;
+  createDatabaseConnection(connection: InsertOrganizationDatabaseConnection): Promise<OrganizationDatabaseConnection>;
+  updateDatabaseConnection(id: string, connection: Partial<InsertOrganizationDatabaseConnection>): Promise<OrganizationDatabaseConnection | undefined>;
+  deleteDatabaseConnection(id: string): Promise<boolean>;
+  setDefaultDatabaseConnection(id: string, organizationId: string): Promise<void>;
   
   createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
   getAuditLogsByOrganization(organizationId: string): Promise<AuditLog[]>;
@@ -565,6 +574,71 @@ export class DbStorage implements IStorage {
       const result = await db.insert(organizationAiConfigs).values(config).returning();
       return result[0];
     }
+  }
+
+  async getDatabaseConnectionsByOrganization(organizationId: string): Promise<OrganizationDatabaseConnection[]> {
+    return await db.select().from(organizationDatabaseConnections)
+      .where(eq(organizationDatabaseConnections.organizationId, organizationId))
+      .orderBy(desc(organizationDatabaseConnections.createdAt));
+  }
+
+  async getDatabaseConnectionById(id: string): Promise<OrganizationDatabaseConnection | undefined> {
+    const result = await db.select().from(organizationDatabaseConnections)
+      .where(eq(organizationDatabaseConnections.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async getDefaultDatabaseConnection(organizationId: string): Promise<OrganizationDatabaseConnection | undefined> {
+    const result = await db.select().from(organizationDatabaseConnections)
+      .where(and(
+        eq(organizationDatabaseConnections.organizationId, organizationId),
+        eq(organizationDatabaseConnections.isDefault, true)
+      ))
+      .limit(1);
+    return result[0];
+  }
+
+  async createDatabaseConnection(connection: InsertOrganizationDatabaseConnection): Promise<OrganizationDatabaseConnection> {
+    if (connection.isDefault) {
+      await db.update(organizationDatabaseConnections)
+        .set({ isDefault: false })
+        .where(eq(organizationDatabaseConnections.organizationId, connection.organizationId));
+    }
+    const result = await db.insert(organizationDatabaseConnections).values(connection).returning();
+    return result[0];
+  }
+
+  async updateDatabaseConnection(id: string, connection: Partial<InsertOrganizationDatabaseConnection>): Promise<OrganizationDatabaseConnection | undefined> {
+    if (connection.isDefault) {
+      const existing = await this.getDatabaseConnectionById(id);
+      if (existing) {
+        await db.update(organizationDatabaseConnections)
+          .set({ isDefault: false })
+          .where(eq(organizationDatabaseConnections.organizationId, existing.organizationId));
+      }
+    }
+    const result = await db.update(organizationDatabaseConnections)
+      .set({ ...connection, updatedAt: new Date() })
+      .where(eq(organizationDatabaseConnections.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteDatabaseConnection(id: string): Promise<boolean> {
+    const result = await db.delete(organizationDatabaseConnections)
+      .where(eq(organizationDatabaseConnections.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  async setDefaultDatabaseConnection(id: string, organizationId: string): Promise<void> {
+    await db.update(organizationDatabaseConnections)
+      .set({ isDefault: false })
+      .where(eq(organizationDatabaseConnections.organizationId, organizationId));
+    await db.update(organizationDatabaseConnections)
+      .set({ isDefault: true })
+      .where(eq(organizationDatabaseConnections.id, id));
   }
 
   async createAuditLog(log: InsertAuditLog): Promise<AuditLog> {

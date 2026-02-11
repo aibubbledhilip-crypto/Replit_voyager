@@ -9,9 +9,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Database, Table, ChevronRight, ChevronDown, Search, RefreshCw, Loader2, Columns, AlertCircle } from "lucide-react";
+import { Database, Table, ChevronRight, ChevronDown, Search, RefreshCw, Loader2, Columns, AlertCircle, Link2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { queryClient } from "@/lib/queryClient";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface TableColumn {
   name: string;
@@ -30,6 +37,13 @@ interface SchemaResponse {
   fetchedTables: number;
 }
 
+interface DbConnectionOption {
+  id: string;
+  name: string;
+  type: string;
+  isDefault: boolean;
+}
+
 export default function QueryExecutionPage() {
   const [results, setResults] = useState<{
     columns: string[];
@@ -43,12 +57,23 @@ export default function QueryExecutionPage() {
   const [tableColumns, setTableColumns] = useState<Map<string, TableColumn[]>>(new Map());
   const [loadingColumns, setLoadingColumns] = useState<Set<string>>(new Set());
   const [failedColumns, setFailedColumns] = useState<Set<string>>(new Set());
+  const [selectedConnectionId, setSelectedConnectionId] = useState<string>("");
   const { toast } = useToast();
+
+  const { data: dbConnections = [] } = useQuery<DbConnectionOption[]>({
+    queryKey: ['/api/db-connections'],
+    queryFn: () => apiRequest('/api/db-connections'),
+  });
+
+  const activeConnectionId = selectedConnectionId || dbConnections.find(c => c.isDefault)?.id || dbConnections[0]?.id || '';
+  const activeConnection = dbConnections.find(c => c.id === activeConnectionId);
+  const isAthenaConnection = !activeConnection || activeConnection.type === 'athena';
 
   const { data: schema, isLoading: isLoadingSchema, error: schemaError, refetch: refetchSchema } = useQuery<SchemaResponse>({
     queryKey: ['/api/query/schema'],
     staleTime: 5 * 60 * 1000,
     retry: 1,
+    enabled: isAthenaConnection,
   });
 
   const fetchColumns = async (tableName: string) => {
@@ -87,7 +112,7 @@ export default function QueryExecutionPage() {
     try {
       const response = await apiRequest('/api/query/execute', {
         method: 'POST',
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, connectionId: activeConnectionId || undefined }),
       });
 
       setResults(response);
@@ -141,6 +166,29 @@ export default function QueryExecutionPage() {
     <div className="flex gap-4 h-full">
       <Card className="w-72 flex-shrink-0 flex flex-col" data-testid="card-schema-browser">
         <CardHeader className="pb-3">
+          {dbConnections.length > 0 && (
+            <div className="mb-2">
+              <Select
+                value={activeConnectionId}
+                onValueChange={setSelectedConnectionId}
+              >
+                <SelectTrigger className="h-8 text-xs" data-testid="select-connection">
+                  <Link2 className="h-3 w-3 mr-1 shrink-0" />
+                  <SelectValue placeholder="Select connection" />
+                </SelectTrigger>
+                <SelectContent>
+                  {dbConnections.map((conn) => (
+                    <SelectItem key={conn.id} value={conn.id}>
+                      <span className="flex items-center gap-1">
+                        {conn.name}
+                        {conn.isDefault && <span className="text-muted-foreground">(default)</span>}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex items-center justify-between gap-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Database className="h-4 w-4" />

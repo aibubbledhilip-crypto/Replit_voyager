@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Database, FileText, Search, GitCompare, Server, Activity, LayoutDashboard, ChevronDown, Brain, CreditCard, Users, Settings, Shield, Cloud } from "lucide-react";
+import { Database, FileText, Search, GitCompare, Server, Activity, LayoutDashboard, ChevronDown, Brain, CreditCard, Users, Settings, Shield, Cloud, Link2 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -61,6 +61,11 @@ const adminItems: MenuItem[] = [
     title: "Configurations",
     icon: Settings,
     children: [
+      {
+        title: "Databases",
+        url: "/admin/db-connections",
+        icon: Link2,
+      },
       {
         title: "AWS",
         url: "/admin/aws-config",

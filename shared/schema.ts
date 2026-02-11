@@ -158,7 +158,7 @@ export type InsertOrganizationInvitation = z.infer<typeof insertOrganizationInvi
 export type OrganizationInvitation = typeof organizationInvitations.$inferSelect;
 
 // ============================================================
-// ORGANIZATION AWS CONFIGURATIONS
+// ORGANIZATION AWS CONFIGURATIONS (Legacy - kept for backward compat)
 // ============================================================
 
 export const organizationAwsConfigs = pgTable("organization_aws_configs", {
@@ -180,6 +180,53 @@ export const insertOrganizationAwsConfigSchema = createInsertSchema(organization
 
 export type InsertOrganizationAwsConfig = z.infer<typeof insertOrganizationAwsConfigSchema>;
 export type OrganizationAwsConfig = typeof organizationAwsConfigs.$inferSelect;
+
+// ============================================================
+// ORGANIZATION DATABASE CONNECTIONS (Multi-database support)
+// ============================================================
+
+export const DATABASE_TYPES = [
+  'postgresql', 'mysql', 'mssql', 'athena', 'bigquery', 'snowflake', 'clickhouse'
+] as const;
+
+export type DatabaseType = typeof DATABASE_TYPES[number];
+
+export const organizationDatabaseConnections = pgTable("organization_database_connections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  host: text("host"),
+  port: integer("port"),
+  database: text("database"),
+  username: text("username"),
+  password: text("password"),
+  ssl: boolean("ssl").notNull().default(false),
+  awsAccessKeyId: text("aws_access_key_id"),
+  awsSecretAccessKey: text("aws_secret_access_key"),
+  awsRegion: text("aws_region"),
+  s3OutputLocation: text("s3_output_location"),
+  projectId: text("project_id"),
+  credentialsJson: text("credentials_json"),
+  dataset: text("dataset"),
+  account: text("account"),
+  warehouse: text("warehouse"),
+  schema: text("schema"),
+  role: text("role"),
+  isDefault: boolean("is_default").notNull().default(false),
+  status: text("status").notNull().default('active'),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertOrganizationDatabaseConnectionSchema = createInsertSchema(organizationDatabaseConnections).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertOrganizationDatabaseConnection = z.infer<typeof insertOrganizationDatabaseConnectionSchema>;
+export type OrganizationDatabaseConnection = typeof organizationDatabaseConnections.$inferSelect;
 
 // ============================================================
 // ORGANIZATION AI CONFIGURATIONS

@@ -275,6 +275,37 @@ INSERT INTO settings (organization_id, key, value) VALUES
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
+-- 15b. ORGANIZATION DATABASE CONNECTIONS (Multi-database support)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS organization_database_connections (
+    id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id VARCHAR NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    host TEXT,
+    port INTEGER,
+    database TEXT,
+    username TEXT,
+    password TEXT,
+    ssl BOOLEAN NOT NULL DEFAULT false,
+    aws_access_key_id TEXT,
+    aws_secret_access_key TEXT,
+    aws_region TEXT,
+    s3_output_location TEXT,
+    project_id TEXT,
+    credentials_json TEXT,
+    dataset TEXT,
+    account TEXT,
+    warehouse TEXT,
+    schema TEXT,
+    role TEXT,
+    is_default BOOLEAN NOT NULL DEFAULT false,
+    status TEXT NOT NULL DEFAULT 'active',
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
 -- HELPFUL INDEXES FOR PERFORMANCE
 -- ============================================================
 CREATE INDEX IF NOT EXISTS idx_query_logs_org ON query_logs(organization_id);
@@ -285,6 +316,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at DESC)
 CREATE INDEX IF NOT EXISTS idx_saved_queries_org ON saved_queries(organization_id);
 CREATE INDEX IF NOT EXISTS idx_export_jobs_org ON export_jobs(organization_id);
 CREATE INDEX IF NOT EXISTS idx_sftp_configs_org ON sftp_configs(organization_id);
+CREATE INDEX IF NOT EXISTS idx_db_connections_org ON organization_database_connections(organization_id);
 
 -- ============================================================
 -- DONE!
