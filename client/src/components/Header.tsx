@@ -14,7 +14,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { SidebarToggleContext } from "@/App";
+import { SidebarToggleContext } from "@/lib/sidebar-context";
 
 interface HeaderProps {
   userRole?: 'admin' | 'user';

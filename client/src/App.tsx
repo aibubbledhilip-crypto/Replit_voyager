@@ -1,15 +1,11 @@
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect } from "react";
 import { Switch, Route, useLocation, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "@/components/app-sidebar";
-
-export const SidebarToggleContext = createContext<{
-  isOpen: boolean;
-  toggle: () => void;
-}>({ isOpen: true, toggle: () => {} });
+import { SidebarToggleContext } from "@/lib/sidebar-context";
 import Header from "@/components/Header";
 import LoginPage from "@/components/LoginPage";
 import SignupPage from "@/pages/SignupPage";
