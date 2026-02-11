@@ -112,12 +112,12 @@ export function AppSidebar({ userRole = 'user', isSuperAdmin = false }: AppSideb
     {
       label: "Nexus Gateway",
       items: nexusGatewayItems,
-      defaultOpen: true,
+      defaultOpen: false,
     },
     {
       label: "Tools",
       items: toolsItems,
-      defaultOpen: true,
+      defaultOpen: false,
     },
   ];
 
@@ -125,7 +125,7 @@ export function AppSidebar({ userRole = 'user', isSuperAdmin = false }: AppSideb
     categories.push({
       label: "Administration",
       items: adminItems,
-      defaultOpen: true,
+      defaultOpen: false,
     });
   }
 
@@ -139,16 +139,16 @@ export function AppSidebar({ userRole = 'user', isSuperAdmin = false }: AppSideb
           icon: Shield,
         },
       ],
-      defaultOpen: true,
+      defaultOpen: false,
     });
   }
 
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(
-    categories.reduce((acc, cat) => ({ ...acc, [cat.label]: cat.defaultOpen ?? true }), {})
+    categories.reduce((acc, cat) => ({ ...acc, [cat.label]: cat.defaultOpen ?? false }), {})
   );
 
   const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({
-    "Configurations": true,
+    "Configurations": false,
   });
 
   const toggleCategory = (label: string) => {
