@@ -100,17 +100,17 @@ function AuthenticatedApp() {
 
   return (
     <SidebarProvider style={sidebarStyle as React.CSSProperties}>
-      <div className="flex h-screen w-full">
-        <AppSidebar userRole={user.role} isSuperAdmin={user.isSuperAdmin} />
-        <div className="flex flex-col flex-1 min-w-0">
-          <Header 
-            userRole={user.role}
-            userName={user.username}
-            isSuperAdmin={user.isSuperAdmin}
-            impersonating={user.impersonating}
-            onLogout={handleLogout}
-          />
-          <main className="flex-1 overflow-auto">
+      <div className="flex flex-col h-screen w-full">
+        <Header 
+          userRole={user.role}
+          userName={user.username}
+          isSuperAdmin={user.isSuperAdmin}
+          impersonating={user.impersonating}
+          onLogout={handleLogout}
+        />
+        <div className="flex flex-1 min-h-0 w-full">
+          <AppSidebar userRole={user.role} isSuperAdmin={user.isSuperAdmin} />
+          <main className="flex-1 overflow-auto min-w-0">
             <div className={`p-6 ${isFullWidthPage ? 'h-full' : 'max-w-7xl mx-auto'}`}>
               <Switch>
                 <Route path="/" component={QueryExecutionPage} />
