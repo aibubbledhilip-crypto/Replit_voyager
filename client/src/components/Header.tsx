@@ -10,7 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -69,9 +68,8 @@ export default function Header({
           </Button>
         </div>
       )}
-      <header className="h-16 border-b bg-card flex items-center justify-between gap-4 px-4" data-testid="header-main">
+      <header className="h-16 border-b bg-card flex items-center justify-between gap-4 px-6" data-testid="header-main">
         <div className="flex items-center gap-3">
-          <SidebarTrigger data-testid="button-sidebar-toggle" />
           <div className="p-2 bg-primary rounded-md">
             <Database className="h-5 w-5 text-primary-foreground" />
           </div>

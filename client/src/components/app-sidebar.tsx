@@ -160,7 +160,7 @@ export function AppSidebar({ userRole = 'user', isSuperAdmin = false }: AppSideb
   };
 
   return (
-    <Sidebar data-testid="sidebar-navigation">
+    <Sidebar collapsible="none" data-testid="sidebar-navigation">
       <SidebarContent>
         {categories.map((category) => (
           <SidebarGroup key={category.label}>
