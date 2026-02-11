@@ -24,13 +24,10 @@ declare module 'http' {
 }
 
 // Validate required environment variables at startup
+// Note: AWS credentials are now configured per-organization via the GUI (Admin > Configurations > AWS)
 const requiredEnvVars = {
   SESSION_SECRET: process.env.SESSION_SECRET,
   DATABASE_URL: process.env.DATABASE_URL,
-  AWS_REGION: process.env.AWS_REGION,
-  AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
-  AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
-  AWS_S3_OUTPUT_LOCATION: process.env.AWS_S3_OUTPUT_LOCATION,
 };
 
 const missingVars = Object.entries(requiredEnvVars)

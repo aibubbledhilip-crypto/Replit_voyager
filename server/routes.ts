@@ -503,6 +503,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AWS Configuration routes (admin only, per-organization)
+  app.get("/api/aws-config", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId;
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+      const config = await storage.getOrganizationAwsConfig(organizationId);
+      if (!config) {
+        return res.json({ organizationId, awsAccessKeyId: '', awsSecretAccessKey: '', awsRegion: 'us-east-1', s3OutputLocation: '' });
+      }
+      const maskKey = (key: string | null) => {
+        if (!key || key.length < 8) return key ? '****' : '';
+        return key.slice(0, 4) + '****' + key.slice(-4);
+      };
+
+      res.json({
+        organizationId: config.organizationId,
+        awsAccessKeyId: maskKey(config.awsAccessKeyId),
+        awsSecretAccessKey: config.awsSecretAccessKey ? '********' : '',
+        awsRegion: config.awsRegion || 'us-east-1',
+        s3OutputLocation: config.s3OutputLocation || '',
+        hasCredentials: !!(config.awsAccessKeyId && config.awsSecretAccessKey),
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/aws-config", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId;
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+
+      const { awsAccessKeyId, awsSecretAccessKey, awsRegion, s3OutputLocation } = req.body;
+
+      if (!awsRegion) {
+        return res.status(400).json({ message: "AWS Region is required" });
+      }
+
+      const existing = await storage.getOrganizationAwsConfig(organizationId);
+
+      const configData: any = {
+        organizationId,
+        awsRegion,
+        s3OutputLocation: s3OutputLocation || null,
+      };
+
+      const isMaskedAccessKey = awsAccessKeyId && /^\w{4}\*{4}\w{4}$/.test(awsAccessKeyId);
+      if (awsAccessKeyId && !isMaskedAccessKey) {
+        configData.awsAccessKeyId = awsAccessKeyId;
+      } else if (existing) {
+        configData.awsAccessKeyId = existing.awsAccessKeyId;
+      }
+
+      const isMaskedSecretKey = !awsSecretAccessKey || awsSecretAccessKey === '********';
+      if (!isMaskedSecretKey) {
+        configData.awsSecretAccessKey = awsSecretAccessKey;
+      } else if (existing) {
+        configData.awsSecretAccessKey = existing.awsSecretAccessKey;
+      }
+
+      const result = await storage.upsertOrganizationAwsConfig(configData);
+
+      await logAuditEvent(req, 'aws_config_update', 'aws_config', organizationId,
+        `region=${awsRegion}, credentialsUpdated=${!isMaskedAccessKey || !isMaskedSecretKey}`
+      );
+
+      const maskKey = (key: string | null) => {
+        if (!key || key.length < 8) return key ? '****' : '';
+        return key.slice(0, 4) + '****' + key.slice(-4);
+      };
+
+      res.json({
+        organizationId: result.organizationId,
+        awsAccessKeyId: maskKey(result.awsAccessKeyId),
+        awsSecretAccessKey: result.awsSecretAccessKey ? '********' : '',
+        awsRegion: result.awsRegion || 'us-east-1',
+        s3OutputLocation: result.s3OutputLocation || '',
+        hasCredentials: !!(result.awsAccessKeyId && result.awsSecretAccessKey),
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/aws-config/test", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId;
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+
+      const config = await storage.getOrganizationAwsConfig(organizationId);
+      if (!config || !config.awsAccessKeyId || !config.awsSecretAccessKey) {
+        return res.status(400).json({ message: "AWS credentials not configured. Please save your configuration first." });
+      }
+      if (!config.s3OutputLocation) {
+        return res.status(400).json({ message: "S3 output location not configured." });
+      }
+
+      const testClient = new AthenaClient({
+        region: config.awsRegion || 'us-east-1',
+        credentials: {
+          accessKeyId: config.awsAccessKeyId,
+          secretAccessKey: config.awsSecretAccessKey,
+        },
+      });
+
+      const athenaDbSetting = await storage.getSetting('athena_database', organizationId);
+      const databaseName = athenaDbSetting?.value || 'default';
+
+      const startCommand = new StartQueryExecutionCommand({
+        QueryString: `SELECT 1`,
+        ResultConfiguration: { OutputLocation: config.s3OutputLocation },
+      });
+
+      const startResponse = await testClient.send(startCommand);
+      const queryExecutionId = startResponse.QueryExecutionId;
+
+      if (!queryExecutionId) {
+        return res.status(500).json({ message: "Failed to start test query" });
+      }
+
+      let queryStatus = 'RUNNING';
+      const getExecCmd = new GetQueryExecutionCommand({ QueryExecutionId: queryExecutionId });
+      let attempts = 0;
+      while ((queryStatus === 'RUNNING' || queryStatus === 'QUEUED') && attempts < 30) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const execResponse = await testClient.send(getExecCmd);
+        queryStatus = execResponse.QueryExecution?.Status?.State || 'FAILED';
+        attempts++;
+      }
+
+      if (queryStatus === 'SUCCEEDED') {
+        res.json({ success: true, message: "Connection successful. AWS Athena is reachable." });
+      } else {
+        res.json({ success: false, message: `Connection test failed with status: ${queryStatus}` });
+      }
+    } catch (error: any) {
+      res.json({ success: false, message: `Connection failed: ${error.message}` });
+    }
+  });
+
   // Saved Queries routes
   app.get("/api/saved-queries", requireAuth, async (req, res) => {
     try {
@@ -578,6 +724,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper to get Athena client from per-org AWS config
+  async function getOrgAthenaClient(organizationId: string): Promise<{ client: AthenaClient; s3OutputLocation: string }> {
+    const config = await storage.getOrganizationAwsConfig(organizationId);
+    if (!config || !config.awsAccessKeyId || !config.awsSecretAccessKey) {
+      throw new Error("AWS credentials not configured. Please set them up in Admin > Configurations > AWS.");
+    }
+    if (!config.s3OutputLocation) {
+      throw new Error("S3 output location not configured. Please set it in Admin > Configurations > AWS.");
+    }
+    const client = new AthenaClient({
+      region: config.awsRegion || 'us-east-1',
+      credentials: {
+        accessKeyId: config.awsAccessKeyId,
+        secretAccessKey: config.awsSecretAccessKey,
+      },
+    });
+    return { client, s3OutputLocation: config.s3OutputLocation };
+  }
+
   // Schema cache per organization to avoid hammering Athena (tenant isolated)
   const schemaCacheByOrg: Map<string, { 
     data: any; 
@@ -599,18 +764,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(orgCache.data);
       }
 
-      const athenaClient = new AthenaClient({
-        region: process.env.AWS_REGION || 'us-east-1',
-        credentials: {
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-        },
-      });
-
-      const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION;
-      if (!s3OutputLocation) {
-        return res.status(400).json({ message: "S3 output location not configured. Please set the AWS_S3_OUTPUT_LOCATION environment variable." });
-      }
+      const { client: athenaClient, s3OutputLocation } = await getOrgAthenaClient(organizationId);
       
       // Get Athena database name from settings (organization-scoped)
       const athenaDbSetting = await storage.getSetting('athena_database', req.session.organizationId);
@@ -690,21 +844,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid table name" });
       }
 
-      const athenaClient = new AthenaClient({
-        region: process.env.AWS_REGION || 'us-east-1',
-        credentials: {
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-        },
-      });
-
-      const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION;
-      if (!s3OutputLocation) {
-        return res.status(400).json({ message: "S3 output location not configured." });
+      const organizationId = req.session.organizationId;
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
       }
+
+      const { client: athenaClient, s3OutputLocation } = await getOrgAthenaClient(organizationId);
       
       // Get Athena database name from settings (organization-scoped)
-      const athenaDbSetting = await storage.getSetting('athena_database', req.session.organizationId);
+      const athenaDbSetting = await storage.getSetting('athena_database', organizationId);
       if (!athenaDbSetting?.value) {
         return res.status(400).json({ message: "Athena database not configured. Please configure it in Admin > Explorer Configuration." });
       }
@@ -773,19 +921,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const displayLimitSetting = await storage.getSetting('display_limit', organizationId);
       const displayLimit = displayLimitSetting ? parseInt(displayLimitSetting.value) : 10000;
 
-      // Initialize Athena client
-      const athenaClient = new AthenaClient({
-        region: process.env.AWS_REGION || 'us-east-1',
-        credentials: {
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-        },
-      });
-
-      const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION;
-      if (!s3OutputLocation) {
-        return res.status(400).json({ message: "S3 output location not configured." });
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
       }
+
+      const { client: athenaClient, s3OutputLocation } = await getOrgAthenaClient(organizationId);
 
       const startTime = Date.now();
 
@@ -912,19 +1052,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
 
-      // Initialize Athena client
-      const athenaClient = new AthenaClient({
-        region: process.env.AWS_REGION || 'us-east-1',
-        credentials: {
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-        },
-      });
-
-      const s3OutputLocation = process.env.AWS_S3_OUTPUT_LOCATION;
-      if (!s3OutputLocation) {
-        return res.status(400).json({ message: "S3 output location not configured." });
-      }
+      const { client: athenaClient, s3OutputLocation } = await getOrgAthenaClient(organizationId!);
 
       const startTime = Date.now();
 

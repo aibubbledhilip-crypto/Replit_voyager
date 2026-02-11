@@ -9,7 +9,13 @@ The user wants me to act as a coding agent.
 - I want to be asked before making major changes.
 - When introducing database schema changes, always update `sql/fresh-database-setup.sql` with the corresponding SQL statements.
 
-## Recent Changes (January 2026)
+## Recent Changes (February 2026)
+- **AWS Configuration GUI**: AWS credentials and Athena connection settings are now configurable per-organization through Admin > Configurations > AWS instead of environment variables
+- All Athena query routes now use per-org AWS config from the database via `getOrgAthenaClient()` helper
+- Added connection test endpoint to verify AWS Athena connectivity
+- All hardcoded database/table defaults removed - configuration is fully GUI-driven
+
+## Previous Changes (January 2026)
 - Transformed from single-tenant to multi-tenant SaaS architecture
 - Added self-service signup with automatic organization creation
 - Integrated Stripe for subscription billing with four tiers (Free, Starter, Professional, Enterprise)
