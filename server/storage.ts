@@ -41,6 +41,7 @@ export interface IStorage {
   
   getSetting(key: string, organizationId?: string): Promise<Setting | undefined>;
   upsertSetting(setting: InsertSetting): Promise<Setting>;
+  deleteSetting(key: string, organizationId: string): Promise<void>;
   getSettingsByOrganization(organizationId: string): Promise<Setting[]>;
   
   createExportJob(job: InsertExportJob): Promise<ExportJob>;
@@ -240,6 +241,11 @@ export class DbStorage implements IStorage {
       }).returning();
       return result[0];
     }
+  }
+
+  async deleteSetting(key: string, organizationId: string): Promise<void> {
+    await db.delete(settings)
+      .where(and(eq(settings.key, key), eq(settings.organizationId, organizationId)));
   }
 
   async getSettingsByOrganization(organizationId: string): Promise<Setting[]> {
