@@ -7,7 +7,6 @@ import { Search, Loader2, Download, Brain, X, CheckCircle, AlertTriangle, AlertC
 import ResultsTable from "@/components/ResultsTable";
 import { apiRequest } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -115,7 +114,6 @@ export default function ExplorerPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
   const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("");
   const { toast } = useToast();
 
   const handleLookup = async (e: React.FormEvent) => {
@@ -139,9 +137,6 @@ export default function ExplorerPage() {
       });
 
       setResults(response);
-      if (response.results.length > 0) {
-        setActiveTab(response.results[0].name);
-      }
       
       const successCount = response.results.filter((r: QueryResult) => r.status === 'success').length;
       toast({
@@ -354,51 +349,29 @@ export default function ExplorerPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <Tabs 
-              defaultValue={results.results[0]?.name} 
-              className="w-full"
-              onValueChange={(value) => setActiveTab(value)}
-            >
-              <TabsList className="w-full justify-start flex-wrap h-auto">
-                {results.results.map((result) => (
-                  <TabsTrigger 
-                    key={result.name} 
-                    value={result.name}
-                    data-testid={`tab-${result.name.toLowerCase()}`}
-                    className="gap-2"
-                  >
-                    {result.name}
+          <CardContent className="space-y-4">
+            {results.results.map((result) => (
+              <Card key={result.name} data-testid={`result-section-${result.name.toLowerCase()}`}>
+                <CardHeader className="py-3 px-4">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <CardTitle className="text-base">{result.name}</CardTitle>
                     {result.status === 'success' ? (
-                      <Badge variant="secondary" className="ml-2">
-                        {result.rowsReturned}
+                      <Badge variant="secondary">
+                        {result.rowsReturned} {result.rowsReturned === 1 ? 'row' : 'rows'}
                       </Badge>
                     ) : (
-                      <Badge variant="destructive" className="ml-2">
-                        Error
-                      </Badge>
+                      <Badge variant="destructive">Error</Badge>
                     )}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-
-              {results.results.map((result) => (
-                <TabsContent 
-                  key={result.name} 
-                  value={result.name}
-                  data-testid={`content-${result.name.toLowerCase()}`}
-                >
+                  </div>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 pt-0">
                   {result.status === 'error' ? (
-                    <div className="py-8 text-center">
-                      <div className="text-destructive font-medium mb-2">
-                        Query Failed
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {result.error}
-                      </div>
+                    <div className="py-4 text-center">
+                      <div className="text-destructive font-medium mb-2">Query Failed</div>
+                      <div className="text-sm text-muted-foreground">{result.error}</div>
                     </div>
                   ) : result.rowsReturned === 0 ? (
-                    <div className="py-8 text-center text-muted-foreground">
+                    <div className="py-4 text-center text-muted-foreground">
                       No data found in {result.name}
                     </div>
                   ) : (
@@ -410,9 +383,9 @@ export default function ExplorerPage() {
                       executionTime={0}
                     />
                   )}
-                </TabsContent>
-              ))}
-            </Tabs>
+                </CardContent>
+              </Card>
+            ))}
           </CardContent>
         </Card>
       )}
