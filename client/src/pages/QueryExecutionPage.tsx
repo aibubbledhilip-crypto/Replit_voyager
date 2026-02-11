@@ -60,20 +60,22 @@ export default function QueryExecutionPage() {
   const [selectedConnectionId, setSelectedConnectionId] = useState<string>("");
   const { toast } = useToast();
 
-  const { data: dbConnections = [] } = useQuery<DbConnectionOption[]>({
+  const { data: dbConnections = [], isLoading: isLoadingConnections } = useQuery<DbConnectionOption[]>({
     queryKey: ['/api/db-connections'],
     queryFn: () => apiRequest('/api/db-connections'),
   });
 
+  const hasConnections = dbConnections.length > 0;
   const activeConnectionId = selectedConnectionId || dbConnections.find(c => c.isDefault)?.id || dbConnections[0]?.id || '';
   const activeConnection = dbConnections.find(c => c.id === activeConnectionId);
-  const isAthenaConnection = !activeConnection || activeConnection.type === 'athena';
+  const isAthenaConnection = activeConnection?.type === 'athena';
+  const shouldLoadSchema = !isLoadingConnections && (!hasConnections || isAthenaConnection);
 
   const { data: schema, isLoading: isLoadingSchema, error: schemaError, refetch: refetchSchema } = useQuery<SchemaResponse>({
     queryKey: ['/api/query/schema'],
     staleTime: 5 * 60 * 1000,
     retry: 1,
-    enabled: isAthenaConnection,
+    enabled: shouldLoadSchema,
   });
 
   const fetchColumns = async (tableName: string) => {
@@ -224,7 +226,13 @@ export default function QueryExecutionPage() {
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden p-0">
           <ScrollArea className="h-full px-4 pb-4">
-            {isLoadingSchema ? (
+            {hasConnections && !isAthenaConnection ? (
+              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-center px-2">
+                <Database className="h-5 w-5 mb-2" />
+                <span className="text-sm">Schema browsing is not available for {activeConnection?.type || 'this'} connections.</span>
+                <span className="text-xs mt-1">You can still write and execute queries directly.</span>
+              </div>
+            ) : isLoadingSchema || isLoadingConnections ? (
               <div className="flex items-center justify-center py-8 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin mr-2" />
                 Loading schema...
