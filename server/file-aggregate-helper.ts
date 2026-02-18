@@ -20,8 +20,9 @@ export interface ParsedFile {
 }
 
 export interface AggregateResult {
-  detailRows: Array<{ fileName: string; columnName: string; value: string }>;
-  frequencyRows: Array<{ value: string; fileCount: number; fileNames: string }>;
+  columnarRows: Array<Record<string, string>>;
+  resolvedColumns: string[];
+  frequencyRows: Array<{ value: string; column: string; fileCount: number; fileNames: string }>;
   summary: {
     totalFiles: number;
     totalValues: number;
@@ -121,55 +122,94 @@ export function aggregateFiles(
   columnNames: string[],
   matchType: 'exact' | 'partial'
 ): AggregateResult {
-  const detailRows: AggregateResult['detailRows'] = [];
-  const valueFileMap: Map<string, Set<string>> = new Map();
   const columnMatches: AggregateResult['summary']['columnMatches'] = [];
+  const resolvedColumnsSet = new Set<string>();
+  const fileColumnMap: Map<string, Map<string, string>> = new Map();
 
   for (const file of parsedFiles) {
     for (const colName of columnNames) {
       const matchedCol = findMatchingColumn(file.columns, colName, matchType);
-      if (!matchedCol) {
-        continue;
-      }
+      if (!matchedCol) continue;
 
       columnMatches.push({ fileName: file.fileName, matchedColumnName: matchedCol, searchColumn: colName });
+      resolvedColumnsSet.add(colName);
+      if (!fileColumnMap.has(file.fileName)) {
+        fileColumnMap.set(file.fileName, new Map());
+      }
+      fileColumnMap.get(file.fileName)!.set(colName, matchedCol);
+    }
+  }
 
-      for (const row of file.data) {
-        const value = String(row[matchedCol] ?? '').trim();
-        if (!value) continue;
+  const resolvedColumns = columnNames.filter(c => resolvedColumnsSet.has(c));
 
-        detailRows.push({
-          fileName: file.fileName,
-          columnName: matchedCol,
-          value,
-        });
+  const columnarRows: Array<Record<string, string>> = [];
+  let totalValues = 0;
+  const allValuesSet = new Set<string>();
+  const valueFileMapByCol: Map<string, Map<string, Set<string>>> = new Map();
 
-        if (!valueFileMap.has(value)) {
-          valueFileMap.set(value, new Set());
+  for (const file of parsedFiles) {
+    const colMapping = fileColumnMap.get(file.fileName);
+    if (!colMapping || colMapping.size === 0) continue;
+
+    const maxRows = file.data.length;
+    for (let i = 0; i < maxRows; i++) {
+      const row = file.data[i];
+      const outputRow: Record<string, string> = { 'File Name': file.fileName };
+      let hasAnyValue = false;
+
+      for (const colName of resolvedColumns) {
+        const actualCol = colMapping.get(colName);
+        if (actualCol) {
+          const val = String(row[actualCol] ?? '').trim();
+          outputRow[colName] = val;
+          if (val) {
+            hasAnyValue = true;
+            totalValues++;
+            allValuesSet.add(val);
+
+            if (!valueFileMapByCol.has(colName)) {
+              valueFileMapByCol.set(colName, new Map());
+            }
+            const vfm = valueFileMapByCol.get(colName)!;
+            if (!vfm.has(val)) {
+              vfm.set(val, new Set());
+            }
+            vfm.get(val)!.add(file.fileName);
+          }
+        } else {
+          outputRow[colName] = '';
         }
-        valueFileMap.get(value)!.add(file.fileName);
+      }
+
+      if (hasAnyValue) {
+        columnarRows.push(outputRow);
       }
     }
   }
 
   const frequencyRows: AggregateResult['frequencyRows'] = [];
-  const entries = Array.from(valueFileMap.entries());
-  for (const [value, fileSet] of entries) {
-    frequencyRows.push({
-      value,
-      fileCount: fileSet.size,
-      fileNames: Array.from(fileSet).join(', '),
-    });
+  const colEntries = Array.from(valueFileMapByCol.entries());
+  for (const [colName, vfm] of colEntries) {
+    const valEntries = Array.from(vfm.entries());
+    for (const [value, fileSet] of valEntries) {
+      frequencyRows.push({
+        value,
+        column: colName,
+        fileCount: fileSet.size,
+        fileNames: Array.from(fileSet).join(', '),
+      });
+    }
   }
   frequencyRows.sort((a, b) => b.fileCount - a.fileCount);
 
   return {
-    detailRows,
+    columnarRows,
+    resolvedColumns,
     frequencyRows,
     summary: {
       totalFiles: parsedFiles.length,
-      totalValues: detailRows.length,
-      uniqueValues: valueFileMap.size,
+      totalValues,
+      uniqueValues: allValuesSet.size,
       matchedColumns: columnNames,
       matchType,
       columnMatches,
@@ -180,33 +220,34 @@ export function aggregateFiles(
 export function generateAggregateXLSX(result: AggregateResult): string {
   const workbook = XLSX.utils.book_new();
 
-  const detailData = result.detailRows.map(r => ({
-    'File Name': r.fileName,
-    'Column Name': r.columnName,
-    'Value': r.value,
-  }));
-  const detailSheet = XLSX.utils.json_to_sheet(detailData.length > 0 ? detailData : [{ 'File Name': '', 'Column Name': '', 'Value': '' }]);
-
-  if (detailData.length > 0) {
-    const colWidths = [
-      { wch: Math.max(12, ...detailData.map(r => r['File Name'].length)) },
-      { wch: Math.max(14, ...detailData.map(r => r['Column Name'].length)) },
-      { wch: Math.max(8, ...detailData.map(r => r['Value'].length).slice(0, 100)) },
-    ];
+  const headers = ['File Name', ...result.resolvedColumns];
+  if (result.columnarRows.length > 0) {
+    const detailSheet = XLSX.utils.json_to_sheet(result.columnarRows, { header: headers });
+    const colWidths = headers.map(h => {
+      const maxLen = Math.max(h.length, ...result.columnarRows.map(r => (r[h] || '').length).slice(0, 200));
+      return { wch: Math.min(maxLen + 2, 60) };
+    });
     detailSheet['!cols'] = colWidths;
+    XLSX.utils.book_append_sheet(workbook, detailSheet, 'Values by File');
+  } else {
+    const emptyRow: Record<string, string> = {};
+    headers.forEach(h => emptyRow[h] = '');
+    const detailSheet = XLSX.utils.json_to_sheet([emptyRow], { header: headers });
+    XLSX.utils.book_append_sheet(workbook, detailSheet, 'Values by File');
   }
-  XLSX.utils.book_append_sheet(workbook, detailSheet, 'Values by File');
 
   const freqData = result.frequencyRows.map(r => ({
     'Value': r.value,
+    'Column': r.column,
     'Appears in # Files': r.fileCount,
     'File Names': r.fileNames,
   }));
-  const freqSheet = XLSX.utils.json_to_sheet(freqData.length > 0 ? freqData : [{ 'Value': '', 'Appears in # Files': '', 'File Names': '' }]);
+  const freqSheet = XLSX.utils.json_to_sheet(freqData.length > 0 ? freqData : [{ 'Value': '', 'Column': '', 'Appears in # Files': '', 'File Names': '' }]);
 
   if (freqData.length > 0) {
     const freqColWidths = [
       { wch: Math.max(8, ...freqData.map(r => r['Value'].length).slice(0, 100)) },
+      { wch: Math.max(8, ...freqData.map(r => r['Column'].length).slice(0, 100)) },
       { wch: 18 },
       { wch: Math.max(12, ...freqData.map(r => r['File Names'].length).slice(0, 100)) },
     ];

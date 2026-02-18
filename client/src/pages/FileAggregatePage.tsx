@@ -30,6 +30,7 @@ interface AggregateResultData {
     matchType: string;
     columnMatches: Array<{ fileName: string; matchedColumnName: string; searchColumn: string }>;
   };
+  resolvedColumns: string[];
   detailCount: number;
   frequencyCount: number;
   downloadFile: string;
@@ -456,11 +457,25 @@ export default function FileAggregatePage() {
               </div>
             )}
 
+            {result.resolvedColumns && result.resolvedColumns.length > 0 && (
+              <div className="space-y-1">
+                <Label className="text-sm">Output Columns</Label>
+                <p className="text-xs text-muted-foreground">
+                  The spreadsheet has "File Name" plus these columns:
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {result.resolvedColumns.map((col, i) => (
+                    <Badge key={i} variant="secondary" className="text-xs">{col}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="text-sm text-muted-foreground">
               The downloaded file contains two sheets:
               <ul className="list-disc ml-5 mt-1 space-y-1">
-                <li><span className="font-medium">Values by File</span> - Each row shows the file name, matched column, and its values.</li>
-                <li><span className="font-medium">Value Frequency</span> - Shows how many files each value appears in.</li>
+                <li><span className="font-medium">Values by File</span> - Each row has the file name and the selected columns as separate columns.</li>
+                <li><span className="font-medium">Value Frequency</span> - Shows how many files each value appears in, grouped by column.</li>
               </ul>
             </div>
           </CardContent>

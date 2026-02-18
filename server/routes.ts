@@ -1604,14 +1604,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: req.session.userId!,
           username: req.session.username!,
           query: `File Aggregate: ${files.length} files, ${colLabel} (${matchType || 'exact'} match)`,
-          rowsReturned: result.detailRows.length,
+          rowsReturned: result.columnarRows.length,
           executionTime: 0,
           status: 'success',
         });
 
         res.json({
           summary: result.summary,
-          detailCount: result.detailRows.length,
+          resolvedColumns: result.resolvedColumns,
+          detailCount: result.columnarRows.length,
           frequencyCount: result.frequencyRows.length,
           downloadFile: outputFileName,
           message: 'Aggregation completed successfully',
