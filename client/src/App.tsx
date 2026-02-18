@@ -12,6 +12,7 @@ import SignupPage from "@/pages/SignupPage";
 import QueryExecutionPage from "@/pages/QueryExecutionPage";
 import ExplorerPage from "@/pages/ExplorerPage";
 import FileComparisonPage from "@/pages/FileComparisonPage";
+import FileAggregatePage from "@/pages/FileAggregatePage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import UserManagementPage from "@/pages/UserManagementPage";
 import UsageLogsPage from "@/pages/UsageLogsPage";
@@ -124,6 +125,7 @@ function AuthenticatedApp() {
                 <Route path="/" component={QueryExecutionPage} />
                 <Route path="/explorer" component={ExplorerPage} />
                 <Route path="/file-comparison" component={FileComparisonPage} />
+                <Route path="/file-aggregate" component={FileAggregatePage} />
                 <Route path="/admin" component={AdminDashboardPage} />
                 <Route path="/admin/users" component={UserManagementPage} />
                 <Route path="/admin/logs" component={UsageLogsPage} />

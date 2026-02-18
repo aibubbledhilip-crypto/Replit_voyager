@@ -1557,6 +1557,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // File Aggregate Routes
+  app.post("/api/aggregate/execute", requireAuth, upload.array('files', 50), async (req, res) => {
+    try {
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length < 2) {
+        return res.status(400).json({ message: "At least 2 files are required for aggregation" });
+      }
+
+      const { columnName, matchType } = req.body;
+      if (!columnName) {
+        return res.status(400).json({ message: "Column name is required" });
+      }
+
+      const { parseFile: parseAggFile, aggregateFiles, generateAggregateXLSX, cleanupOldAggregateFiles } = await import('./file-aggregate-helper.js');
+
+      try {
+        const parsedFiles = files.map(f => parseAggFile(f.path, f.originalname));
+        const result = aggregateFiles(parsedFiles, columnName, matchType || 'exact');
+
+        if (result.summary.columnMatches.length === 0) {
+          files.forEach(f => { try { fs.unlinkSync(f.path); } catch {} });
+          return res.status(400).json({
+            message: `Column "${columnName}" was not found in any of the uploaded files. Please check the column name and try again.`,
+          });
+        }
+
+        const outputFileName = generateAggregateXLSX(result);
+
+        files.forEach(f => { try { fs.unlinkSync(f.path); } catch {} });
+
+        await storage.createQueryLog({
+          userId: req.session.userId!,
+          username: req.session.username!,
+          query: `File Aggregate: ${files.length} files, column "${columnName}" (${matchType || 'exact'} match)`,
+          rowsReturned: result.detailRows.length,
+          executionTime: 0,
+          status: 'success',
+        });
+
+        res.json({
+          summary: result.summary,
+          detailCount: result.detailRows.length,
+          frequencyCount: result.frequencyRows.length,
+          downloadFile: outputFileName,
+          message: 'Aggregation completed successfully',
+        });
+
+        cleanupOldAggregateFiles();
+      } catch (error: any) {
+        files.forEach(f => { try { if (fs.existsSync(f.path)) fs.unlinkSync(f.path); } catch {} });
+        throw error;
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/aggregate/download/:filename", requireAuth, async (req, res) => {
+    try {
+      const { filename } = req.params;
+      const safeName = path.basename(filename);
+      const filePath = path.join(__dirname, '..', 'aggregate_results', safeName);
+
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: "File not found" });
+      }
+
+      res.download(filePath, safeName, (err) => {
+        if (err) {
+          console.error('Error downloading aggregate file:', err);
+          if (!res.headersSent) {
+            res.status(500).json({ message: "Error downloading file" });
+          }
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // SFTP Configuration Routes (Admin only, organization-scoped)
   app.get("/api/sftp/configs", requireAdmin, async (req, res) => {
     try {
