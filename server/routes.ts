@@ -1565,21 +1565,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "At least 2 files are required for aggregation" });
       }
 
-      const { columnName, matchType } = req.body;
-      if (!columnName) {
-        return res.status(400).json({ message: "Column name is required" });
+      const { columnNames: columnNamesRaw, columnName, matchType } = req.body;
+
+      let columnNames: string[] = [];
+      if (columnNamesRaw) {
+        try {
+          columnNames = JSON.parse(columnNamesRaw);
+        } catch {
+          columnNames = String(columnNamesRaw).split(',').map((s: string) => s.trim()).filter(Boolean);
+        }
+      } else if (columnName) {
+        columnNames = [columnName];
+      }
+
+      if (columnNames.length === 0) {
+        return res.status(400).json({ message: "At least one column name is required" });
       }
 
       const { parseFile: parseAggFile, aggregateFiles, generateAggregateXLSX, cleanupOldAggregateFiles } = await import('./file-aggregate-helper.js');
 
       try {
         const parsedFiles = files.map(f => parseAggFile(f.path, f.originalname));
-        const result = aggregateFiles(parsedFiles, columnName, matchType || 'exact');
+        const result = aggregateFiles(parsedFiles, columnNames, matchType || 'exact');
 
         if (result.summary.columnMatches.length === 0) {
           files.forEach(f => { try { fs.unlinkSync(f.path); } catch {} });
           return res.status(400).json({
-            message: `Column "${columnName}" was not found in any of the uploaded files. Please check the column name and try again.`,
+            message: `None of the specified columns (${columnNames.join(', ')}) were found in any of the uploaded files. Please check the column names and try again.`,
           });
         }
 
@@ -1587,10 +1599,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         files.forEach(f => { try { fs.unlinkSync(f.path); } catch {} });
 
+        const colLabel = columnNames.length === 1 ? `column "${columnNames[0]}"` : `columns "${columnNames.join('", "')}"`;
         await storage.createQueryLog({
           userId: req.session.userId!,
           username: req.session.username!,
-          query: `File Aggregate: ${files.length} files, column "${columnName}" (${matchType || 'exact'} match)`,
+          query: `File Aggregate: ${files.length} files, ${colLabel} (${matchType || 'exact'} match)`,
           rowsReturned: result.detailRows.length,
           executionTime: 0,
           status: 'success',

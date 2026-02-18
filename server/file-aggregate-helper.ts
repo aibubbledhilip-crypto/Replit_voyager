@@ -26,9 +26,9 @@ export interface AggregateResult {
     totalFiles: number;
     totalValues: number;
     uniqueValues: number;
-    matchedColumn: string;
+    matchedColumns: string[];
     matchType: 'exact' | 'partial';
-    columnMatches: Array<{ fileName: string; matchedColumnName: string }>;
+    columnMatches: Array<{ fileName: string; matchedColumnName: string; searchColumn: string }>;
   };
 }
 
@@ -118,7 +118,7 @@ export function findMatchingColumn(
 
 export function aggregateFiles(
   parsedFiles: ParsedFile[],
-  columnName: string,
+  columnNames: string[],
   matchType: 'exact' | 'partial'
 ): AggregateResult {
   const detailRows: AggregateResult['detailRows'] = [];
@@ -126,27 +126,29 @@ export function aggregateFiles(
   const columnMatches: AggregateResult['summary']['columnMatches'] = [];
 
   for (const file of parsedFiles) {
-    const matchedCol = findMatchingColumn(file.columns, columnName, matchType);
-    if (!matchedCol) {
-      continue;
-    }
-
-    columnMatches.push({ fileName: file.fileName, matchedColumnName: matchedCol });
-
-    for (const row of file.data) {
-      const value = String(row[matchedCol] ?? '').trim();
-      if (!value) continue;
-
-      detailRows.push({
-        fileName: file.fileName,
-        columnName: matchedCol,
-        value,
-      });
-
-      if (!valueFileMap.has(value)) {
-        valueFileMap.set(value, new Set());
+    for (const colName of columnNames) {
+      const matchedCol = findMatchingColumn(file.columns, colName, matchType);
+      if (!matchedCol) {
+        continue;
       }
-      valueFileMap.get(value)!.add(file.fileName);
+
+      columnMatches.push({ fileName: file.fileName, matchedColumnName: matchedCol, searchColumn: colName });
+
+      for (const row of file.data) {
+        const value = String(row[matchedCol] ?? '').trim();
+        if (!value) continue;
+
+        detailRows.push({
+          fileName: file.fileName,
+          columnName: matchedCol,
+          value,
+        });
+
+        if (!valueFileMap.has(value)) {
+          valueFileMap.set(value, new Set());
+        }
+        valueFileMap.get(value)!.add(file.fileName);
+      }
     }
   }
 
@@ -168,7 +170,7 @@ export function aggregateFiles(
       totalFiles: parsedFiles.length,
       totalValues: detailRows.length,
       uniqueValues: valueFileMap.size,
-      matchedColumn: columnName,
+      matchedColumns: columnNames,
       matchType,
       columnMatches,
     },
@@ -183,14 +185,16 @@ export function generateAggregateXLSX(result: AggregateResult): string {
     'Column Name': r.columnName,
     'Value': r.value,
   }));
-  const detailSheet = XLSX.utils.json_to_sheet(detailData);
+  const detailSheet = XLSX.utils.json_to_sheet(detailData.length > 0 ? detailData : [{ 'File Name': '', 'Column Name': '', 'Value': '' }]);
 
-  const colWidths = [
-    { wch: Math.max(12, ...detailData.map(r => r['File Name'].length)) },
-    { wch: Math.max(14, ...detailData.map(r => r['Column Name'].length)) },
-    { wch: Math.max(8, ...detailData.map(r => r['Value'].length).slice(0, 100)) },
-  ];
-  detailSheet['!cols'] = colWidths;
+  if (detailData.length > 0) {
+    const colWidths = [
+      { wch: Math.max(12, ...detailData.map(r => r['File Name'].length)) },
+      { wch: Math.max(14, ...detailData.map(r => r['Column Name'].length)) },
+      { wch: Math.max(8, ...detailData.map(r => r['Value'].length).slice(0, 100)) },
+    ];
+    detailSheet['!cols'] = colWidths;
+  }
   XLSX.utils.book_append_sheet(workbook, detailSheet, 'Values by File');
 
   const freqData = result.frequencyRows.map(r => ({
@@ -198,14 +202,16 @@ export function generateAggregateXLSX(result: AggregateResult): string {
     'Appears in # Files': r.fileCount,
     'File Names': r.fileNames,
   }));
-  const freqSheet = XLSX.utils.json_to_sheet(freqData);
+  const freqSheet = XLSX.utils.json_to_sheet(freqData.length > 0 ? freqData : [{ 'Value': '', 'Appears in # Files': '', 'File Names': '' }]);
 
-  const freqColWidths = [
-    { wch: Math.max(8, ...freqData.map(r => r['Value'].length).slice(0, 100)) },
-    { wch: 18 },
-    { wch: Math.max(12, ...freqData.map(r => r['File Names'].length).slice(0, 100)) },
-  ];
-  freqSheet['!cols'] = freqColWidths;
+  if (freqData.length > 0) {
+    const freqColWidths = [
+      { wch: Math.max(8, ...freqData.map(r => r['Value'].length).slice(0, 100)) },
+      { wch: 18 },
+      { wch: Math.max(12, ...freqData.map(r => r['File Names'].length).slice(0, 100)) },
+    ];
+    freqSheet['!cols'] = freqColWidths;
+  }
   XLSX.utils.book_append_sheet(workbook, freqSheet, 'Value Frequency');
 
   const timestamp = Date.now();

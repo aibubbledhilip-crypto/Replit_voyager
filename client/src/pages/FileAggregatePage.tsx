@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Upload, Download, Layers, Loader2, X, CheckCircle2, AlertCircle } from "lucide-react";
+import { FileText, Upload, Download, Layers, Loader2, X, CheckCircle2, AlertCircle, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getCsrfToken } from "@/lib/api";
 import * as XLSX from 'xlsx';
@@ -26,9 +26,9 @@ interface AggregateResultData {
     totalFiles: number;
     totalValues: number;
     uniqueValues: number;
-    matchedColumn: string;
+    matchedColumns: string[];
     matchType: string;
-    columnMatches: Array<{ fileName: string; matchedColumnName: string }>;
+    columnMatches: Array<{ fileName: string; matchedColumnName: string; searchColumn: string }>;
   };
   detailCount: number;
   frequencyCount: number;
@@ -38,7 +38,8 @@ interface AggregateResultData {
 
 export default function FileAggregatePage() {
   const [files, setFiles] = useState<UploadedFile[]>([]);
-  const [columnName, setColumnName] = useState("");
+  const [columnInput, setColumnInput] = useState("");
+  const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [matchType, setMatchType] = useState<"exact" | "partial">("exact");
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<AggregateResultData | null>(null);
@@ -104,13 +105,45 @@ export default function FileAggregatePage() {
     setResult(null);
   };
 
+  const addColumn = () => {
+    const trimmed = columnInput.trim();
+    if (!trimmed) return;
+    if (selectedColumns.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
+      toast({ title: "Duplicate", description: `"${trimmed}" is already added.`, variant: "destructive" });
+      return;
+    }
+    setSelectedColumns(prev => [...prev, trimmed]);
+    setColumnInput("");
+    setResult(null);
+  };
+
+  const addColumnFromBadge = (col: string) => {
+    if (selectedColumns.some(c => c.toLowerCase() === col.toLowerCase())) {
+      return;
+    }
+    setSelectedColumns(prev => [...prev, col]);
+    setResult(null);
+  };
+
+  const removeColumn = (index: number) => {
+    setSelectedColumns(prev => prev.filter((_, i) => i !== index));
+    setResult(null);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addColumn();
+    }
+  };
+
   const handleAggregate = async () => {
     if (files.length < 2) {
       toast({ title: "Not enough files", description: "Please upload at least 2 files.", variant: "destructive" });
       return;
     }
-    if (!columnName.trim()) {
-      toast({ title: "Column name required", description: "Please enter a column name to aggregate on.", variant: "destructive" });
+    if (selectedColumns.length === 0) {
+      toast({ title: "No columns selected", description: "Please add at least one column name to aggregate on.", variant: "destructive" });
       return;
     }
 
@@ -120,7 +153,7 @@ export default function FileAggregatePage() {
     try {
       const formData = new FormData();
       files.forEach(f => formData.append('files', f.file));
-      formData.append('columnName', columnName.trim());
+      formData.append('columnNames', JSON.stringify(selectedColumns));
       formData.append('matchType', matchType);
 
       const csrfToken = await getCsrfToken();
@@ -158,12 +191,16 @@ export default function FileAggregatePage() {
     new Set(files.flatMap(f => f.columns))
   );
 
+  const availableColumns = allColumns.filter(
+    col => !selectedColumns.some(sc => sc.toLowerCase() === col.toLowerCase())
+  );
+
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto" data-testid="file-aggregate-page">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight" data-testid="text-page-title">File Aggregate</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Upload multiple CSV or Excel files, specify a column name, and aggregate matching values across all files.
+          Upload multiple CSV or Excel files, specify one or more column names, and aggregate matching values across all files.
         </p>
       </div>
 
@@ -230,40 +267,84 @@ export default function FileAggregatePage() {
             Column Configuration
           </CardTitle>
           <CardDescription>
-            Specify the column name to aggregate across all uploaded files.
+            Add one or more column names to extract and aggregate across all uploaded files.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Column Name</Label>
-              <Input
-                placeholder="Enter column name..."
-                value={columnName}
-                onChange={(e) => setColumnName(e.target.value)}
-                data-testid="input-column-name"
-              />
-              {allColumns.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {allColumns.slice(0, 15).map(col => (
-                    <Badge
-                      key={col}
-                      variant="outline"
-                      className="text-xs cursor-pointer"
-                      onClick={() => setColumnName(col)}
-                      data-testid={`badge-column-${col}`}
-                    >
-                      {col}
-                    </Badge>
-                  ))}
-                  {allColumns.length > 15 && (
-                    <span className="text-xs text-muted-foreground self-center">
-                      +{allColumns.length - 15} more
-                    </span>
-                  )}
+              <Label>Add Column</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Type a column name and press Enter..."
+                  value={columnInput}
+                  onChange={(e) => setColumnInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  data-testid="input-column-name"
+                  className="flex-1"
+                />
+                <Button
+                  variant="outline"
+                  onClick={addColumn}
+                  disabled={!columnInput.trim()}
+                  data-testid="button-add-column"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add
+                </Button>
+              </div>
+
+              {availableColumns.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Click a column from the uploaded files to add it:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {availableColumns.slice(0, 20).map(col => (
+                      <Badge
+                        key={col}
+                        variant="outline"
+                        className="text-xs cursor-pointer"
+                        onClick={() => addColumnFromBadge(col)}
+                        data-testid={`badge-available-column-${col}`}
+                      >
+                        {col}
+                      </Badge>
+                    ))}
+                    {availableColumns.length > 20 && (
+                      <span className="text-xs text-muted-foreground self-center">
+                        +{availableColumns.length - 20} more
+                      </span>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
+
+            {selectedColumns.length > 0 && (
+              <div className="space-y-2">
+                <Label>Selected Columns ({selectedColumns.length})</Label>
+                <div className="flex flex-wrap gap-2">
+                  {selectedColumns.map((col, index) => (
+                    <Badge
+                      key={`${col}-${index}`}
+                      variant="secondary"
+                      className="text-sm gap-1 pr-1"
+                      data-testid={`badge-selected-column-${index}`}
+                    >
+                      {col}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-4 w-4 ml-1 rounded-full"
+                        onClick={() => removeColumn(index)}
+                        data-testid={`button-remove-column-${index}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Match Type</Label>
@@ -278,15 +359,15 @@ export default function FileAggregatePage() {
               </Select>
               <p className="text-xs text-muted-foreground">
                 {matchType === 'exact'
-                  ? 'Column name must match exactly (case-insensitive).'
-                  : 'Column name can be a substring of the actual column name.'}
+                  ? 'Column names must match exactly (case-insensitive).'
+                  : 'Column names can be a substring of the actual column name.'}
               </p>
             </div>
           </div>
 
           <Button
             onClick={handleAggregate}
-            disabled={isProcessing || files.length < 2 || !columnName.trim()}
+            disabled={isProcessing || files.length < 2 || selectedColumns.length === 0}
             data-testid="button-aggregate"
           >
             {isProcessing ? (
@@ -333,10 +414,21 @@ export default function FileAggregatePage() {
                 <div className="text-lg font-semibold" data-testid="text-unique-values">{result.summary.uniqueValues}</div>
               </div>
               <div className="space-y-1">
-                <div className="text-xs text-muted-foreground">Match Type</div>
-                <div className="text-lg font-semibold capitalize" data-testid="text-match-type">{result.summary.matchType}</div>
+                <div className="text-xs text-muted-foreground">Columns Matched</div>
+                <div className="text-lg font-semibold" data-testid="text-columns-matched">{result.summary.matchedColumns.length}</div>
               </div>
             </div>
+
+            {result.summary.matchedColumns.length > 0 && (
+              <div className="space-y-1">
+                <Label className="text-sm">Searched Columns</Label>
+                <div className="flex flex-wrap gap-1">
+                  {result.summary.matchedColumns.map((col, i) => (
+                    <Badge key={i} variant="outline" className="text-xs">{col}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {result.summary.columnMatches.length > 0 && (
               <div className="space-y-2">
@@ -354,13 +446,12 @@ export default function FileAggregatePage() {
               </div>
             )}
 
-            {result.summary.columnMatches.length < result.summary.totalFiles && (
+            {result.summary.columnMatches.length < (result.summary.totalFiles * result.summary.matchedColumns.length) && (
               <div className="flex items-start gap-2 p-3 rounded-md border border-yellow-500/30 bg-yellow-500/5">
                 <AlertCircle className="h-4 w-4 text-yellow-500 mt-0.5 shrink-0" />
                 <div className="text-sm">
-                  <span className="font-medium">Warning:</span> Column "{result.summary.matchedColumn}" was not found in{' '}
-                  {result.summary.totalFiles - result.summary.columnMatches.length} file(s).
-                  Those files were skipped.
+                  <span className="font-medium">Note:</span> Some columns were not found in all files.
+                  Files without a matching column were skipped for that column.
                 </div>
               </div>
             )}
