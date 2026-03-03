@@ -965,6 +965,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const SCHEMA_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
   // Database schema endpoint - get tables only (columns fetched on demand)
+  app.get("/api/query/athena-databases", requireAuth, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId;
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+
+      const connectionId = req.query.connectionId as string | undefined;
+      let athenaClient: AthenaClient;
+      let s3OutputLocation: string;
+
+      if (connectionId) {
+        const connection = await storage.getDatabaseConnectionById(connectionId);
+        if (!connection || connection.organizationId !== organizationId) {
+          return res.status(404).json({ message: "Connection not found" });
+        }
+        if (connection.type !== 'athena') {
+          return res.status(400).json({ message: "This endpoint is only for Athena connections." });
+        }
+        if (!connection.awsAccessKeyId || !connection.awsSecretAccessKey) {
+          return res.status(400).json({ message: "AWS credentials not configured." });
+        }
+        if (!connection.s3OutputLocation) {
+          return res.status(400).json({ message: "S3 output location not configured." });
+        }
+        athenaClient = new AthenaClient({
+          region: connection.awsRegion || 'us-east-1',
+          credentials: {
+            accessKeyId: connection.awsAccessKeyId,
+            secretAccessKey: connection.awsSecretAccessKey,
+          },
+        });
+        s3OutputLocation = connection.s3OutputLocation;
+      } else {
+        const result = await getOrgAthenaClient(organizationId);
+        athenaClient = result.client;
+        s3OutputLocation = result.s3OutputLocation;
+      }
+
+      const startCommand = new StartQueryExecutionCommand({
+        QueryString: 'SHOW DATABASES',
+        ResultConfiguration: { OutputLocation: s3OutputLocation },
+      });
+      const startResponse = await athenaClient.send(startCommand);
+      const queryExecutionId = startResponse.QueryExecutionId;
+      if (!queryExecutionId) throw new Error('Failed to start query');
+
+      let queryStatus = 'RUNNING';
+      const maxPollTime = 30000;
+      const pollStartTime = Date.now();
+      while (queryStatus === 'RUNNING' || queryStatus === 'QUEUED') {
+        if (Date.now() - pollStartTime > maxPollTime) throw new Error('Query timeout');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const execResponse = await athenaClient.send(
+          new GetQueryExecutionCommand({ QueryExecutionId: queryExecutionId })
+        );
+        queryStatus = execResponse.QueryExecution?.Status?.State || 'FAILED';
+        if (queryStatus === 'FAILED') {
+          const reason = execResponse.QueryExecution?.Status?.StateChangeReason || 'Unknown';
+          throw new Error(`Query failed: ${reason}`);
+        }
+      }
+
+      const resultsResponse = await athenaClient.send(
+        new GetQueryResultsCommand({ QueryExecutionId: queryExecutionId, MaxResults: 100 })
+      );
+      const rows = resultsResponse.ResultSet?.Rows || [];
+      const databases = rows.slice(1).map(row => row.Data?.[0]?.VarCharValue || '').filter(Boolean);
+
+      res.json({ databases });
+    } catch (error: any) {
+      console.error('Athena databases fetch error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get("/api/query/schema", requireAuth, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;

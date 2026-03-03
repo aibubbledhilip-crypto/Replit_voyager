@@ -131,6 +131,8 @@ export default function DatabaseConnectionsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<DbConnection>>({ ...emptyForm });
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const [athenaDbList, setAthenaDbList] = useState<string[]>([]);
+  const [isLoadingDatabases, setIsLoadingDatabases] = useState(false);
 
   const { data: connections = [], isLoading } = useQuery<DbConnection[]>({
     queryKey: ['/api/db-connections'],
@@ -222,11 +224,13 @@ export default function DatabaseConnectionsPage() {
     setEditingId(null);
     setFormData({ ...emptyForm });
     setShowPasswords({});
+    setAthenaDbList([]);
     setDialogOpen(true);
   };
 
   const openEditDialog = (conn: DbConnection) => {
     setEditingId(conn.id);
+    setAthenaDbList([]);
     setFormData({
       name: conn.name,
       type: conn.type,
@@ -275,6 +279,27 @@ export default function DatabaseConnectionsPage() {
 
   const togglePasswordField = (field: string) => {
     setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const fetchAthenaDatabases = async () => {
+    if (!editingId) {
+      toast({ title: "Save first", description: "Save the connection first, then edit it to fetch available databases.", variant: "destructive" });
+      return;
+    }
+    setIsLoadingDatabases(true);
+    try {
+      const data = await apiRequest(`/api/query/athena-databases?connectionId=${editingId}`);
+      setAthenaDbList(data.databases || []);
+      if (data.databases?.length > 0) {
+        toast({ title: "Databases loaded", description: `Found ${data.databases.length} database(s).` });
+      } else {
+        toast({ title: "No databases found", description: "No databases available in this Athena catalog.", variant: "destructive" });
+      }
+    } catch (error: any) {
+      toast({ title: "Failed to fetch databases", description: error.message, variant: "destructive" });
+    } finally {
+      setIsLoadingDatabases(false);
+    }
   };
 
   const needsStandardFields = ['postgresql', 'mysql', 'mssql', 'clickhouse'].includes(formData.type || '');
@@ -526,13 +551,44 @@ export default function DatabaseConnectionsPage() {
             {needsAthenaFields && (
               <>
                 <div className="space-y-2">
-                  <Label>Athena Database Name</Label>
-                  <Input
-                    data-testid="input-athena-database"
-                    value={formData.database || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, database: e.target.value }))}
-                    placeholder="my_athena_database"
-                  />
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <Label>Athena Database Name</Label>
+                    {editingId && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchAthenaDatabases}
+                        disabled={isLoadingDatabases}
+                        data-testid="button-fetch-databases"
+                      >
+                        <Database className="h-3 w-3 mr-1" />
+                        {isLoadingDatabases ? 'Loading...' : 'Fetch Databases'}
+                      </Button>
+                    )}
+                  </div>
+                  {athenaDbList.length > 0 ? (
+                    <Select
+                      value={formData.database || ''}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, database: value }))}
+                    >
+                      <SelectTrigger data-testid="select-athena-database">
+                        <SelectValue placeholder="Select a database" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {athenaDbList.map((db) => (
+                          <SelectItem key={db} value={db}>{db}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      data-testid="input-athena-database"
+                      value={formData.database || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, database: e.target.value }))}
+                      placeholder={editingId ? "Click 'Fetch Databases' or type manually" : "my_athena_database"}
+                    />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Access Key ID</Label>
