@@ -526,6 +526,15 @@ export default function DatabaseConnectionsPage() {
             {needsAthenaFields && (
               <>
                 <div className="space-y-2">
+                  <Label>Athena Database Name</Label>
+                  <Input
+                    data-testid="input-athena-database"
+                    value={formData.database || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, database: e.target.value }))}
+                    placeholder="my_athena_database"
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label>Access Key ID</Label>
                   <Input
                     data-testid="input-aws-access-key"
