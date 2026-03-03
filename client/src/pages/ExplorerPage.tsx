@@ -25,6 +25,7 @@ interface AIIssue {
 interface ParsedAIAnalysis {
   msisdn: string | null;
   overall_status: "OK" | "HAS_ISSUES";
+  summary: string | null;
   issues: AIIssue[];
   qa?: {
     question: string | null;
@@ -423,7 +424,12 @@ export default function ExplorerPage() {
                         <div className="font-semibold text-lg">
                           {parsed.overall_status === "OK" ? "No Issues Found" : "Issues Detected"}
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        {parsed.summary && (
+                          <div className="text-sm mt-1">
+                            {parsed.summary}
+                          </div>
+                        )}
+                        <div className="text-sm text-muted-foreground mt-1">
                           MSISDN: {parsed.msisdn || "N/A"}
                           {parsed.issues.length > 0 && ` • ${parsed.issues.length} issue${parsed.issues.length > 1 ? 's' : ''} found`}
                         </div>
