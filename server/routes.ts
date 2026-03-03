@@ -1047,10 +1047,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             new GetQueryExecutionCommand({ QueryExecutionId: queryExecutionId })
           );
           queryStatus = execResponse.QueryExecution?.Status?.State || 'FAILED';
+          if (queryStatus === 'FAILED') {
+            const reason = execResponse.QueryExecution?.Status?.StateChangeReason || 'Unknown reason';
+            throw new Error(`Query failed: ${reason}`);
+          }
         }
 
         if (queryStatus !== 'SUCCEEDED') {
-          throw new Error(`Query failed: ${queryStatus}`);
+          throw new Error(`Query ended with status: ${queryStatus}`);
         }
 
         const resultsResponse = await athenaClient.send(
