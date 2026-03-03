@@ -1383,7 +1383,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
 
-      const { client: athenaClient, s3OutputLocation } = await getOrgAthenaClient(organizationId!);
+      // Try to get Athena client from database connection first, fall back to org AWS config
+      let athenaClient: AthenaClient;
+      let s3OutputLocation: string;
+      
+      const orgConnections = await storage.getDatabaseConnectionsByOrganization(organizationId!);
+      const athenaConnection = orgConnections.find(c => c.type === 'athena' && c.awsAccessKeyId && c.awsSecretAccessKey);
+      
+      if (athenaConnection) {
+        athenaClient = new AthenaClient({
+          region: athenaConnection.awsRegion || 'us-east-1',
+          credentials: {
+            accessKeyId: athenaConnection.awsAccessKeyId!,
+            secretAccessKey: athenaConnection.awsSecretAccessKey!,
+          },
+        });
+        s3OutputLocation = athenaConnection.s3OutputLocation || '';
+        if (!s3OutputLocation) {
+          return res.status(400).json({ message: "S3 output location not configured on the Athena connection." });
+        }
+      } else {
+        const orgClient = await getOrgAthenaClient(organizationId!);
+        athenaClient = orgClient.client;
+        s3OutputLocation = orgClient.s3OutputLocation;
+      }
 
       const startTime = Date.now();
 
@@ -1416,7 +1439,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           if (queryStatus !== 'SUCCEEDED') {
-            throw new Error(`Query failed with status: ${queryStatus}`);
+            const failExec = await athenaClient.send(new GetQueryExecutionCommand({ QueryExecutionId: queryExecutionId }));
+            const reason = failExec.QueryExecution?.Status?.StateChangeReason || 'Unknown reason';
+            throw new Error(`Query failed: ${reason}`);
           }
 
           // Get query results (AWS Athena has a max limit of 1000 per request)
