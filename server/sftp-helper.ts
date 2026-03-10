@@ -1,10 +1,6 @@
 import SftpClient from 'ssh2-sftp-client';
 import type { SftpConfig } from '@shared/schema';
 
-/**
- * Get current date components in Central Time (America/Chicago)
- * This handles both CST (UTC-6) and CDT (UTC-5) automatically
- */
 function getCentralTimeDate(): { year: number; month: string; day: string; dateObj: Date } {
   const now = new Date();
   const centralTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
@@ -23,6 +19,14 @@ interface SftpFileInfo {
   modifyTime: number;
   hasCurrentDate: boolean;
   hasCurrentDateInFilename: boolean;
+  matchedPattern?: string;
+}
+
+interface PatternResult {
+  pattern: string;
+  latestFile: SftpFileInfo | null;
+  hasCurrentDate: boolean;
+  matchingFiles: number;
 }
 
 interface PathResult {
@@ -31,6 +35,7 @@ interface PathResult {
   allFilesHaveCurrentDate: boolean;
   totalFiles: number;
   filesWithCurrentDate: number;
+  patterns?: PatternResult[];
   error?: string;
 }
 
@@ -44,21 +49,13 @@ interface SftpMonitorResult {
   error?: string;
 }
 
-/**
- * Check if a filename contains today's date (in Central Time) in common formats:
- * - YYYYMMDD
- * - YYYY-MM-DD
- * - YYYY_MM_DD
- * - YYYYMMDD_HHMMSS
- */
 function hasCurrentDateInFilename(filename: string): boolean {
   const { year, month, day } = getCentralTimeDate();
   
-  // Common date formats in filenames
   const formats = [
-    `${year}${month}${day}`,           // YYYYMMDD
-    `${year}-${month}-${day}`,         // YYYY-MM-DD
-    `${year}_${month}_${day}`,         // YYYY_MM_DD
+    `${year}${month}${day}`,
+    `${year}-${month}-${day}`,
+    `${year}_${month}_${day}`,
   ];
   
   const filenameLower = filename.toLowerCase();
@@ -66,19 +63,49 @@ function hasCurrentDateInFilename(filename: string): boolean {
   return formats.some(format => filenameLower.includes(format));
 }
 
-/**
- * Build connection options based on auth type
- */
+function extractDateFromFilename(filename: string): Date | null {
+  const patterns = [
+    /(\d{4})(\d{2})(\d{2})/,
+    /(\d{4})-(\d{2})-(\d{2})/,
+    /(\d{4})_(\d{2})_(\d{2})/,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = filename.match(pattern);
+    if (match) {
+      const year = parseInt(match[1]);
+      const month = parseInt(match[2]);
+      const day = parseInt(match[3]);
+      if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+        return new Date(year, month - 1, day);
+      }
+    }
+  }
+  return null;
+}
+
+function globToRegex(pattern: string): RegExp {
+  let regexStr = pattern
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*/g, '.*')
+    .replace(/\?/g, '.');
+  return new RegExp(`^${regexStr}$`, 'i');
+}
+
+function matchesPattern(filename: string, pattern: string): boolean {
+  const regex = globToRegex(pattern);
+  return regex.test(filename);
+}
+
 function buildConnectionOptions(config: Partial<SftpConfig>) {
   const options: any = {
     host: config.host,
     port: config.port || 22,
     username: config.username,
-    readyTimeout: 10000, // 10 seconds
+    readyTimeout: 10000,
   };
   
   if (config.authType === 'key' && config.privateKey) {
-    // Use private key content directly
     options.privateKey = config.privateKey;
     if (config.passphrase) {
       options.passphrase = config.passphrase;
@@ -90,16 +117,12 @@ function buildConnectionOptions(config: Partial<SftpConfig>) {
   return options;
 }
 
-/**
- * Check files in a single path
- */
-async function checkPath(sftp: SftpClient, remotePath: string): Promise<PathResult> {
+async function checkPath(sftp: SftpClient, remotePath: string, pathPatterns?: string[]): Promise<PathResult> {
   try {
     const fileList = await sftp.list(remotePath);
     
-    // Process files (exclude directories)
-    const files: SftpFileInfo[] = fileList
-      .filter(item => item.type === '-') // Only files, not directories
+    const allFiles: SftpFileInfo[] = fileList
+      .filter(item => item.type === '-')
       .map(item => {
         const filenameCheck = hasCurrentDateInFilename(item.name);
         return {
@@ -110,17 +133,73 @@ async function checkPath(sftp: SftpClient, remotePath: string): Promise<PathResu
           hasCurrentDate: filenameCheck,
         };
       });
-    
-    // Calculate statistics
-    const filesWithCurrentDate = files.filter(f => f.hasCurrentDate).length;
-    const allFilesHaveCurrentDate = files.length > 0 && filesWithCurrentDate === files.length;
-    
+
+    if (pathPatterns && pathPatterns.length > 0) {
+      const patternResults: PatternResult[] = pathPatterns.map(pattern => {
+        const matching = allFiles.filter(f => matchesPattern(f.name, pattern));
+        
+        let latestFile: SftpFileInfo | null = null;
+        if (matching.length > 0) {
+          latestFile = matching.reduce((latest, file) => {
+            const latestDate = extractDateFromFilename(latest.name);
+            const fileDate = extractDateFromFilename(file.name);
+            if (fileDate && latestDate && fileDate > latestDate) return file;
+            if (fileDate && !latestDate) return file;
+            return latest;
+          });
+          latestFile = { ...latestFile, matchedPattern: pattern };
+        }
+        
+        return {
+          pattern,
+          latestFile,
+          hasCurrentDate: latestFile ? latestFile.hasCurrentDate : false,
+          matchingFiles: matching.length,
+        };
+      });
+
+      const trackedFiles = patternResults
+        .filter(pr => pr.latestFile)
+        .map(pr => pr.latestFile!);
+      const filesWithCurrentDate = trackedFiles.filter(f => f.hasCurrentDate).length;
+      const allHealthy = patternResults.length > 0 && 
+        patternResults.every(pr => pr.hasCurrentDate);
+
+      return {
+        path: remotePath,
+        files: trackedFiles,
+        patterns: patternResults,
+        allFilesHaveCurrentDate: allHealthy,
+        totalFiles: trackedFiles.length,
+        filesWithCurrentDate,
+      };
+    }
+
+    if (allFiles.length > 0) {
+      const latestFile = allFiles.reduce((latest, file) => {
+        const latestDate = extractDateFromFilename(latest.name);
+        const fileDate = extractDateFromFilename(file.name);
+        if (fileDate && latestDate && fileDate > latestDate) return file;
+        if (fileDate && !latestDate) return file;
+        if (!fileDate && !latestDate && file.modifyTime > latest.modifyTime) return file;
+        return latest;
+      });
+
+      return {
+        path: remotePath,
+        files: [latestFile],
+        allFilesHaveCurrentDate: latestFile.hasCurrentDate,
+        totalFiles: 1,
+        filesWithCurrentDate: latestFile.hasCurrentDate ? 1 : 0,
+      };
+    }
+
     return {
       path: remotePath,
-      files,
-      allFilesHaveCurrentDate,
-      totalFiles: files.length,
-      filesWithCurrentDate,
+      files: [],
+      allFilesHaveCurrentDate: false,
+      totalFiles: 0,
+      filesWithCurrentDate: 0,
     };
   } catch (error: any) {
     return {
@@ -134,30 +213,25 @@ async function checkPath(sftp: SftpClient, remotePath: string): Promise<PathResu
   }
 }
 
-/**
- * Connect to SFTP server and check all configured paths
- */
 export async function checkSftpFiles(config: SftpConfig): Promise<SftpMonitorResult> {
   const sftp = new SftpClient();
   
   try {
-    // Connect to SFTP server
     await sftp.connect(buildConnectionOptions(config));
     
-    // Get paths to check (use remotePaths array)
     const paths = config.remotePaths || ['/'];
+    const filePatterns = (config.filePatterns as Record<string, string[]>) || {};
     
-    // Check all paths
     const pathResults: PathResult[] = [];
-    for (const remotePath of paths) {
-      const result = await checkPath(sftp, remotePath);
+    for (let i = 0; i < paths.length; i++) {
+      const remotePath = paths[i];
+      const patterns = filePatterns[remotePath] || filePatterns[String(i)] || undefined;
+      const result = await checkPath(sftp, remotePath, patterns);
       pathResults.push(result);
     }
     
-    // Disconnect
     await sftp.end();
     
-    // Calculate overall health
     const healthyPaths = pathResults.filter(p => !p.error && p.allFilesHaveCurrentDate).length;
     const allPathsHealthy = pathResults.length > 0 && healthyPaths === pathResults.length;
     
@@ -170,7 +244,6 @@ export async function checkSftpFiles(config: SftpConfig): Promise<SftpMonitorRes
       healthyPaths,
     };
   } catch (error: any) {
-    // Ensure disconnection even on error
     try {
       await sftp.end();
     } catch {}
@@ -187,16 +260,12 @@ export async function checkSftpFiles(config: SftpConfig): Promise<SftpMonitorRes
   }
 }
 
-/**
- * Test SFTP connection and verify access to all paths
- */
 export async function testSftpConnection(config: Partial<SftpConfig> & { remotePaths?: string[] }): Promise<{ success: boolean; error?: string }> {
   const sftp = new SftpClient();
   
   try {
     await sftp.connect(buildConnectionOptions(config));
     
-    // Try to access all remote paths
     const paths = config.remotePaths || ['/'];
     for (const remotePath of paths) {
       await sftp.list(remotePath);

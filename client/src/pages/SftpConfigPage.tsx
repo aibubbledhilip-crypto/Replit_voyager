@@ -38,6 +38,7 @@ interface SftpConfig {
   privateKey?: string;
   authType: string;
   remotePaths: string[];
+  filePatterns: Record<string, string[]>;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -56,6 +57,7 @@ export default function SftpConfigPage() {
     privateKey: "",
     passphrase: "",
     remotePaths: ["/"],
+    filePatterns: {} as Record<string, string[]>,
     status: "active",
   });
   const [isTesting, setIsTesting] = useState(false);
@@ -146,6 +148,7 @@ export default function SftpConfigPage() {
       privateKey: "",
       passphrase: "",
       remotePaths: ["/"],
+      filePatterns: {},
       status: "active",
     });
     setEditingConfig(null);
@@ -168,6 +171,7 @@ export default function SftpConfigPage() {
         privateKey: "",
         passphrase: "",
         remotePaths: paths,
+        filePatterns: (config.filePatterns as Record<string, string[]>) || {},
         status: config.status,
       });
       setKeyFileName(config.authType === 'key' ? '(existing key)' : '');
@@ -226,14 +230,48 @@ export default function SftpConfigPage() {
       });
       return;
     }
+    const removedPath = formData.remotePaths[index];
     const newPaths = formData.remotePaths.filter((_, i) => i !== index);
-    setFormData({ ...formData, remotePaths: newPaths });
+    const newPatterns = { ...formData.filePatterns };
+    delete newPatterns[removedPath];
+    setFormData({ ...formData, remotePaths: newPaths, filePatterns: newPatterns });
   };
 
   const handlePathChange = (index: number, value: string) => {
+    const oldPath = formData.remotePaths[index];
     const newPaths = [...formData.remotePaths];
     newPaths[index] = value || "";
-    setFormData({ ...formData, remotePaths: newPaths });
+    const newPatterns = { ...formData.filePatterns };
+    if (oldPath && newPatterns[oldPath]) {
+      newPatterns[value || ""] = newPatterns[oldPath];
+      delete newPatterns[oldPath];
+    }
+    setFormData({ ...formData, remotePaths: newPaths, filePatterns: newPatterns });
+  };
+
+  const handleAddPattern = (path: string) => {
+    const newPatterns = { ...formData.filePatterns };
+    const existing = newPatterns[path] || [];
+    newPatterns[path] = [...existing, ""];
+    setFormData({ ...formData, filePatterns: newPatterns });
+  };
+
+  const handleRemovePattern = (path: string, patternIndex: number) => {
+    const newPatterns = { ...formData.filePatterns };
+    const existing = newPatterns[path] || [];
+    newPatterns[path] = existing.filter((_, i) => i !== patternIndex);
+    if (newPatterns[path].length === 0) {
+      delete newPatterns[path];
+    }
+    setFormData({ ...formData, filePatterns: newPatterns });
+  };
+
+  const handlePatternChange = (path: string, patternIndex: number, value: string) => {
+    const newPatterns = { ...formData.filePatterns };
+    const existing = [...(newPatterns[path] || [])];
+    existing[patternIndex] = value;
+    newPatterns[path] = existing;
+    setFormData({ ...formData, filePatterns: newPatterns });
   };
   
   const ensureValidPaths = (paths: string[] | undefined | null): string[] => {
@@ -256,7 +294,14 @@ export default function SftpConfigPage() {
       return;
     }
 
-    const submitData = { ...formData, remotePaths: validPaths };
+    const cleanedPatterns: Record<string, string[]> = {};
+    for (const path of validPaths) {
+      const patterns = (formData.filePatterns[path] || []).filter(p => p.trim() !== "");
+      if (patterns.length > 0) {
+        cleanedPatterns[path] = patterns;
+      }
+    }
+    const submitData = { ...formData, remotePaths: validPaths, filePatterns: cleanedPatterns };
     
     if (editingConfig) {
       updateMutation.mutate({ id: editingConfig.id, data: submitData });
@@ -558,31 +603,67 @@ export default function SftpConfigPage() {
                     Add Path
                   </Button>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-4">
                   {formData.remotePaths.map((path, index) => (
-                    <div key={index} className="flex gap-2">
-                      <Input
-                        value={path || ""}
-                        onChange={(e) => handlePathChange(index, e.target.value)}
-                        placeholder="/path/to/monitor"
-                        data-testid={`input-sftp-path-${index}`}
-                      />
-                      {formData.remotePaths.length > 1 && (
+                    <div key={index} className="space-y-2 border rounded-md p-3">
+                      <div className="flex gap-2">
+                        <Input
+                          value={path || ""}
+                          onChange={(e) => handlePathChange(index, e.target.value)}
+                          placeholder="/path/to/monitor"
+                          data-testid={`input-sftp-path-${index}`}
+                        />
+                        {formData.remotePaths.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemovePath(index)}
+                            data-testid={`button-remove-path-${index}`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="ml-2 space-y-2">
+                        {(formData.filePatterns[path] || []).map((pattern, pIdx) => (
+                          <div key={pIdx} className="flex gap-2 items-center">
+                            <span className="text-xs text-muted-foreground w-16 shrink-0">Pattern:</span>
+                            <Input
+                              value={pattern}
+                              onChange={(e) => handlePatternChange(path, pIdx, e.target.value)}
+                              placeholder="e.g. report_*.csv"
+                              className="text-sm"
+                              data-testid={`input-pattern-${index}-${pIdx}`}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleRemovePattern(path, pIdx)}
+                              data-testid={`button-remove-pattern-${index}-${pIdx}`}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
                         <Button
                           type="button"
                           variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemovePath(index)}
-                          data-testid={`button-remove-path-${index}`}
+                          size="sm"
+                          onClick={() => handleAddPattern(path)}
+                          className="text-xs"
+                          data-testid={`button-add-pattern-${index}`}
                         >
-                          <X className="h-4 w-4" />
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add File Pattern
                         </Button>
-                      )}
+                      </div>
                     </div>
                   ))}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Add multiple paths to monitor different directories on the same server
+                  Add file patterns (e.g. report_*.csv) to track specific files. Without patterns, the latest file in the directory is checked.
                 </p>
               </div>
 

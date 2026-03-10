@@ -24,6 +24,14 @@ interface SftpFileInfo {
   modifyTime: number;
   hasCurrentDate: boolean;
   hasCurrentDateInFilename: boolean;
+  matchedPattern?: string;
+}
+
+interface PatternResult {
+  pattern: string;
+  latestFile: SftpFileInfo | null;
+  hasCurrentDate: boolean;
+  matchingFiles: number;
 }
 
 interface PathResult {
@@ -32,6 +40,7 @@ interface PathResult {
   allFilesHaveCurrentDate: boolean;
   totalFiles: number;
   filesWithCurrentDate: number;
+  patterns?: PatternResult[];
   error?: string;
 }
 
@@ -331,7 +340,10 @@ export default function SftpMonitorPage() {
                                     ) : (
                                       <>
                                         <span className="text-xs text-muted-foreground">
-                                          {pathResult.filesWithCurrentDate}/{pathResult.totalFiles} files current
+                                          {pathResult.patterns 
+                                            ? `${pathResult.patterns.filter(p => p.hasCurrentDate).length}/${pathResult.patterns.length} patterns current`
+                                            : `${pathResult.filesWithCurrentDate}/${pathResult.totalFiles} current`
+                                          }
                                         </span>
                                         {pathResult.allFilesHaveCurrentDate ? (
                                           <FileCheck className="h-4 w-4" style={{ color: "#22c55e" }} />
@@ -360,39 +372,79 @@ export default function SftpMonitorPage() {
                                           <TableRow>
                                             <TableHead className="w-12">Status</TableHead>
                                             <TableHead>Filename</TableHead>
+                                            {pathResult.patterns && <TableHead className="w-36">Pattern</TableHead>}
                                             <TableHead className="w-24">Size</TableHead>
                                             <TableHead className="w-44">Modified</TableHead>
                                           </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                          {pathResult.files.map((file, fileIdx) => (
-                                            <TableRow
-                                              key={fileIdx}
-                                              className={file.hasCurrentDate ? "" : "bg-destructive/5"}
-                                            >
-                                              <TableCell>
-                                                {file.hasCurrentDate ? (
-                                                  <FileCheck className="h-4 w-4" style={{ color: "#22c55e" }} />
-                                                ) : (
-                                                  <FileX className="h-4 w-4" style={{ color: "#ef4444" }} />
-                                                )}
-                                              </TableCell>
-                                              <TableCell
-                                                className="font-mono text-sm"
-                                                style={{
-                                                  color: file.hasCurrentDate ? "#22c55e" : "#ef4444",
-                                                }}
+                                          {pathResult.patterns ? (
+                                            pathResult.patterns.map((pr, prIdx) => (
+                                              <TableRow
+                                                key={prIdx}
+                                                className={pr.hasCurrentDate ? "" : "bg-destructive/5"}
                                               >
-                                                {file.name}
-                                              </TableCell>
-                                              <TableCell className="text-sm text-muted-foreground">
-                                                {formatFileSize(file.size)}
-                                              </TableCell>
-                                              <TableCell className="text-sm text-muted-foreground font-mono">
-                                                {formatDate(file.modifyTime)}
-                                              </TableCell>
-                                            </TableRow>
-                                          ))}
+                                                <TableCell>
+                                                  {pr.hasCurrentDate ? (
+                                                    <FileCheck className="h-4 w-4" style={{ color: "#22c55e" }} />
+                                                  ) : (
+                                                    <FileX className="h-4 w-4" style={{ color: "#ef4444" }} />
+                                                  )}
+                                                </TableCell>
+                                                <TableCell
+                                                  className="font-mono text-sm"
+                                                  style={{
+                                                    color: pr.hasCurrentDate ? "#22c55e" : "#ef4444",
+                                                  }}
+                                                >
+                                                  {pr.latestFile ? pr.latestFile.name : <span className="italic text-muted-foreground">No file found</span>}
+                                                </TableCell>
+                                                <TableCell>
+                                                  <Badge variant="outline" className="font-mono text-xs">
+                                                    {pr.pattern}
+                                                  </Badge>
+                                                  <span className="text-xs text-muted-foreground ml-1">
+                                                    ({pr.matchingFiles} match{pr.matchingFiles !== 1 ? "es" : ""})
+                                                  </span>
+                                                </TableCell>
+                                                <TableCell className="text-sm text-muted-foreground">
+                                                  {pr.latestFile ? formatFileSize(pr.latestFile.size) : "-"}
+                                                </TableCell>
+                                                <TableCell className="text-sm text-muted-foreground font-mono">
+                                                  {pr.latestFile ? formatDate(pr.latestFile.modifyTime) : "-"}
+                                                </TableCell>
+                                              </TableRow>
+                                            ))
+                                          ) : (
+                                            pathResult.files.map((file, fileIdx) => (
+                                              <TableRow
+                                                key={fileIdx}
+                                                className={file.hasCurrentDate ? "" : "bg-destructive/5"}
+                                              >
+                                                <TableCell>
+                                                  {file.hasCurrentDate ? (
+                                                    <FileCheck className="h-4 w-4" style={{ color: "#22c55e" }} />
+                                                  ) : (
+                                                    <FileX className="h-4 w-4" style={{ color: "#ef4444" }} />
+                                                  )}
+                                                </TableCell>
+                                                <TableCell
+                                                  className="font-mono text-sm"
+                                                  style={{
+                                                    color: file.hasCurrentDate ? "#22c55e" : "#ef4444",
+                                                  }}
+                                                >
+                                                  {file.name}
+                                                </TableCell>
+                                                <TableCell className="text-sm text-muted-foreground">
+                                                  {formatFileSize(file.size)}
+                                                </TableCell>
+                                                <TableCell className="text-sm text-muted-foreground font-mono">
+                                                  {formatDate(file.modifyTime)}
+                                                </TableCell>
+                                              </TableRow>
+                                            ))
+                                          )}
                                         </TableBody>
                                       </Table>
                                     </div>
@@ -427,7 +479,11 @@ export default function SftpMonitorPage() {
               <li>YYYY_MM_DD (e.g. 2026_03_10)</li>
             </ul>
             <p className="text-muted-foreground mt-2">
-              Files are marked <span style={{ color: "#ef4444", fontWeight: 500 }}>red</span> if their filename does not contain today's date.
+              <span className="font-medium">With file patterns:</span> Only the latest file matching each pattern is checked.
+              <br />
+              <span className="font-medium">Without patterns:</span> The latest file in the directory is checked.
+            </p>
+            <p className="text-muted-foreground mt-1">
               All dates are evaluated in Central Time (America/Chicago). Each server can have multiple paths configured.
             </p>
           </div>

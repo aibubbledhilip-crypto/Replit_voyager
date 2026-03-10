@@ -195,6 +195,7 @@ CREATE TABLE IF NOT EXISTS sftp_configs (
     passphrase TEXT,
     auth_type TEXT NOT NULL DEFAULT 'password',
     remote_paths TEXT[] NOT NULL DEFAULT ARRAY['/']::text[],
+    file_patterns JSONB DEFAULT '{}'::jsonb,
     status TEXT NOT NULL DEFAULT 'active',
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()

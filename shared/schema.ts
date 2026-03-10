@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -345,6 +345,7 @@ export const sftpConfigs = pgTable("sftp_configs", {
   passphrase: text("passphrase"),
   authType: text("auth_type").notNull().default('password'),
   remotePaths: text("remote_paths").array().notNull().default(sql`ARRAY['/']::text[]`),
+  filePatterns: jsonb("file_patterns").default(sql`'{}'::jsonb`),
   status: text("status").notNull().default('active'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
