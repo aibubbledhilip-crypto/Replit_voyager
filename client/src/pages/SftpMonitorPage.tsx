@@ -366,87 +366,97 @@ export default function SftpMonitorPage() {
                                       No files found in this path
                                     </div>
                                   ) : (
-                                    <div className="border rounded-md overflow-hidden">
-                                      <Table>
-                                        <TableHeader>
-                                          <TableRow>
-                                            <TableHead className="w-12">Status</TableHead>
-                                            <TableHead>Filename</TableHead>
-                                            {pathResult.patterns && <TableHead className="w-36">Pattern</TableHead>}
-                                            <TableHead className="w-24">Size</TableHead>
-                                            <TableHead className="w-44">Modified</TableHead>
-                                          </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                          {pathResult.patterns ? (
-                                            pathResult.patterns.map((pr, prIdx) => (
-                                              <TableRow
-                                                key={prIdx}
-                                                className={pr.hasCurrentDate ? "" : "bg-destructive/5"}
-                                              >
-                                                <TableCell>
-                                                  {pr.hasCurrentDate ? (
-                                                    <FileCheck className="h-4 w-4" style={{ color: "#22c55e" }} />
-                                                  ) : (
-                                                    <FileX className="h-4 w-4" style={{ color: "#ef4444" }} />
-                                                  )}
-                                                </TableCell>
-                                                <TableCell
-                                                  className="font-mono text-sm"
-                                                  style={{
-                                                    color: pr.hasCurrentDate ? "#22c55e" : "#ef4444",
-                                                  }}
-                                                >
-                                                  {pr.latestFile ? pr.latestFile.name : <span className="italic text-muted-foreground">No file found</span>}
-                                                </TableCell>
-                                                <TableCell>
+                                    <div className="space-y-3">
+                                      {pathResult.patterns && pathResult.patterns.length > 0 && (
+                                        <div className="space-y-2">
+                                          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Monitored Patterns</div>
+                                          {pathResult.patterns.map((pr, prIdx) => (
+                                            <div
+                                              key={prIdx}
+                                              className={`flex items-center gap-3 p-3 rounded-md border ${
+                                                pr.hasCurrentDate
+                                                  ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20"
+                                                  : "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20"
+                                              }`}
+                                              data-testid={`pattern-status-${prIdx}`}
+                                            >
+                                              {pr.hasCurrentDate ? (
+                                                <FileCheck className="h-5 w-5 shrink-0" style={{ color: "#22c55e" }} />
+                                              ) : (
+                                                <FileX className="h-5 w-5 shrink-0" style={{ color: "#ef4444" }} />
+                                              )}
+                                              <div className="flex-1 min-w-0">
+                                                <div className="flex flex-wrap items-center gap-2">
                                                   <Badge variant="outline" className="font-mono text-xs">
                                                     {pr.pattern}
                                                   </Badge>
-                                                  <span className="text-xs text-muted-foreground ml-1">
-                                                    ({pr.matchingFiles} match{pr.matchingFiles !== 1 ? "es" : ""})
+                                                  <span className="text-xs text-muted-foreground">
+                                                    {pr.matchingFiles} match{pr.matchingFiles !== 1 ? "es" : ""}
                                                   </span>
-                                                </TableCell>
-                                                <TableCell className="text-sm text-muted-foreground">
-                                                  {pr.latestFile ? formatFileSize(pr.latestFile.size) : "-"}
-                                                </TableCell>
-                                                <TableCell className="text-sm text-muted-foreground font-mono">
-                                                  {pr.latestFile ? formatDate(pr.latestFile.modifyTime) : "-"}
-                                                </TableCell>
-                                              </TableRow>
-                                            ))
-                                          ) : (
-                                            pathResult.files.map((file, fileIdx) => (
-                                              <TableRow
-                                                key={fileIdx}
-                                                className={file.hasCurrentDate ? "" : "bg-destructive/5"}
-                                              >
-                                                <TableCell>
-                                                  {file.hasCurrentDate ? (
-                                                    <FileCheck className="h-4 w-4" style={{ color: "#22c55e" }} />
+                                                </div>
+                                                <div className="text-sm mt-1 font-mono truncate" style={{ color: pr.hasCurrentDate ? "#22c55e" : "#ef4444" }}>
+                                                  {pr.latestFile ? (
+                                                    <>
+                                                      Latest: {pr.latestFile.name}
+                                                      <span className="text-muted-foreground ml-2">
+                                                        ({formatFileSize(pr.latestFile.size)}, {formatDate(pr.latestFile.modifyTime)})
+                                                      </span>
+                                                    </>
                                                   ) : (
-                                                    <FileX className="h-4 w-4" style={{ color: "#ef4444" }} />
+                                                    <span className="italic text-muted-foreground">No matching file found</span>
                                                   )}
-                                                </TableCell>
-                                                <TableCell
-                                                  className="font-mono text-sm"
-                                                  style={{
-                                                    color: file.hasCurrentDate ? "#22c55e" : "#ef4444",
-                                                  }}
-                                                >
-                                                  {file.name}
-                                                </TableCell>
-                                                <TableCell className="text-sm text-muted-foreground">
-                                                  {formatFileSize(file.size)}
-                                                </TableCell>
-                                                <TableCell className="text-sm text-muted-foreground font-mono">
-                                                  {formatDate(file.modifyTime)}
-                                                </TableCell>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+
+                                      <div>
+                                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">All Files ({pathResult.files.length})</div>
+                                        <div className="border rounded-md overflow-hidden">
+                                          <Table>
+                                            <TableHeader>
+                                              <TableRow>
+                                                <TableHead className="w-12">Status</TableHead>
+                                                <TableHead>Filename</TableHead>
+                                                <TableHead className="w-24">Size</TableHead>
+                                                <TableHead className="w-44">Modified</TableHead>
                                               </TableRow>
-                                            ))
-                                          )}
-                                        </TableBody>
-                                      </Table>
+                                            </TableHeader>
+                                            <TableBody>
+                                              {pathResult.files.map((file, fileIdx) => (
+                                                <TableRow
+                                                  key={fileIdx}
+                                                  className={file.hasCurrentDate ? "" : "bg-destructive/5"}
+                                                >
+                                                  <TableCell>
+                                                    {file.hasCurrentDate ? (
+                                                      <FileCheck className="h-4 w-4" style={{ color: "#22c55e" }} />
+                                                    ) : (
+                                                      <FileX className="h-4 w-4" style={{ color: "#ef4444" }} />
+                                                    )}
+                                                  </TableCell>
+                                                  <TableCell
+                                                    className="font-mono text-sm"
+                                                    style={{
+                                                      color: file.hasCurrentDate ? "#22c55e" : "#ef4444",
+                                                    }}
+                                                  >
+                                                    {file.name}
+                                                  </TableCell>
+                                                  <TableCell className="text-sm text-muted-foreground">
+                                                    {formatFileSize(file.size)}
+                                                  </TableCell>
+                                                  <TableCell className="text-sm text-muted-foreground font-mono">
+                                                    {formatDate(file.modifyTime)}
+                                                  </TableCell>
+                                                </TableRow>
+                                              ))}
+                                            </TableBody>
+                                          </Table>
+                                        </div>
+                                      </div>
                                     </div>
                                   )}
                                 </div>

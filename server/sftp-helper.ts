@@ -184,48 +184,29 @@ async function checkPath(sftp: SftpClient, remotePath: string, pathPatterns?: st
         };
       });
 
-      const trackedFiles = patternResults
-        .filter(pr => pr.latestFile)
-        .map(pr => pr.latestFile!);
-      const filesWithCurrentDate = trackedFiles.filter(f => f.hasCurrentDate).length;
       const allHealthy = patternResults.length > 0 && 
         patternResults.every(pr => pr.hasCurrentDate);
+      const patternsWithCurrentDate = patternResults.filter(pr => pr.hasCurrentDate).length;
 
       return {
         path: remotePath,
-        files: trackedFiles,
+        files: allFiles,
         patterns: patternResults,
         allFilesHaveCurrentDate: allHealthy,
-        totalFiles: trackedFiles.length,
-        filesWithCurrentDate,
+        totalFiles: allFiles.length,
+        filesWithCurrentDate: patternsWithCurrentDate,
       };
     }
 
-    if (allFiles.length > 0) {
-      const latestFile = allFiles.reduce((latest, file) => {
-        const latestDate = extractDateFromFilename(latest.name);
-        const fileDate = extractDateFromFilename(file.name);
-        if (fileDate && latestDate && fileDate > latestDate) return file;
-        if (fileDate && !latestDate) return file;
-        if (!fileDate && !latestDate && file.modifyTime > latest.modifyTime) return file;
-        return latest;
-      });
-
-      return {
-        path: remotePath,
-        files: [latestFile],
-        allFilesHaveCurrentDate: latestFile.hasCurrentDate,
-        totalFiles: 1,
-        filesWithCurrentDate: latestFile.hasCurrentDate ? 1 : 0,
-      };
-    }
+    const filesWithCurrentDate = allFiles.filter(f => f.hasCurrentDate).length;
+    const allFilesHaveCurrentDate = allFiles.length > 0 && filesWithCurrentDate === allFiles.length;
 
     return {
       path: remotePath,
-      files: [],
-      allFilesHaveCurrentDate: false,
-      totalFiles: 0,
-      filesWithCurrentDate: 0,
+      files: allFiles,
+      allFilesHaveCurrentDate,
+      totalFiles: allFiles.length,
+      filesWithCurrentDate,
     };
   } catch (error: any) {
     return {
