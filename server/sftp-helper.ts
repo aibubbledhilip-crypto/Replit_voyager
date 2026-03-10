@@ -23,7 +23,6 @@ interface SftpFileInfo {
   modifyTime: number;
   hasCurrentDate: boolean;
   hasCurrentDateInFilename: boolean;
-  hasCurrentDateInModified: boolean;
 }
 
 interface PathResult {
@@ -68,23 +67,6 @@ function hasCurrentDateInFilename(filename: string): boolean {
 }
 
 /**
- * Check if a file's modification timestamp is from today (in Central Time)
- */
-function hasCurrentDateInModified(modifyTime: number): boolean {
-  const { year, month, day } = getCentralTimeDate();
-  
-  // Convert modify time to Central Time for comparison
-  const modifyDate = new Date(modifyTime);
-  const modifyCentral = new Date(modifyDate.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
-  
-  const modifyYear = modifyCentral.getFullYear();
-  const modifyMonth = String(modifyCentral.getMonth() + 1).padStart(2, '0');
-  const modifyDay = String(modifyCentral.getDate()).padStart(2, '0');
-  
-  return year === modifyYear && month === modifyMonth && day === modifyDay;
-}
-
-/**
  * Build connection options based on auth type
  */
 function buildConnectionOptions(config: Partial<SftpConfig>) {
@@ -120,14 +102,12 @@ async function checkPath(sftp: SftpClient, remotePath: string): Promise<PathResu
       .filter(item => item.type === '-') // Only files, not directories
       .map(item => {
         const filenameCheck = hasCurrentDateInFilename(item.name);
-        const modifiedCheck = hasCurrentDateInModified(item.modifyTime);
         return {
           name: item.name,
           size: item.size,
           modifyTime: item.modifyTime,
           hasCurrentDateInFilename: filenameCheck,
-          hasCurrentDateInModified: modifiedCheck,
-          hasCurrentDate: filenameCheck || modifiedCheck, // Green if either condition is true
+          hasCurrentDate: filenameCheck,
         };
       });
     

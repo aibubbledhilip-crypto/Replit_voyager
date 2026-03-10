@@ -24,7 +24,6 @@ interface SftpFileInfo {
   modifyTime: number;
   hasCurrentDate: boolean;
   hasCurrentDateInFilename: boolean;
-  hasCurrentDateInModified: boolean;
 }
 
 interface PathResult {
@@ -420,15 +419,16 @@ export default function SftpMonitorPage() {
           <div className="text-sm">
             <p className="font-medium mb-1">About Date Detection</p>
             <p className="text-muted-foreground">
-              Files are marked <span style={{ color: "#22c55e", fontWeight: 500 }}>green</span> if either:
+              Files are marked <span style={{ color: "#22c55e", fontWeight: 500 }}>green</span> if the filename contains today's date in one of these formats:
             </p>
             <ul className="list-disc list-inside text-muted-foreground mt-1 space-y-1">
-              <li>The filename contains today's date (formats: YYYYMMDD, YYYY-MM-DD, or YYYY_MM_DD)</li>
-              <li>The file was last modified today</li>
+              <li>YYYYMMDD (e.g. 20260310)</li>
+              <li>YYYY-MM-DD (e.g. 2026-03-10)</li>
+              <li>YYYY_MM_DD (e.g. 2026_03_10)</li>
             </ul>
             <p className="text-muted-foreground mt-2">
-              Files are marked <span style={{ color: "#ef4444", fontWeight: 500 }}>red</span> if neither condition is met.
-              Each server can have multiple paths configured.
+              Files are marked <span style={{ color: "#ef4444", fontWeight: 500 }}>red</span> if their filename does not contain today's date.
+              All dates are evaluated in Central Time (America/Chicago). Each server can have multiple paths configured.
             </p>
           </div>
         </CardContent>
