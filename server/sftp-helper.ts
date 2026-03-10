@@ -63,6 +63,26 @@ function hasCurrentDateInFilename(filename: string): boolean {
   return formats.some(format => filenameLower.includes(format));
 }
 
+function hasCurrentDateInModified(modifyTime: number): boolean {
+  const { year, month, day } = getCentralTimeDate();
+  
+  const modifyDate = new Date(modifyTime);
+  const modifyCentral = new Date(modifyDate.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  
+  const modifyYear = modifyCentral.getFullYear();
+  const modifyMonth = String(modifyCentral.getMonth() + 1).padStart(2, '0');
+  const modifyDay = String(modifyCentral.getDate()).padStart(2, '0');
+  
+  return year === modifyYear && month === modifyMonth && day === modifyDay;
+}
+
+function fileHasCurrentDate(filename: string, modifyTime: number): boolean {
+  if (hasCurrentDateInFilename(filename)) {
+    return true;
+  }
+  return hasCurrentDateInModified(modifyTime);
+}
+
 function extractDateFromFilename(filename: string): Date | null {
   const patterns = [
     /(\d{4})(\d{2})(\d{2})/,
@@ -129,12 +149,13 @@ async function checkPath(sftp: SftpClient, remotePath: string, pathPatterns?: st
       .filter(item => item.type === '-')
       .map(item => {
         const filenameCheck = hasCurrentDateInFilename(item.name);
+        const currentDate = fileHasCurrentDate(item.name, item.modifyTime);
         return {
           name: item.name,
           size: item.size,
           modifyTime: item.modifyTime,
           hasCurrentDateInFilename: filenameCheck,
-          hasCurrentDate: filenameCheck,
+          hasCurrentDate: currentDate,
         };
       });
 

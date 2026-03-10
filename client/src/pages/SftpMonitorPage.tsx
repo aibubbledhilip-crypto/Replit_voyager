@@ -471,12 +471,11 @@ export default function SftpMonitorPage() {
           <div className="text-sm">
             <p className="font-medium mb-1">About Date Detection</p>
             <p className="text-muted-foreground">
-              Files are marked <span style={{ color: "#22c55e", fontWeight: 500 }}>green</span> if the filename contains today's date in one of these formats:
+              Files are marked <span style={{ color: "#22c55e", fontWeight: 500 }}>green</span> if:
             </p>
             <ul className="list-disc list-inside text-muted-foreground mt-1 space-y-1">
-              <li>YYYYMMDD (e.g. 20260310)</li>
-              <li>YYYY-MM-DD (e.g. 2026-03-10)</li>
-              <li>YYYY_MM_DD (e.g. 2026_03_10)</li>
+              <li>The filename contains today's date (YYYYMMDD, YYYY-MM-DD, or YYYY_MM_DD)</li>
+              <li>Or, if no date is in the filename, the file was last modified today</li>
             </ul>
             <p className="text-muted-foreground mt-2">
               <span className="font-medium">With file patterns:</span> Only the latest file matching each pattern is checked.
