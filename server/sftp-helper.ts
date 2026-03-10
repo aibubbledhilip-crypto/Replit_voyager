@@ -85,10 +85,14 @@ function extractDateFromFilename(filename: string): Date | null {
 }
 
 function globToRegex(pattern: string): RegExp {
+  const hasWildcard = pattern.includes('*') || pattern.includes('?');
   let regexStr = pattern
     .replace(/[.+^${}()|[\]\\]/g, '\\$&')
     .replace(/\*/g, '.*')
     .replace(/\?/g, '.');
+  if (!hasWildcard) {
+    return new RegExp(regexStr, 'i');
+  }
   return new RegExp(`^${regexStr}$`, 'i');
 }
 
@@ -145,6 +149,7 @@ async function checkPath(sftp: SftpClient, remotePath: string, pathPatterns?: st
             const fileDate = extractDateFromFilename(file.name);
             if (fileDate && latestDate && fileDate > latestDate) return file;
             if (fileDate && !latestDate) return file;
+            if (!fileDate && !latestDate && file.modifyTime > latest.modifyTime) return file;
             return latest;
           });
           latestFile = { ...latestFile, matchedPattern: pattern };
