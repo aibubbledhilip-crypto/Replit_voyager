@@ -13,7 +13,7 @@ import {
   BarChart, Bar, LineChart, Line, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
-import { Plus, Trash2, Pencil, Play, BarChart2, TrendingUp, Activity, Loader2 } from "lucide-react";
+import { Plus, Trash2, Pencil, Play, BarChart2, BarChartHorizontal, TrendingUp, Activity, Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +22,8 @@ import type { DashboardChart } from "@shared/schema";
 const CHART_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
 
 const CHART_TYPES = [
-  { value: "bar", label: "Bar Chart", icon: BarChart2 },
+  { value: "bar", label: "Bar (Vertical)", icon: BarChart2 },
+  { value: "horizontal-bar", label: "Bar (Horizontal)", icon: BarChartHorizontal },
   { value: "line", label: "Line Chart", icon: TrendingUp },
   { value: "area", label: "Area Chart", icon: Activity },
 ];
@@ -90,6 +91,34 @@ function renderChart(chartType: string, data: Record<string, any>[], xCol: strin
       {yCols.length > 1 && <Legend />}
     </>
   );
+
+  if (chartType === "horizontal-bar") {
+    const longestLabel = Math.max(...data.map(r => String(r[xCol] ?? '').length), 6);
+    const yWidth = Math.min(Math.max(longestLabel * 7, 60), 160);
+    return (
+      <BarChart
+        layout="vertical"
+        data={coerceData(data, yCols)}
+        margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={false} />
+        <XAxis type="number" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+        <YAxis
+          type="category"
+          dataKey={xCol}
+          tick={{ fontSize: 11 }}
+          tickLine={false}
+          axisLine={false}
+          width={yWidth}
+        />
+        <Tooltip contentStyle={{ fontSize: 12 }} />
+        {yCols.length > 1 && <Legend />}
+        {yCols.map((col, i) => (
+          <Bar key={col} dataKey={col} fill={CHART_COLORS[i % CHART_COLORS.length]} radius={[0, 3, 3, 0]} />
+        ))}
+      </BarChart>
+    );
+  }
 
   if (chartType === "line") {
     return (
