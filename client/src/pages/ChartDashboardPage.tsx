@@ -126,6 +126,11 @@ function ChartCard({ chart, onEdit, onDelete }: { chart: DashboardChart; onEdit:
     retry: false,
   });
 
+  const availableCols = data?.columns ?? [];
+  const missingY = data ? chart.yAxisColumns.filter(c => !availableCols.includes(c)) : [];
+  const xMissing = data ? !availableCols.includes(chart.xAxisColumn) : false;
+  const hasMismatch = !!(data && data.rows.length > 0 && (missingY.length > 0 || xMissing));
+
   const TypeIcon = CHART_TYPES.find(t => t.value === chart.chartType)?.icon || BarChart2;
 
   return (
@@ -186,7 +191,18 @@ function ChartCard({ chart, onEdit, onDelete }: { chart: DashboardChart; onEdit:
             No data returned
           </div>
         )}
-        {data && data.rows.length > 0 && (
+        {hasMismatch && (
+          <div className="flex flex-col items-center justify-center h-48 gap-2 text-center px-4">
+            <span className="text-sm text-destructive font-medium">Column mismatch</span>
+            <span className="text-xs text-muted-foreground">
+              {xMissing && <>X column <code className="bg-muted px-1 rounded">{chart.xAxisColumn}</code> not in results.</>}
+              {missingY.length > 0 && <> Y column(s) <code className="bg-muted px-1 rounded">{missingY.join(', ')}</code> not in results.</>}
+              <br />Query returns: {availableCols.join(', ')}
+            </span>
+            <Button size="sm" variant="outline" onClick={onEdit}>Edit Chart</Button>
+          </div>
+        )}
+        {data && data.rows.length > 0 && !hasMismatch && (
           <div>
             <ResponsiveContainer width="100%" height={240}>
               {renderChart(chart.chartType, data.rows, chart.xAxisColumn, chart.yAxisColumns) || <div />}
@@ -466,7 +482,10 @@ export default function ChartDashboardPage() {
                 id="chart-sql"
                 data-testid="textarea-chart-sql"
                 value={form.sqlQuery}
-                onChange={e => setForm(prev => ({ ...prev, sqlQuery: e.target.value }))}
+                onChange={e => {
+                  setForm(prev => ({ ...prev, sqlQuery: e.target.value, xAxisColumn: '', yAxisColumns: [] }));
+                  setPreview(null);
+                }}
                 placeholder="SELECT date, count FROM my_table ORDER BY date"
                 className="font-mono text-sm min-h-[100px]"
               />
