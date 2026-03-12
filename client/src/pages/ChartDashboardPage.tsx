@@ -71,14 +71,21 @@ function renderChart(chartType: string, data: Record<string, any>[], xCol: strin
 
   const commonProps = {
     data: coerceData(data, yCols),
-    margin: { top: 5, right: 20, left: 0, bottom: 5 },
+    margin: { top: 5, right: 20, left: 0, bottom: 60 },
   };
 
   const axes = (
     <>
       <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-      <XAxis dataKey={xCol} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-      <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={45} />
+      <XAxis
+        dataKey={xCol}
+        interval={0}
+        tick={{ fontSize: 11, angle: -35, textAnchor: "end", dy: 4 }}
+        tickLine={false}
+        axisLine={false}
+        height={60}
+      />
+      <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={55} />
       <Tooltip contentStyle={{ fontSize: 12 }} />
       {yCols.length > 1 && <Legend />}
     </>
