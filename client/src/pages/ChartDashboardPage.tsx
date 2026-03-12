@@ -52,11 +52,25 @@ const emptyForm: ChartFormState = {
   connectionId: "",
 };
 
+function coerceData(data: Record<string, any>[], yCols: string[]): Record<string, any>[] {
+  return data.map(row => {
+    const coerced: Record<string, any> = { ...row };
+    for (const col of yCols) {
+      const v = row[col];
+      if (v !== null && v !== undefined && v !== '') {
+        const n = Number(v);
+        coerced[col] = isNaN(n) ? v : n;
+      }
+    }
+    return coerced;
+  });
+}
+
 function renderChart(chartType: string, data: Record<string, any>[], xCol: string, yCols: string[]) {
   if (!data.length || !xCol || !yCols.length) return null;
 
   const commonProps = {
-    data,
+    data: coerceData(data, yCols),
     margin: { top: 5, right: 20, left: 0, bottom: 5 },
   };
 
