@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -109,7 +110,7 @@ interface AIAnalysisResult {
 }
 
 export default function ExplorerPage() {
-  const [msisdn, setMsisdn] = useState("");
+  const [lookupValue, setLookupValue] = useState("");
   const [results, setResults] = useState<LookupResults | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -117,13 +118,38 @@ export default function ExplorerPage() {
   const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
   const { toast } = useToast();
 
+  const { data: allSettings } = useQuery<Array<{ key: string; value: string }>>({
+    queryKey: ['/api/settings'],
+    queryFn: () => apiRequest('/api/settings'),
+  });
+
+  const settingsMap = new Map<string, string>();
+  if (Array.isArray(allSettings)) {
+    allSettings.forEach((s) => settingsMap.set(s.key, s.value));
+  }
+  const lookupLabel = settingsMap.get('explorer_lookup_label') || 'MSISDN';
+  const lookupPlaceholder = settingsMap.get('explorer_lookup_placeholder') || 'Enter value to search';
+  const lookupValidation = settingsMap.get('explorer_lookup_validation') || 'digits_only';
+
+  const validateInput = (value: string): string | null => {
+    if (!value.trim()) return `${lookupLabel} is required`;
+    if (lookupValidation === 'digits_only' && !/^\d+$/.test(value.trim())) {
+      return `${lookupLabel} must contain digits only`;
+    }
+    if (lookupValidation === 'alphanumeric' && !/^[a-zA-Z0-9]+$/.test(value.trim())) {
+      return `${lookupLabel} must contain letters and numbers only`;
+    }
+    return null;
+  };
+
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!msisdn.trim()) {
+
+    const validationError = validateInput(lookupValue);
+    if (validationError) {
       toast({
-        title: "MSISDN Required",
-        description: "Please enter an MSISDN to search",
+        title: `${lookupLabel} Required`,
+        description: validationError,
         variant: "destructive",
       });
       return;
@@ -134,7 +160,7 @@ export default function ExplorerPage() {
     try {
       const response = await apiRequest('/api/query/msisdn-lookup', {
         method: 'POST',
-        body: JSON.stringify({ msisdn: msisdn.trim() }),
+        body: JSON.stringify({ msisdn: lookupValue.trim() }),
       });
 
       setResults(response);
@@ -147,7 +173,7 @@ export default function ExplorerPage() {
     } catch (error: any) {
       toast({
         title: "Lookup Failed",
-        description: error.message || "Failed to execute MSISDN lookup",
+        description: error.message || "Failed to execute lookup",
         variant: "destructive",
       });
       setResults(null);
@@ -158,7 +184,7 @@ export default function ExplorerPage() {
 
   const handleClear = () => {
     setResults(null);
-    setMsisdn("");
+    setLookupValue("");
   };
 
   const handleExportExcel = () => {
@@ -195,7 +221,7 @@ export default function ExplorerPage() {
       XLSX.utils.book_append_sheet(workbook, worksheet, result.name);
     });
 
-    const fileName = `MSISDN_${results.msisdn}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    const fileName = `${lookupLabel}_${results.msisdn}_${new Date().toISOString().slice(0, 10)}.xlsx`;
     XLSX.writeFile(workbook, fileName);
 
     toast({
@@ -232,7 +258,7 @@ export default function ExplorerPage() {
         method: 'POST',
         body: JSON.stringify({
           data: allSourcesData,
-          sourceName: `MSISDN Lookup (${results.msisdn})`,
+          sourceName: `${lookupLabel} Lookup (${results.msisdn})`,
           isMultiSource: true,
         }),
       });
@@ -256,21 +282,21 @@ export default function ExplorerPage() {
         <CardHeader>
           <CardTitle>Explorer</CardTitle>
           <CardDescription>
-            Search across all data sources for a specific MSISDN
+            Search across all data sources by {lookupLabel}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLookup} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="msisdn">MSISDN</Label>
+              <Label htmlFor="lookup-value">{lookupLabel}</Label>
               <div className="flex gap-2">
                 <Input
-                  id="msisdn"
+                  id="lookup-value"
                   data-testid="input-msisdn"
                   type="text"
-                  placeholder="Enter MSISDN (e.g., 18322458086)"
-                  value={msisdn}
-                  onChange={(e) => setMsisdn(e.target.value)}
+                  placeholder={lookupPlaceholder}
+                  value={lookupValue}
+                  onChange={(e) => setLookupValue(e.target.value)}
                   disabled={isLoading}
                 />
                 <Button 
@@ -312,7 +338,7 @@ export default function ExplorerPage() {
           <CardHeader>
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div>
-                <CardTitle>Results for {results.msisdn}</CardTitle>
+                <CardTitle>Results for {results.msisdn} <span className="text-muted-foreground font-normal text-sm">({lookupLabel})</span></CardTitle>
                 <CardDescription>
                   Found {results.totalRowsReturned} total rows across {results.results.length} sources
                 </CardDescription>
@@ -430,7 +456,7 @@ export default function ExplorerPage() {
                           </div>
                         )}
                         <div className="text-sm text-muted-foreground mt-1">
-                          MSISDN: {parsed.msisdn || "N/A"}
+                          {lookupLabel}: {parsed.msisdn || "N/A"}
                           {parsed.issues.length > 0 && ` • ${parsed.issues.length} issue${parsed.issues.length > 1 ? 's' : ''} found`}
                         </div>
                       </div>

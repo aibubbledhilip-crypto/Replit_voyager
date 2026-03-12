@@ -1317,27 +1317,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "MSISDN is required" });
       }
 
-      // Trim whitespace and validate MSISDN to prevent SQL injection - must be digits only
+      // Trim whitespace
       const trimmedMsisdn = typeof msisdn === 'string' ? msisdn.trim() : '';
       
       if (!trimmedMsisdn) {
-        return res.status(400).json({ message: "MSISDN is required" });
+        return res.status(400).json({ message: "Lookup value is required" });
       }
-      
-      const msisdnSchema = z.string().regex(/^\d+$/, "MSISDN must contain only digits");
-      const validationResult = msisdnSchema.safeParse(trimmedMsisdn);
-      
-      if (!validationResult.success) {
-        return res.status(400).json({ 
-          message: "Invalid MSISDN format. MSISDN must contain only digits.",
-          errors: validationResult.error.errors 
-        });
-      }
-      
-      const sanitizedMsisdn = validationResult.data;
 
       // Get settings (organization-scoped)
       const organizationId = req.session.organizationId;
+
+      // Read configured validation type and label for helpful error messages
+      const lookupValidationSetting = await storage.getSetting('explorer_lookup_validation', organizationId);
+      const lookupLabelSetting = await storage.getSetting('explorer_lookup_label', organizationId);
+      const validationType = lookupValidationSetting?.value || 'digits_only';
+      const lookupLabel = lookupLabelSetting?.value || 'MSISDN';
+
+      // Validate input according to configured type
+      if (validationType === 'digits_only' && !/^\d+$/.test(trimmedMsisdn)) {
+        return res.status(400).json({ message: `${lookupLabel} must contain digits only` });
+      }
+      if (validationType === 'alphanumeric' && !/^[a-zA-Z0-9]+$/.test(trimmedMsisdn)) {
+        return res.status(400).json({ message: `${lookupLabel} must contain letters and numbers only` });
+      }
+      // 'any' validation: only check non-empty (already done above)
+
+      const sanitizedMsisdn = trimmedMsisdn;
       
       // Get row limit setting (used for export restriction)
       const exportLimitSetting = await storage.getSetting('row_limit', organizationId);

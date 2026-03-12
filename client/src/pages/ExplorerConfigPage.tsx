@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Save, Search, Database, Trash2, Plus } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Save, Search, Database, Trash2, Plus, SlidersHorizontal } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -47,6 +48,10 @@ export default function ExplorerConfigPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newSource, setNewSource] = useState({ key: "", label: "", description: "", table: "", column: "" });
 
+  const [lookupLabel, setLookupLabel] = useState('MSISDN');
+  const [lookupPlaceholder, setLookupPlaceholder] = useState('Enter MSISDN (e.g., 18322458086)');
+  const [lookupValidation, setLookupValidation] = useState('digits_only');
+
   useEffect(() => {
     setDatabaseName(athenaDatabase?.value || '');
   }, [athenaDatabase]);
@@ -60,6 +65,10 @@ export default function ExplorerConfigPage() {
         settingsMap.set(s.key, s.value);
       });
     }
+
+    if (settingsMap.has('explorer_lookup_label')) setLookupLabel(settingsMap.get('explorer_lookup_label')!);
+    if (settingsMap.has('explorer_lookup_placeholder')) setLookupPlaceholder(settingsMap.get('explorer_lookup_placeholder')!);
+    if (settingsMap.has('explorer_lookup_validation')) setLookupValidation(settingsMap.get('explorer_lookup_validation')!);
 
     const explorerKeys = new Set<string>();
     settingsMap.forEach((_, key) => {
@@ -99,6 +108,29 @@ export default function ExplorerConfigPage() {
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message || "Failed to update database", variant: "destructive" });
+    },
+  });
+
+  const saveLookupFieldMutation = useMutation({
+    mutationFn: async () => {
+      const updates = [
+        { key: 'explorer_lookup_label', value: lookupLabel },
+        { key: 'explorer_lookup_placeholder', value: lookupPlaceholder },
+        { key: 'explorer_lookup_validation', value: lookupValidation },
+      ];
+      for (const update of updates) {
+        await apiRequest('/api/settings', {
+          method: 'PUT',
+          body: JSON.stringify(update),
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
+      toast({ title: "Success", description: "Lookup field settings saved successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to save lookup field settings", variant: "destructive" });
     },
   });
 
@@ -235,6 +267,70 @@ export default function ExplorerConfigPage() {
             >
               <Save className="h-4 w-4 mr-2" />
               Save
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <CardTitle>Lookup Field</CardTitle>
+              <CardDescription>
+                Configure the search field shown in the Explorer — its label, placeholder, and input validation
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="lookup-label">Field Label</Label>
+              <Input
+                id="lookup-label"
+                data-testid="input-lookup-label"
+                value={lookupLabel}
+                onChange={(e) => setLookupLabel(e.target.value)}
+                placeholder="e.g. MSISDN, Subscriber ID, Device ID"
+              />
+              <p className="text-xs text-muted-foreground">Shown as the input label in Explorer</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lookup-placeholder">Placeholder Text</Label>
+              <Input
+                id="lookup-placeholder"
+                data-testid="input-lookup-placeholder"
+                value={lookupPlaceholder}
+                onChange={(e) => setLookupPlaceholder(e.target.value)}
+                placeholder="e.g. Enter MSISDN (e.g., 18322458086)"
+              />
+              <p className="text-xs text-muted-foreground">Hint text shown inside the input field</p>
+            </div>
+          </div>
+          <div className="space-y-2 max-w-xs">
+            <Label htmlFor="lookup-validation">Input Validation</Label>
+            <Select value={lookupValidation} onValueChange={setLookupValidation}>
+              <SelectTrigger id="lookup-validation" data-testid="select-lookup-validation">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="digits_only">Digits only (e.g. phone numbers)</SelectItem>
+                <SelectItem value="alphanumeric">Alphanumeric (letters and numbers)</SelectItem>
+                <SelectItem value="any">Any input (no format restriction)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">Controls what characters are accepted at lookup time</p>
+          </div>
+          <div className="flex justify-end pt-2">
+            <Button
+              onClick={() => saveLookupFieldMutation.mutate()}
+              disabled={saveLookupFieldMutation.isPending}
+              data-testid="button-save-lookup-field"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {saveLookupFieldMutation.isPending ? "Saving..." : "Save"}
             </Button>
           </div>
         </CardContent>
