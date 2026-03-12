@@ -35,8 +35,8 @@ const nexusGatewayItems: MenuItem[] = [
 
 const toolsItems: MenuItem[] = [
   {
-    title: "Charts",
-    url: "/charts",
+    title: "Depiction",
+    url: "/depiction",
     icon: BarChart2,
   },
   {

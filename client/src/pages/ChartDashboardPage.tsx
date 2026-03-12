@@ -325,7 +325,7 @@ export default function ChartDashboardPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
-          <h1 className="text-3xl font-semibold" data-testid="text-charts-title">Charts</h1>
+          <h1 className="text-3xl font-semibold" data-testid="text-depiction-title">Depiction</h1>
           <p className="text-muted-foreground mt-1">Visualize query results as bar, line, or area charts</p>
         </div>
         <Button onClick={openAdd} data-testid="button-add-chart">
