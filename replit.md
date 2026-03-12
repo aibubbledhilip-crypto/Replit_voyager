@@ -9,7 +9,13 @@ The user wants me to act as a coding agent.
 - I want to be asked before making major changes.
 - When introducing database schema changes, always update `sql/fresh-database-setup.sql` with the corresponding SQL statements.
 
-## Recent Changes (February 2026)
+## Recent Changes (March 2026)
+- **Depiction** (`/depiction`): New chart visualization feature — write SQL, preview results, configure X/Y axes, and save bar/line/area charts. Charts auto-execute on the dashboard grid. Backed by `dashboard_charts` table; supports any named DB connection or Athena.
+- Explorer lookup field made fully configurable: label, placeholder, and validation mode (`digits_only`/`alphanumeric`/`any`) via Admin > Explorer Config
+- SFTP health: if filename contains a date pattern, only that date is used for health status (mtime fallback removed for date-pattern filenames)
+- File input alignment fixed in File Comparison and File Aggregate pages
+
+## Previous Changes (February 2026)
 - **AWS Configuration GUI**: AWS credentials and Athena connection settings are now configurable per-organization through Admin > Configurations > AWS instead of environment variables
 - All Athena query routes now use per-org AWS config from the database via `getOrgAthenaClient()` helper
 - Added connection test endpoint to verify AWS Athena connectivity
