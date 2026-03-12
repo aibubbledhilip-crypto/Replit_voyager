@@ -218,14 +218,28 @@ export default function FileAggregatePage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="file-input">Select Files</Label>
-            <Input
-              id="file-input"
-              type="file"
-              accept=".csv,.xlsx,.xls"
-              multiple
-              onChange={handleFilesChange}
-              data-testid="input-file-upload"
-            />
+            <div className="flex items-center gap-3 border rounded-md px-3 h-9">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => document.getElementById('file-input')?.click()}
+                data-testid="button-choose-files"
+              >
+                Choose Files
+              </Button>
+              <span className="text-sm text-muted-foreground truncate">
+                {files.length > 0 ? `${files.length} file${files.length > 1 ? 's' : ''} selected` : 'No files chosen'}
+              </span>
+              <input
+                id="file-input"
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                multiple
+                onChange={handleFilesChange}
+                data-testid="input-file-upload"
+                className="hidden"
+              />
+            </div>
           </div>
 
           {files.length > 0 && (
