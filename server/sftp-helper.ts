@@ -76,10 +76,16 @@ function hasCurrentDateInModified(modifyTime: number): boolean {
   return year === modifyYear && month === modifyMonth && day === modifyDay;
 }
 
+function filenameHasAnyDate(filename: string): boolean {
+  return extractDateFromFilename(filename) !== null;
+}
+
 function fileHasCurrentDate(filename: string, modifyTime: number): boolean {
-  if (hasCurrentDateInFilename(filename)) {
-    return true;
+  if (filenameHasAnyDate(filename)) {
+    // Filename contains a date — use only that, do NOT fall back to mtime
+    return hasCurrentDateInFilename(filename);
   }
+  // No date in filename at all — fall back to modification time
   return hasCurrentDateInModified(modifyTime);
 }
 
