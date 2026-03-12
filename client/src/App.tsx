@@ -24,6 +24,7 @@ import AwsConfigPage from "@/pages/AwsConfigPage";
 import DatabaseConnectionsPage from "@/pages/DatabaseConnectionsPage";
 import BillingPage from "@/pages/BillingPage";
 import SuperAdminPage from "@/pages/SuperAdminPage";
+import ChartDashboardPage from "@/pages/ChartDashboardPage";
 import NotFound from "@/pages/not-found";
 import { apiRequest } from "@/lib/api";
 
@@ -134,6 +135,7 @@ function AuthenticatedApp() {
                 <Route path="/admin/ai-config" component={AIConfigPage} />
                 <Route path="/admin/aws-config" component={AwsConfigPage} />
                 <Route path="/admin/db-connections" component={DatabaseConnectionsPage} />
+                <Route path="/charts" component={ChartDashboardPage} />
                 <Route path="/sftp-monitor" component={SftpMonitorPage} />
                 <Route path="/billing" component={BillingPage} />
                 <Route path="/super-admin" component={SuperAdminPage} />

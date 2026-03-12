@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Database, FileText, Search, GitCompare, Layers, Server, Activity, LayoutDashboard, ChevronDown, Brain, CreditCard, Users, Settings, Shield, Cloud, Link2 } from "lucide-react";
+import { Database, FileText, Search, GitCompare, Layers, Server, Activity, LayoutDashboard, ChevronDown, Brain, CreditCard, Users, Settings, Shield, Cloud, Link2, BarChart2 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -34,6 +34,11 @@ const nexusGatewayItems: MenuItem[] = [
 ];
 
 const toolsItems: MenuItem[] = [
+  {
+    title: "Charts",
+    url: "/charts",
+    icon: BarChart2,
+  },
   {
     title: "File Comparison",
     url: "/file-comparison",

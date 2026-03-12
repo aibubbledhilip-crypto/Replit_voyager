@@ -4,6 +4,7 @@ import {
   organizations, subscriptionPlans, organizationSubscriptions, 
   organizationMembers, organizationInvitations, organizationAwsConfigs,
   organizationAiConfigs, organizationDatabaseConnections, auditLogs,
+  dashboardCharts,
   type User, type InsertUser, type QueryLog, type InsertQueryLog, 
   type Setting, type InsertSetting, type ExportJob, type InsertExportJob, 
   type SftpConfig, type InsertSftpConfig, type SavedQuery, type InsertSavedQuery,
@@ -14,7 +15,8 @@ import {
   type OrganizationAwsConfig, type InsertOrganizationAwsConfig,
   type OrganizationAiConfig, type InsertOrganizationAiConfig,
   type OrganizationDatabaseConnection, type InsertOrganizationDatabaseConnection,
-  type AuditLog, type InsertAuditLog
+  type AuditLog, type InsertAuditLog,
+  type DashboardChart, type InsertDashboardChart,
 } from "@shared/schema";
 import { eq, desc, and, or, isNull } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -109,6 +111,12 @@ export interface IStorage {
   
   createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
   getAuditLogsByOrganization(organizationId: string): Promise<AuditLog[]>;
+
+  getDashboardCharts(organizationId: string): Promise<DashboardChart[]>;
+  getDashboardChart(id: string): Promise<DashboardChart | undefined>;
+  createDashboardChart(chart: InsertDashboardChart): Promise<DashboardChart>;
+  updateDashboardChart(id: string, chart: Partial<InsertDashboardChart>): Promise<DashboardChart | undefined>;
+  deleteDashboardChart(id: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -650,6 +658,34 @@ export class DbStorage implements IStorage {
     return await db.select().from(auditLogs)
       .where(eq(auditLogs.organizationId, organizationId))
       .orderBy(desc(auditLogs.createdAt));
+  }
+
+  async getDashboardCharts(organizationId: string): Promise<DashboardChart[]> {
+    return await db.select().from(dashboardCharts)
+      .where(eq(dashboardCharts.organizationId, organizationId))
+      .orderBy(desc(dashboardCharts.createdAt));
+  }
+
+  async getDashboardChart(id: string): Promise<DashboardChart | undefined> {
+    const result = await db.select().from(dashboardCharts).where(eq(dashboardCharts.id, id));
+    return result[0];
+  }
+
+  async createDashboardChart(chart: InsertDashboardChart): Promise<DashboardChart> {
+    const result = await db.insert(dashboardCharts).values(chart).returning();
+    return result[0];
+  }
+
+  async updateDashboardChart(id: string, chart: Partial<InsertDashboardChart>): Promise<DashboardChart | undefined> {
+    const result = await db.update(dashboardCharts)
+      .set({ ...chart, updatedAt: new Date() })
+      .where(eq(dashboardCharts.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteDashboardChart(id: string): Promise<void> {
+    await db.delete(dashboardCharts).where(eq(dashboardCharts.id, id));
   }
 }
 

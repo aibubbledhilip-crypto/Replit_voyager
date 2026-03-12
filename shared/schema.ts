@@ -382,6 +382,33 @@ export type InsertSavedQuery = z.infer<typeof insertSavedQuerySchema>;
 export type SavedQuery = typeof savedQueries.$inferSelect;
 
 // ============================================================
+// DASHBOARD CHARTS
+// ============================================================
+
+export const dashboardCharts = pgTable("dashboard_charts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").references(() => organizations.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  description: text("description"),
+  sqlQuery: text("sql_query").notNull(),
+  chartType: text("chart_type").notNull().default('bar'),
+  xAxisColumn: text("x_axis_column").notNull(),
+  yAxisColumns: text("y_axis_columns").array().notNull().default(sql`ARRAY[]::text[]`),
+  connectionId: varchar("connection_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertDashboardChartSchema = createInsertSchema(dashboardCharts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertDashboardChart = z.infer<typeof insertDashboardChartSchema>;
+export type DashboardChart = typeof dashboardCharts.$inferSelect;
+
+// ============================================================
 // AUDIT LOGS (New for SaaS compliance)
 // ============================================================
 

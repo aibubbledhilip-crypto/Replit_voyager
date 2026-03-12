@@ -307,6 +307,23 @@ CREATE TABLE IF NOT EXISTS organization_database_connections (
 );
 
 -- ============================================================
+-- 15c. DASHBOARD CHARTS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS dashboard_charts (
+    id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id VARCHAR REFERENCES organizations(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT,
+    sql_query TEXT NOT NULL,
+    chart_type TEXT NOT NULL DEFAULT 'bar',
+    x_axis_column TEXT NOT NULL,
+    y_axis_columns TEXT[] NOT NULL DEFAULT ARRAY[]::text[],
+    connection_id VARCHAR,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
 -- HELPFUL INDEXES FOR PERFORMANCE
 -- ============================================================
 CREATE INDEX IF NOT EXISTS idx_query_logs_org ON query_logs(organization_id);
@@ -318,6 +335,7 @@ CREATE INDEX IF NOT EXISTS idx_saved_queries_org ON saved_queries(organization_i
 CREATE INDEX IF NOT EXISTS idx_export_jobs_org ON export_jobs(organization_id);
 CREATE INDEX IF NOT EXISTS idx_sftp_configs_org ON sftp_configs(organization_id);
 CREATE INDEX IF NOT EXISTS idx_db_connections_org ON organization_database_connections(organization_id);
+CREATE INDEX IF NOT EXISTS idx_dashboard_charts_org ON dashboard_charts(organization_id);
 
 -- ============================================================
 -- DONE!

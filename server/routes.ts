@@ -2729,6 +2729,105 @@ Be concise and focus on the most important insights. Use clear headings and bull
     }
   });
 
+  // ============================================================
+  // DASHBOARD CHARTS
+  // ============================================================
+
+  app.get("/api/dashboard/charts", requireAuth, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId!;
+      const charts = await storage.getDashboardCharts(organizationId);
+      res.json(charts);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/dashboard/charts", requireAuth, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId!;
+      const { name, description, sqlQuery, chartType, xAxisColumn, yAxisColumns, connectionId } = req.body;
+      if (!name || !sqlQuery || !xAxisColumn) {
+        return res.status(400).json({ message: "name, sqlQuery, and xAxisColumn are required" });
+      }
+      const chart = await storage.createDashboardChart({
+        organizationId,
+        name,
+        description: description || null,
+        sqlQuery,
+        chartType: chartType || 'bar',
+        xAxisColumn,
+        yAxisColumns: yAxisColumns || [],
+        connectionId: connectionId || null,
+      });
+      res.json(chart);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/dashboard/charts/:id", requireAuth, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId!;
+      const chart = await storage.getDashboardChart(req.params.id);
+      if (!chart || chart.organizationId !== organizationId) {
+        return res.status(404).json({ message: "Chart not found" });
+      }
+      const { name, description, sqlQuery, chartType, xAxisColumn, yAxisColumns, connectionId } = req.body;
+      const updated = await storage.updateDashboardChart(req.params.id, {
+        name, description, sqlQuery, chartType, xAxisColumn, yAxisColumns, connectionId,
+      });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/dashboard/charts/:id", requireAuth, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId!;
+      const chart = await storage.getDashboardChart(req.params.id);
+      if (!chart || chart.organizationId !== organizationId) {
+        return res.status(404).json({ message: "Chart not found" });
+      }
+      await storage.deleteDashboardChart(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/dashboard/execute", requireAuth, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId!;
+      const { sql: query, connectionId, limit = 500 } = req.body;
+      if (!query) return res.status(400).json({ message: "sql is required" });
+
+      let columns: string[];
+      let data: Record<string, any>[];
+
+      if (connectionId) {
+        const connection = await storage.getDatabaseConnectionById(connectionId);
+        if (!connection || connection.organizationId !== organizationId) {
+          return res.status(404).json({ message: "Database connection not found" });
+        }
+        const driver = getDriver(connection.type);
+        const result = await driver.executeQuery(connection, query, limit);
+        columns = result.columns;
+        data = result.rows;
+      } else {
+        const { client: athenaClient, s3OutputLocation } = await getOrgAthenaClient(organizationId);
+        const result = await executeAthenaQueryWithPagination(athenaClient, query, s3OutputLocation, limit);
+        columns = result.columns;
+        data = result.data;
+      }
+
+      res.json({ columns, rows: data });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
