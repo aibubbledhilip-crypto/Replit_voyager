@@ -239,11 +239,7 @@ const athenaDriver: DatabaseDriver = {
 
     return {
       columns: result.columns,
-      rows: result.data.map(row => {
-        const obj: Record<string, any> = {};
-        result.columns.forEach((col, i) => { obj[col] = row[i]; });
-        return obj;
-      }),
+      rows: result.data,
       rowCount: result.totalRows,
       executionTimeMs,
     };
