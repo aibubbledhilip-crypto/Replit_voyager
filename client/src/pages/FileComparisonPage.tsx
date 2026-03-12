@@ -286,14 +286,27 @@ export default function FileComparisonPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="file1-input">Choose File</Label>
-              <Input
-                id="file1-input"
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                onChange={handleFile1Change}
-                data-testid="input-file1"
-                className="file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer cursor-pointer"
-              />
+              <div className="flex items-center gap-3 border rounded-md px-3 h-9">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => document.getElementById('file1-input')?.click()}
+                  data-testid="button-choose-file1"
+                >
+                  Choose File
+                </Button>
+                <span className="text-sm text-muted-foreground truncate">
+                  {file1 ? file1.name : 'No file chosen'}
+                </span>
+                <input
+                  id="file1-input"
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={handleFile1Change}
+                  data-testid="input-file1"
+                  className="hidden"
+                />
+              </div>
             </div>
             {isAnalyzing && file1 && (
               <div className="flex items-center gap-2 text-sm">
@@ -324,14 +337,27 @@ export default function FileComparisonPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="file2-input">Choose File</Label>
-              <Input
-                id="file2-input"
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                onChange={handleFile2Change}
-                data-testid="input-file2"
-                className="file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer cursor-pointer"
-              />
+              <div className="flex items-center gap-3 border rounded-md px-3 h-9">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => document.getElementById('file2-input')?.click()}
+                  data-testid="button-choose-file2"
+                >
+                  Choose File
+                </Button>
+                <span className="text-sm text-muted-foreground truncate">
+                  {file2 ? file2.name : 'No file chosen'}
+                </span>
+                <input
+                  id="file2-input"
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={handleFile2Change}
+                  data-testid="input-file2"
+                  className="hidden"
+                />
+              </div>
             </div>
             {isAnalyzing && file2 && (
               <div className="flex items-center gap-2 text-sm">
