@@ -58,11 +58,7 @@ export default function SignupPage() {
 
       const result = await response.json();
 
-      if (result.requiresVerification) {
-        setLocation(`/verify-email-sent?email=${encodeURIComponent(result.email)}`);
-      } else {
-        setLocation("/");
-      }
+      setLocation("/");
     } catch (error: any) {
       toast({
         title: "Registration failed",

@@ -137,10 +137,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Account is inactive" });
       }
 
-      if (!user.emailVerified) {
-        await logAuditEvent(req, 'login_failed', 'auth', user.id, `Failed login attempt for user ${username} (email not verified)`);
-        return res.status(403).json({ message: "Please verify your email address before signing in.", requiresVerification: true, email: user.email });
-      }
+      // EMAIL VERIFICATION TEMPORARILY DISABLED — re-enable when DNS/Resend domain is configured
+      // if (!user.emailVerified) {
+      //   await logAuditEvent(req, 'login_failed', 'auth', user.id, `Failed login attempt for user ${username} (email not verified)`);
+      //   return res.status(403).json({ message: "Please verify your email address before signing in.", requiresVerification: true, email: user.email });
+      // }
 
       const isValid = await bcrypt.compare(password, user.password);
       if (!isValid) {
@@ -302,19 +303,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: 'member',
       });
 
-      // Send verification email so the new user can activate their account
-      const verificationToken = crypto.randomBytes(32).toString('hex');
-      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      await storage.setEmailVerificationToken(user.id, verificationToken, verificationExpires);
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      try {
-        await sendVerificationEmail(user.email, user.username, verificationToken, baseUrl);
-      } catch (emailError) {
-        console.error("Failed to send verification email to admin-created user:", emailError);
-      }
-      
+      // EMAIL VERIFICATION TEMPORARILY DISABLED — auto-verify until DNS/Resend domain is configured
+      await storage.markEmailVerified(user.id);
+      // When re-enabling: remove the line above and uncomment below:
+      // const verificationToken = crypto.randomBytes(32).toString('hex');
+      // const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      // await storage.setEmailVerificationToken(user.id, verificationToken, verificationExpires);
+      // const baseUrl = `${req.protocol}://${req.get('host')}`;
+      // try { await sendVerificationEmail(user.email, user.username, verificationToken, baseUrl); }
+      // catch (emailError) { console.error("Failed to send verification email to admin-created user:", emailError); }
+
       // Audit log: user created
-      await logAuditEvent(req, 'user_created', 'user', user.id, `User "${user.username}" created by admin — verification email sent to ${user.email}`);
+      await logAuditEvent(req, 'user_created', 'user', user.id, `User "${user.username}" created`);
       
       const { password, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
@@ -2172,24 +2172,31 @@ Be concise and focus on the most important insights. Use clear headings and bull
         ipAddress: req.ip,
       });
 
-      // Generate email verification token (24-hour expiry)
-      const verificationToken = crypto.randomBytes(32).toString('hex');
-      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      await storage.setEmailVerificationToken(user.id, verificationToken, verificationExpires);
+      // EMAIL VERIFICATION TEMPORARILY DISABLED — auto-verify until DNS/Resend domain is configured
+      await storage.markEmailVerified(user.id);
+      // When re-enabling, uncomment the block below and remove the line above:
+      // const verificationToken = crypto.randomBytes(32).toString('hex');
+      // const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      // await storage.setEmailVerificationToken(user.id, verificationToken, verificationExpires);
+      // const baseUrl = `${req.protocol}://${req.get('host')}`;
+      // try { await sendVerificationEmail(user.email, user.username, verificationToken, baseUrl); }
+      // catch (emailError) { console.error("Failed to send verification email:", emailError); }
+      // return res.json({ requiresVerification: true, email: user.email, message: "Account created. Please check your email to verify your account before signing in." });
 
-      // Send verification email
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      try {
-        await sendVerificationEmail(user.email, user.username, verificationToken, baseUrl);
-      } catch (emailError) {
-        console.error("Failed to send verification email:", emailError);
-        // Don't block registration if email fails — user can request a resend
-      }
-
-      res.json({
-        requiresVerification: true,
-        email: user.email,
-        message: "Account created. Please check your email to verify your account before signing in.",
+      // Auto-login after registration (temporary while email verification is disabled)
+      req.session.regenerate((err) => {
+        if (err) return res.status(500).json({ message: "Registration successful but login failed" });
+        req.session.userId = user.id;
+        req.session.username = user.username;
+        req.session.role = user.role;
+        req.session.organizationId = organization.id;
+        req.session.save((err) => {
+          if (err) return res.status(500).json({ message: "Failed to save session" });
+          res.json({
+            user: { id: user.id, username: user.username, email: user.email, role: user.role },
+            organization: { id: organization.id, name: organization.name, slug: organization.slug },
+          });
+        });
       });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
