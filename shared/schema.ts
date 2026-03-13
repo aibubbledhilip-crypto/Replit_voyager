@@ -16,6 +16,7 @@ export const organizations = pgTable("organizations", {
   stripeSubscriptionId: text("stripe_subscription_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertOrganizationSchema = createInsertSchema(organizations).omit({
@@ -99,6 +100,7 @@ export const users = pgTable("users", {
   isSuperAdmin: boolean("is_super_admin").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   lastActive: timestamp("last_active"),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

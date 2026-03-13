@@ -123,17 +123,17 @@ export interface IStorage {
 
 export class DbStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    const result = await db.select().from(users).where(and(eq(users.id, id), isNull(users.deletedAt))).limit(1);
     return result[0];
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
+    const result = await db.select().from(users).where(and(eq(users.username, username), isNull(users.deletedAt))).limit(1);
     return result[0];
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    const result = await db.select().from(users).where(and(eq(users.email, email), isNull(users.deletedAt))).limit(1);
     return result[0];
   }
 
@@ -149,7 +149,10 @@ export class DbStorage implements IStorage {
   }
 
   async deleteUser(userId: string): Promise<boolean> {
-    const result = await db.delete(users).where(eq(users.id, userId)).returning();
+    const result = await db.update(users)
+      .set({ deletedAt: new Date() })
+      .where(and(eq(users.id, userId), isNull(users.deletedAt)))
+      .returning();
     return result.length > 0;
   }
 
@@ -193,7 +196,7 @@ export class DbStorage implements IStorage {
   }
 
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
+    return await db.select().from(users).where(isNull(users.deletedAt));
   }
 
   async getUsersByOrganization(organizationId: string): Promise<User[]> {
@@ -202,7 +205,7 @@ export class DbStorage implements IStorage {
     const userIds = members.map((m: OrganizationMember) => m.userId);
     if (userIds.length === 0) return [];
     const result = await db.select().from(users)
-      .where(or(...userIds.map((id: string) => eq(users.id, id))));
+      .where(and(or(...userIds.map((id: string) => eq(users.id, id))), isNull(users.deletedAt)));
     return result;
   }
 
@@ -404,12 +407,12 @@ export class DbStorage implements IStorage {
   }
 
   async getOrganization(id: string): Promise<Organization | undefined> {
-    const result = await db.select().from(organizations).where(eq(organizations.id, id)).limit(1);
+    const result = await db.select().from(organizations).where(and(eq(organizations.id, id), isNull(organizations.deletedAt))).limit(1);
     return result[0];
   }
 
   async getOrganizationBySlug(slug: string): Promise<Organization | undefined> {
-    const result = await db.select().from(organizations).where(eq(organizations.slug, slug)).limit(1);
+    const result = await db.select().from(organizations).where(and(eq(organizations.slug, slug), isNull(organizations.deletedAt))).limit(1);
     return result[0];
   }
 
@@ -427,12 +430,15 @@ export class DbStorage implements IStorage {
   }
 
   async deleteOrganization(id: string): Promise<boolean> {
-    const result = await db.delete(organizations).where(eq(organizations.id, id)).returning();
+    const result = await db.update(organizations)
+      .set({ deletedAt: new Date() })
+      .where(and(eq(organizations.id, id), isNull(organizations.deletedAt)))
+      .returning();
     return result.length > 0;
   }
 
   async getAllOrganizations(): Promise<Organization[]> {
-    return await db.select().from(organizations).orderBy(desc(organizations.createdAt));
+    return await db.select().from(organizations).where(isNull(organizations.deletedAt)).orderBy(desc(organizations.createdAt));
   }
 
   async getSubscriptionPlan(id: string): Promise<SubscriptionPlan | undefined> {
@@ -497,8 +503,8 @@ export class DbStorage implements IStorage {
     const orgIds = members.map((m: OrganizationMember) => m.organizationId);
     if (orgIds.length === 0) return [];
     const result = await db.select().from(organizations)
-      .where(or(...orgIds.map((id: string) => eq(organizations.id, id))));
-    // Return orgs in the same order as memberships
+      .where(and(or(...orgIds.map((id: string) => eq(organizations.id, id))), isNull(organizations.deletedAt)));
+    // Return orgs in the same order as memberships (filtering any soft-deleted ones)
     return orgIds.map((id: string) => result.find((org: Organization) => org.id === id)).filter(Boolean) as Organization[];
   }
 

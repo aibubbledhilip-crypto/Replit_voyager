@@ -89,7 +89,7 @@ export default function SuperAdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/super-admin/organizations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/super-admin/stats"] });
-      toast({ title: "Organization deleted", description: "The organization and all its data have been removed." });
+      toast({ title: "Organization deleted", description: "The organization has been deactivated and hidden. Its data is retained in the database for audit purposes." });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -117,7 +117,7 @@ export default function SuperAdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/super-admin/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/super-admin/stats"] });
-      toast({ title: "User deleted", description: "The user account has been permanently removed." });
+      toast({ title: "User deleted", description: "The user account has been deactivated and hidden. The record is retained in the database for audit purposes." });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });

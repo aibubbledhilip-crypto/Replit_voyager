@@ -2736,7 +2736,7 @@ Be concise and focus on the most important insights. Use clear headings and bull
     }
   });
 
-  // Delete organization (super admin only - cascades all related data)
+  // Soft-delete organization (super admin only - marks deleted_at, preserves data for audit)
   app.delete("/api/super-admin/organizations/:id", requireAuth, requireSuperAdmin, async (req, res) => {
     try {
       const { id } = req.params;

@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS organizations (
     stripe_customer_id TEXT,
     stripe_subscription_id TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    deleted_at TIMESTAMP -- NULL = active, non-NULL = soft-deleted (kept for audit)
 );
 
 -- ============================================================
@@ -55,7 +56,8 @@ CREATE TABLE IF NOT EXISTS users (
     email_verified BOOLEAN NOT NULL DEFAULT false,
     is_super_admin BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    last_active TIMESTAMP
+    last_active TIMESTAMP,
+    deleted_at TIMESTAMP -- NULL = active, non-NULL = soft-deleted (kept for audit)
 );
 
 -- ============================================================
