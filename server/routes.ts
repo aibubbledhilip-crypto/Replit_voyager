@@ -2699,6 +2699,25 @@ Be concise and focus on the most important insights. Use clear headings and bull
     }
   });
 
+  // Permanently delete a user account (super admin only)
+  app.delete("/api/super-admin/users/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (id === req.session.userId) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+      const user = await storage.getUser(id);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      await logAuditEvent(req, 'user_deleted_by_super_admin', 'user', id,
+        `Super admin permanently deleted user "${user.username}" (${user.email})`);
+      const deleted = await storage.deleteUser(id);
+      if (!deleted) return res.status(500).json({ message: "Failed to delete user" });
+      res.json({ message: "User deleted successfully" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Remove user from a specific organization (super admin only)
   app.delete("/api/super-admin/users/:userId/organizations/:orgId", requireAuth, requireSuperAdmin, async (req, res) => {
     try {

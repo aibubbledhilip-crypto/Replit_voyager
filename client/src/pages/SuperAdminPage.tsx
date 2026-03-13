@@ -110,6 +110,20 @@ export default function SuperAdminPage() {
     },
   });
 
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      return apiRequest("DELETE", `/api/super-admin/users/${userId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/super-admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/super-admin/stats"] });
+      toast({ title: "User deleted", description: "The user account has been permanently removed." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   const removeFromOrgMutation = useMutation({
     mutationFn: async ({ userId, orgId }: { userId: string; orgId: string }) => {
       return apiRequest("DELETE", `/api/super-admin/users/${userId}/organizations/${orgId}`);
@@ -411,6 +425,37 @@ export default function SuperAdminPage() {
                               <KeyRound className="h-4 w-4 mr-1" />
                               Reset PW
                             </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-destructive"
+                                  data-testid={`button-delete-user-${user.id}`}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Delete
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete User</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Permanently delete <strong>{user.username}</strong> ({user.email})? This removes their account and all associated data. This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-destructive text-destructive-foreground"
+                                    onClick={() => deleteUserMutation.mutate(user.id)}
+                                    data-testid={`button-confirm-delete-user-${user.id}`}
+                                  >
+                                    Delete User
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </TableCell>
                       </TableRow>
