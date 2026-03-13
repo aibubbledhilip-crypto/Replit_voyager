@@ -18,6 +18,7 @@ import { executeAthenaQueryWithPagination } from "./athena-helper";
 import { getDriver, maskConnectionCredentials, hasCredentials, DATABASE_TYPE_LABELS } from "./database-drivers";
 import { analyzeData, getValidatedModel, type AIProvider } from "./ai-service";
 import { stripeService } from "./stripeService";
+import { sendVerificationEmail } from "./email";
 import { getStripePublishableKey } from "./stripeClient";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -134,6 +135,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Audit log: failed login attempt (inactive account)
         await logAuditEvent(req, 'login_failed', 'auth', user.id, `Failed login attempt for user ${username} (account inactive)`);
         return res.status(403).json({ message: "Account is inactive" });
+      }
+
+      if (!user.emailVerified) {
+        await logAuditEvent(req, 'login_failed', 'auth', user.id, `Failed login attempt for user ${username} (email not verified)`);
+        return res.status(403).json({ message: "Please verify your email address before signing in.", requiresVerification: true, email: user.email });
       }
 
       const isValid = await bcrypt.compare(password, user.password);
@@ -288,6 +294,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = await storage.createUser(userData);
+
+      // Admin-created users are auto-verified (admin vouches for them)
+      await storage.markEmailVerified(user.id);
       
       // Add user to the admin's organization
       await storage.addOrganizationMember({
@@ -2155,36 +2164,24 @@ Be concise and focus on the most important insights. Use clear headings and bull
         ipAddress: req.ip,
       });
 
-      // Auto-login after registration
-      req.session.regenerate((err) => {
-        if (err) {
-          return res.status(500).json({ message: "Registration successful but login failed" });
-        }
+      // Generate email verification token (24-hour expiry)
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await storage.setEmailVerificationToken(user.id, verificationToken, verificationExpires);
 
-        req.session.userId = user.id;
-        req.session.username = user.username;
-        req.session.role = user.role;
-        req.session.organizationId = organization.id;
+      // Send verification email
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      try {
+        await sendVerificationEmail(user.email, user.username, verificationToken, baseUrl);
+      } catch (emailError) {
+        console.error("Failed to send verification email:", emailError);
+        // Don't block registration if email fails — user can request a resend
+      }
 
-        req.session.save((err) => {
-          if (err) {
-            return res.status(500).json({ message: "Failed to save session" });
-          }
-
-          res.json({
-            user: {
-              id: user.id,
-              username: user.username,
-              email: user.email,
-              role: user.role,
-            },
-            organization: {
-              id: organization.id,
-              name: organization.name,
-              slug: organization.slug,
-            },
-          });
-        });
+      res.json({
+        requiresVerification: true,
+        email: user.email,
+        message: "Account created. Please check your email to verify your account before signing in.",
       });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -2192,6 +2189,53 @@ Be concise and focus on the most important insights. Use clear headings and bull
       }
       console.error("Registration error:", error);
       res.status(500).json({ message: error.message || "Registration failed" });
+    }
+  });
+
+  // Verify email token
+  app.get("/api/auth/verify-email", async (req, res) => {
+    try {
+      const { token } = req.query;
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ message: "Missing verification token" });
+      }
+      const user = await storage.getUserByVerificationToken(token);
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired verification link. Please request a new one." });
+      }
+      if (user.emailVerificationExpires && user.emailVerificationExpires < new Date()) {
+        return res.status(400).json({ message: "Verification link has expired. Please request a new one." });
+      }
+      await storage.markEmailVerified(user.id);
+      await logAuditEvent(req, 'email_verified', 'user', user.id, `User ${user.username} verified their email address`);
+      res.json({ message: "Email verified successfully. You can now sign in." });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Resend verification email
+  app.post("/api/auth/resend-verification", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ message: "Email is required" });
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal whether the email exists
+        return res.json({ message: "If that email is registered, a new verification link has been sent." });
+      }
+      if (user.emailVerified) {
+        return res.status(400).json({ message: "This email is already verified. Please sign in." });
+      }
+      const token = crypto.randomBytes(32).toString('hex');
+      const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await storage.setEmailVerificationToken(user.id, token, expires);
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      await sendVerificationEmail(user.email, user.username, token, baseUrl);
+      res.json({ message: "Verification email sent." });
+    } catch (error: any) {
+      console.error("Resend verification error:", error);
+      res.status(500).json({ message: "Failed to send verification email" });
     }
   });
 

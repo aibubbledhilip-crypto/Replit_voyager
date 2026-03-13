@@ -57,7 +57,9 @@ CREATE TABLE IF NOT EXISTS users (
     is_super_admin BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     last_active TIMESTAMP,
-    deleted_at TIMESTAMP -- NULL = active, non-NULL = soft-deleted (kept for audit)
+    deleted_at TIMESTAMP,                  -- NULL = active, non-NULL = soft-deleted (kept for audit)
+    email_verification_token TEXT,         -- NULL once verified or not yet set
+    email_verification_expires TIMESTAMP   -- expiry for the verification link (24h)
 );
 
 -- ============================================================

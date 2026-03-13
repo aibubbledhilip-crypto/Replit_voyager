@@ -37,6 +37,9 @@ export interface IStorage {
   updateUserSuperAdmin(userId: string, isSuperAdmin: boolean): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   getUsersByOrganization(organizationId: string): Promise<User[]>;
+  setEmailVerificationToken(userId: string, token: string, expires: Date): Promise<void>;
+  getUserByVerificationToken(token: string): Promise<User | undefined>;
+  markEmailVerified(userId: string): Promise<void>;
   
   createQueryLog(log: InsertQueryLog): Promise<QueryLog>;
   getAllQueryLogs(): Promise<QueryLog[]>;
@@ -207,6 +210,25 @@ export class DbStorage implements IStorage {
     const result = await db.select().from(users)
       .where(and(or(...userIds.map((id: string) => eq(users.id, id))), isNull(users.deletedAt)));
     return result;
+  }
+
+  async setEmailVerificationToken(userId: string, token: string, expires: Date): Promise<void> {
+    await db.update(users)
+      .set({ emailVerificationToken: token, emailVerificationExpires: expires })
+      .where(eq(users.id, userId));
+  }
+
+  async getUserByVerificationToken(token: string): Promise<User | undefined> {
+    const result = await db.select().from(users)
+      .where(and(eq(users.emailVerificationToken, token), isNull(users.deletedAt)))
+      .limit(1);
+    return result[0];
+  }
+
+  async markEmailVerified(userId: string): Promise<void> {
+    await db.update(users)
+      .set({ emailVerified: true, emailVerificationToken: null, emailVerificationExpires: null })
+      .where(eq(users.id, userId));
   }
 
   async createQueryLog(log: InsertQueryLog): Promise<QueryLog> {

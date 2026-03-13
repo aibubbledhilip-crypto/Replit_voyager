@@ -51,7 +51,9 @@ export async function apiRequest(url: string, options?: RequestInit) {
       return apiRequest(url, options);
     }
     
-    throw new Error(error.message || 'Request failed');
+    const thrownError: any = new Error(error.message || 'Request failed');
+    Object.assign(thrownError, error); // attach full response body (e.g. requiresVerification, email)
+    throw thrownError;
   }
 
   return response.json();

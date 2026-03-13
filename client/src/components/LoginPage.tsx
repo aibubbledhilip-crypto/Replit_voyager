@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,9 +26,12 @@ export default function LoginPage() {
         method: 'POST',
         body: JSON.stringify({ username, password }),
       });
-
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
     } catch (error: any) {
+      if (error.requiresVerification) {
+        setLocation(`/verify-email-sent?email=${encodeURIComponent(error.email || "")}`);
+        return;
+      }
       toast({
         title: "Login Failed",
         description: error.message || "Invalid credentials",

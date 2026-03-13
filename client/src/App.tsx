@@ -9,6 +9,8 @@ import { SidebarToggleContext } from "@/lib/sidebar-context";
 import Header from "@/components/Header";
 import LoginPage from "@/components/LoginPage";
 import SignupPage from "@/pages/SignupPage";
+import VerifyEmailSentPage from "@/pages/VerifyEmailSentPage";
+import VerifyEmailPage from "@/pages/VerifyEmailPage";
 import QueryExecutionPage from "@/pages/QueryExecutionPage";
 import ExplorerPage from "@/pages/ExplorerPage";
 import FileComparisonPage from "@/pages/FileComparisonPage";
@@ -45,13 +47,13 @@ function AuthenticatedApp() {
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
   
   // Public routes that don't require authentication
-  const publicRoutes = ['/login', '/signup', '/invite'];
+  const publicRoutes = ['/login', '/signup', '/invite', '/verify-email-sent', '/verify-email'];
   const isPublicRoute = publicRoutes.some(route => location.startsWith(route));
   
   // Query Execution and Explorer pages use full width
   const isFullWidthPage = location === "/" || location === "/explorer";
 
-  // Redirect logged-in users away from login/signup pages
+  // Redirect logged-in users away from login/signup pages (not verify pages)
   useEffect(() => {
     if (user && (location === '/login' || location === '/signup')) {
       setLocation('/');
@@ -91,6 +93,8 @@ function AuthenticatedApp() {
       <Switch>
         <Route path="/login" component={LoginPage} />
         <Route path="/signup" component={SignupPage} />
+        <Route path="/verify-email-sent" component={VerifyEmailSentPage} />
+        <Route path="/verify-email" component={VerifyEmailPage} />
         <Route component={LoginPage} />
       </Switch>
     );

@@ -101,6 +101,8 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   lastActive: timestamp("last_active"),
   deletedAt: timestamp("deleted_at"),
+  emailVerificationToken: text("email_verification_token"),
+  emailVerificationExpires: timestamp("email_verification_expires"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

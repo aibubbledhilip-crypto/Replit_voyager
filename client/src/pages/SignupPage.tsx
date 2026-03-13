@@ -57,13 +57,12 @@ export default function SignupPage() {
       }
 
       const result = await response.json();
-      
-      toast({
-        title: "Account created!",
-        description: `Welcome to Voyager, ${result.user.username}!`,
-      });
 
-      setLocation("/");
+      if (result.requiresVerification) {
+        setLocation(`/verify-email-sent?email=${encodeURIComponent(result.email)}`);
+      } else {
+        setLocation("/");
+      }
     } catch (error: any) {
       toast({
         title: "Registration failed",
