@@ -55,6 +55,7 @@ export default function SuperAdminPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [resetPasswordUser, setResetPasswordUser] = useState<UserWithDetails | null>(null);
   const [newPassword, setNewPassword] = useState("");
+  const [manageOrgsUser, setManageOrgsUser] = useState<UserWithDetails | null>(null);
 
   const { data: stats, isLoading: statsLoading } = useQuery<PlatformStats>({
     queryKey: ["/api/super-admin/stats"],
@@ -103,6 +104,25 @@ export default function SuperAdminPage() {
       setResetPasswordUser(null);
       setNewPassword("");
       toast({ title: "Password reset", description: "The user's password has been updated." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const removeFromOrgMutation = useMutation({
+    mutationFn: async ({ userId, orgId }: { userId: string; orgId: string }) => {
+      return apiRequest("DELETE", `/api/super-admin/users/${userId}/organizations/${orgId}`);
+    },
+    onSuccess: (_, { userId, orgId }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/super-admin/users"] });
+      // Optimistically update the dialog user's org list
+      setManageOrgsUser((prev) =>
+        prev && prev.id === userId
+          ? { ...prev, organizations: prev.organizations.filter((o) => o.id !== orgId) }
+          : prev
+      );
+      toast({ title: "Removed", description: "User removed from organization." });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -372,15 +392,26 @@ export default function SuperAdminPage() {
                             : "Never"}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => { setResetPasswordUser(user); setNewPassword(""); }}
-                            data-testid={`button-reset-password-${user.id}`}
-                          >
-                            <KeyRound className="h-4 w-4 mr-1" />
-                            Reset PW
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setManageOrgsUser(user)}
+                              data-testid={`button-manage-orgs-${user.id}`}
+                            >
+                              <Building2 className="h-4 w-4 mr-1" />
+                              Orgs
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => { setResetPasswordUser(user); setNewPassword(""); }}
+                              data-testid={`button-reset-password-${user.id}`}
+                            >
+                              <KeyRound className="h-4 w-4 mr-1" />
+                              Reset PW
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -393,6 +424,70 @@ export default function SuperAdminPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Manage Orgs Dialog */}
+      <Dialog open={!!manageOrgsUser} onOpenChange={(open) => { if (!open) setManageOrgsUser(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Organization Memberships</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            {manageOrgsUser && (
+              <p className="text-sm text-muted-foreground mb-4">
+                Managing organizations for <strong>{manageOrgsUser.username}</strong> ({manageOrgsUser.email})
+              </p>
+            )}
+            {manageOrgsUser && manageOrgsUser.organizations.length === 0 ? (
+              <p className="text-sm text-muted-foreground">This user is not a member of any organization.</p>
+            ) : (
+              <div className="space-y-2">
+                {manageOrgsUser?.organizations.map((org) => (
+                  <div key={org.id} className="flex items-center justify-between px-3 py-2 rounded-md border">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{org.name}</span>
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive"
+                          data-testid={`button-remove-from-org-${org.id}`}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Remove
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remove from Organization</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Remove <strong>{manageOrgsUser?.username}</strong> from <strong>{org.name}</strong>? Their account will remain but they will lose access to this organization.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground"
+                            onClick={() => removeFromOrgMutation.mutate({ userId: manageOrgsUser!.id, orgId: org.id })}
+                            data-testid={`button-confirm-remove-from-org-${org.id}`}
+                          >
+                            Remove
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setManageOrgsUser(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reset Password Dialog */}
       <Dialog open={!!resetPasswordUser} onOpenChange={(open) => { if (!open) { setResetPasswordUser(null); setNewPassword(""); } }}>

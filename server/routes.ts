@@ -2699,6 +2699,24 @@ Be concise and focus on the most important insights. Use clear headings and bull
     }
   });
 
+  // Remove user from a specific organization (super admin only)
+  app.delete("/api/super-admin/users/:userId/organizations/:orgId", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const { userId, orgId } = req.params;
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      const org = await storage.getOrganization(orgId);
+      if (!org) return res.status(404).json({ message: "Organization not found" });
+      const removed = await storage.removeOrganizationMember(orgId, userId);
+      if (!removed) return res.status(404).json({ message: "User is not a member of this organization" });
+      await logAuditEvent(req, 'user_removed_from_org_by_super_admin', 'organization_member', userId,
+        `Super admin removed user "${user.username}" from organization "${org.name}"`);
+      res.json({ message: "User removed from organization" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Delete organization (super admin only - cascades all related data)
   app.delete("/api/super-admin/organizations/:id", requireAuth, requireSuperAdmin, async (req, res) => {
     try {
