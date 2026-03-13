@@ -118,35 +118,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { username, password } = req.body;
+      const { email, password } = req.body;
       
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
       }
 
-      const user = await storage.getUserByUsername(username);
+      const user = await storage.getUserByEmail(email.toLowerCase().trim());
       if (!user) {
-        // Audit log: failed login attempt (user not found)
-        await logAuditEvent(req, 'login_failed', 'auth', undefined, `Failed login attempt for username: ${username} (user not found)`);
+        await logAuditEvent(req, 'login_failed', 'auth', undefined, `Failed login attempt for email: ${email} (user not found)`);
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
       if (user.status !== 'active') {
-        // Audit log: failed login attempt (inactive account)
-        await logAuditEvent(req, 'login_failed', 'auth', user.id, `Failed login attempt for user ${username} (account inactive)`);
+        await logAuditEvent(req, 'login_failed', 'auth', user.id, `Failed login attempt for ${email} (account inactive)`);
         return res.status(403).json({ message: "Account is inactive" });
       }
 
       // EMAIL VERIFICATION TEMPORARILY DISABLED — re-enable when DNS/Resend domain is configured
       // if (!user.emailVerified) {
-      //   await logAuditEvent(req, 'login_failed', 'auth', user.id, `Failed login attempt for user ${username} (email not verified)`);
+      //   await logAuditEvent(req, 'login_failed', 'auth', user.id, `Failed login attempt for ${email} (email not verified)`);
       //   return res.status(403).json({ message: "Please verify your email address before signing in.", requiresVerification: true, email: user.email });
       // }
 
       const isValid = await bcrypt.compare(password, user.password);
       if (!isValid) {
-        // Audit log: failed login attempt (wrong password)
-        await logAuditEvent(req, 'login_failed', 'auth', user.id, `Failed login attempt for user ${username} (invalid password)`);
+        await logAuditEvent(req, 'login_failed', 'auth', user.id, `Failed login attempt for ${email} (invalid password)`);
         return res.status(401).json({ message: "Invalid credentials" });
       }
 

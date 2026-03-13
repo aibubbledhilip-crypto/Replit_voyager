@@ -20,6 +20,71 @@ import {
 } from "@shared/schema";
 import { eq, desc, and, or, isNull } from "drizzle-orm";
 import bcrypt from "bcrypt";
+import { encrypt, decrypt } from "./encryption";
+
+// ---- Credential helpers ------------------------------------------------
+
+function encryptConnectionFields(c: Partial<InsertOrganizationDatabaseConnection>): Partial<InsertOrganizationDatabaseConnection> {
+  return {
+    ...c,
+    password: c.password ? encrypt(c.password) as string : c.password,
+    awsSecretAccessKey: c.awsSecretAccessKey ? encrypt(c.awsSecretAccessKey) as string : c.awsSecretAccessKey,
+    credentialsJson: c.credentialsJson ? encrypt(c.credentialsJson) as string : c.credentialsJson,
+  };
+}
+
+function decryptConnectionFields(c: OrganizationDatabaseConnection): OrganizationDatabaseConnection {
+  return {
+    ...c,
+    password: c.password ? decrypt(c.password) as string : c.password,
+    awsSecretAccessKey: c.awsSecretAccessKey ? decrypt(c.awsSecretAccessKey) as string : c.awsSecretAccessKey,
+    credentialsJson: c.credentialsJson ? decrypt(c.credentialsJson) as string : c.credentialsJson,
+  };
+}
+
+function encryptAwsConfigFields(c: InsertOrganizationAwsConfig): InsertOrganizationAwsConfig {
+  return { ...c, awsSecretAccessKey: c.awsSecretAccessKey ? encrypt(c.awsSecretAccessKey) as string : c.awsSecretAccessKey };
+}
+
+function decryptAwsConfigFields(c: OrganizationAwsConfig): OrganizationAwsConfig {
+  return { ...c, awsSecretAccessKey: c.awsSecretAccessKey ? decrypt(c.awsSecretAccessKey) as string : c.awsSecretAccessKey };
+}
+
+function encryptSftpFields(c: InsertSftpConfig): InsertSftpConfig {
+  return {
+    ...c,
+    password: c.password ? encrypt(c.password) as string : c.password,
+    privateKey: c.privateKey ? encrypt(c.privateKey) as string : c.privateKey,
+    passphrase: c.passphrase ? encrypt(c.passphrase) as string : c.passphrase,
+  };
+}
+
+function decryptSftpFields(c: SftpConfig): SftpConfig {
+  return {
+    ...c,
+    password: c.password ? decrypt(c.password) as string : c.password,
+    privateKey: c.privateKey ? decrypt(c.privateKey) as string : c.privateKey,
+    passphrase: c.passphrase ? decrypt(c.passphrase) as string : c.passphrase,
+  };
+}
+
+function encryptAiConfigFields(c: InsertOrganizationAiConfig): InsertOrganizationAiConfig {
+  return {
+    ...c,
+    openaiApiKey: c.openaiApiKey ? encrypt(c.openaiApiKey) as string : c.openaiApiKey,
+    anthropicApiKey: c.anthropicApiKey ? encrypt(c.anthropicApiKey) as string : c.anthropicApiKey,
+    geminiApiKey: c.geminiApiKey ? encrypt(c.geminiApiKey) as string : c.geminiApiKey,
+  };
+}
+
+function decryptAiConfigFields(c: OrganizationAiConfig): OrganizationAiConfig {
+  return {
+    ...c,
+    openaiApiKey: c.openaiApiKey ? decrypt(c.openaiApiKey) as string : c.openaiApiKey,
+    anthropicApiKey: c.anthropicApiKey ? decrypt(c.anthropicApiKey) as string : c.anthropicApiKey,
+    geminiApiKey: c.geminiApiKey ? decrypt(c.geminiApiKey) as string : c.geminiApiKey,
+  };
+}
 
 const SALT_ROUNDS = 10;
 const DEFAULT_ORG_ID = 'default-org';
@@ -203,13 +268,18 @@ export class DbStorage implements IStorage {
   }
 
   async getUsersByOrganization(organizationId: string): Promise<User[]> {
-    const members = await db.select().from(organizationMembers)
-      .where(eq(organizationMembers.organizationId, organizationId));
-    const userIds = members.map((m: OrganizationMember) => m.userId);
-    if (userIds.length === 0) return [];
-    const result = await db.select().from(users)
-      .where(and(or(...userIds.map((id: string) => eq(users.id, id))), isNull(users.deletedAt)));
-    return result;
+    // Single JOIN query — no N+1
+    return await db
+      .select({
+        id: users.id, email: users.email, username: users.username, password: users.password,
+        role: users.role, status: users.status, emailVerified: users.emailVerified,
+        isSuperAdmin: users.isSuperAdmin, createdAt: users.createdAt, lastActive: users.lastActive,
+        deletedAt: users.deletedAt, emailVerificationToken: users.emailVerificationToken,
+        emailVerificationExpires: users.emailVerificationExpires,
+      })
+      .from(users)
+      .innerJoin(organizationMembers, eq(users.id, organizationMembers.userId))
+      .where(and(eq(organizationMembers.organizationId, organizationId), isNull(users.deletedAt))) as User[];
   }
 
   async setEmailVerificationToken(userId: string, token: string, expires: Date): Promise<void> {
@@ -358,34 +428,36 @@ export class DbStorage implements IStorage {
   }
 
   async getAllSftpConfigs(): Promise<SftpConfig[]> {
-    return await db.select().from(sftpConfigs).orderBy(desc(sftpConfigs.createdAt));
+    const rows = await db.select().from(sftpConfigs).orderBy(desc(sftpConfigs.createdAt));
+    return rows.map(decryptSftpFields);
   }
 
   async getActiveSftpConfigs(): Promise<SftpConfig[]> {
-    return await db.select().from(sftpConfigs)
+    const rows = await db.select().from(sftpConfigs)
       .where(eq(sftpConfigs.status, 'active'))
       .orderBy(desc(sftpConfigs.createdAt));
+    return rows.map(decryptSftpFields);
   }
 
   async getSftpConfigById(id: string): Promise<SftpConfig | undefined> {
     const result = await db.select().from(sftpConfigs).where(eq(sftpConfigs.id, id)).limit(1);
-    return result[0];
+    return result[0] ? decryptSftpFields(result[0]) : undefined;
   }
 
   async createSftpConfig(config: InsertSftpConfig): Promise<SftpConfig> {
     const result = await db.insert(sftpConfigs).values({
-      ...config,
+      ...encryptSftpFields(config),
       organizationId: config.organizationId || DEFAULT_ORG_ID,
     }).returning();
-    return result[0];
+    return decryptSftpFields(result[0]);
   }
 
   async updateSftpConfig(id: string, config: InsertSftpConfig): Promise<SftpConfig | undefined> {
     const result = await db.update(sftpConfigs)
-      .set({ ...config, updatedAt: new Date() })
+      .set({ ...encryptSftpFields(config), updatedAt: new Date() })
       .where(eq(sftpConfigs.id, id))
       .returning();
-    return result[0];
+    return result[0] ? decryptSftpFields(result[0]) : undefined;
   }
 
   async deleteSftpConfig(id: string): Promise<boolean> {
@@ -396,9 +468,10 @@ export class DbStorage implements IStorage {
   }
 
   async getSftpConfigsByOrganization(organizationId: string): Promise<SftpConfig[]> {
-    return await db.select().from(sftpConfigs)
+    const rows = await db.select().from(sftpConfigs)
       .where(eq(sftpConfigs.organizationId, organizationId))
       .orderBy(desc(sftpConfigs.createdAt));
+    return rows.map(decryptSftpFields);
   }
 
   async getSavedQueriesByUser(userId: string): Promise<SavedQuery[]> {
@@ -519,15 +592,19 @@ export class DbStorage implements IStorage {
   }
 
   async getUserOrganizations(userId: string): Promise<Organization[]> {
-    const members = await db.select().from(organizationMembers)
-      .where(eq(organizationMembers.userId, userId))
-      .orderBy(organizationMembers.createdAt); // Deterministic order: oldest membership first
-    const orgIds = members.map((m: OrganizationMember) => m.organizationId);
-    if (orgIds.length === 0) return [];
-    const result = await db.select().from(organizations)
-      .where(and(or(...orgIds.map((id: string) => eq(organizations.id, id))), isNull(organizations.deletedAt)));
-    // Return orgs in the same order as memberships (filtering any soft-deleted ones)
-    return orgIds.map((id: string) => result.find((org: Organization) => org.id === id)).filter(Boolean) as Organization[];
+    // Single JOIN query — no N+1; ordered by membership creation (oldest first)
+    return await db
+      .select({
+        id: organizations.id, name: organizations.name, slug: organizations.slug,
+        status: organizations.status, stripeCustomerId: organizations.stripeCustomerId,
+        stripeSubscriptionId: organizations.stripeSubscriptionId,
+        createdAt: organizations.createdAt, updatedAt: organizations.updatedAt,
+        deletedAt: organizations.deletedAt,
+      })
+      .from(organizations)
+      .innerJoin(organizationMembers, eq(organizations.id, organizationMembers.organizationId))
+      .where(and(eq(organizationMembers.userId, userId), isNull(organizations.deletedAt)))
+      .orderBy(organizationMembers.createdAt) as Organization[];
   }
 
   async addOrganizationMember(member: InsertOrganizationMember): Promise<OrganizationMember> {
@@ -586,20 +663,22 @@ export class DbStorage implements IStorage {
     const result = await db.select().from(organizationAwsConfigs)
       .where(eq(organizationAwsConfigs.organizationId, organizationId))
       .limit(1);
-    return result[0];
+    return result[0] ? decryptAwsConfigFields(result[0]) : undefined;
   }
 
   async upsertOrganizationAwsConfig(config: InsertOrganizationAwsConfig): Promise<OrganizationAwsConfig> {
-    const existing = await this.getOrganizationAwsConfig(config.organizationId);
-    if (existing) {
+    const encrypted = encryptAwsConfigFields(config);
+    const existing = await db.select().from(organizationAwsConfigs)
+      .where(eq(organizationAwsConfigs.organizationId, config.organizationId)).limit(1);
+    if (existing[0]) {
       const result = await db.update(organizationAwsConfigs)
-        .set({ ...config, updatedAt: new Date() })
+        .set({ ...encrypted, updatedAt: new Date() })
         .where(eq(organizationAwsConfigs.organizationId, config.organizationId))
         .returning();
-      return result[0];
+      return decryptAwsConfigFields(result[0]);
     } else {
-      const result = await db.insert(organizationAwsConfigs).values(config).returning();
-      return result[0];
+      const result = await db.insert(organizationAwsConfigs).values(encrypted).returning();
+      return decryptAwsConfigFields(result[0]);
     }
   }
 
@@ -607,34 +686,37 @@ export class DbStorage implements IStorage {
     const result = await db.select().from(organizationAiConfigs)
       .where(eq(organizationAiConfigs.organizationId, organizationId))
       .limit(1);
-    return result[0];
+    return result[0] ? decryptAiConfigFields(result[0]) : undefined;
   }
 
   async upsertOrganizationAiConfig(config: InsertOrganizationAiConfig): Promise<OrganizationAiConfig> {
-    const existing = await this.getOrganizationAiConfig(config.organizationId);
-    if (existing) {
+    const encrypted = encryptAiConfigFields(config);
+    const existing = await db.select().from(organizationAiConfigs)
+      .where(eq(organizationAiConfigs.organizationId, config.organizationId)).limit(1);
+    if (existing[0]) {
       const result = await db.update(organizationAiConfigs)
-        .set({ ...config, updatedAt: new Date() })
+        .set({ ...encrypted, updatedAt: new Date() })
         .where(eq(organizationAiConfigs.organizationId, config.organizationId))
         .returning();
-      return result[0];
+      return decryptAiConfigFields(result[0]);
     } else {
-      const result = await db.insert(organizationAiConfigs).values(config).returning();
-      return result[0];
+      const result = await db.insert(organizationAiConfigs).values(encrypted).returning();
+      return decryptAiConfigFields(result[0]);
     }
   }
 
   async getDatabaseConnectionsByOrganization(organizationId: string): Promise<OrganizationDatabaseConnection[]> {
-    return await db.select().from(organizationDatabaseConnections)
+    const rows = await db.select().from(organizationDatabaseConnections)
       .where(eq(organizationDatabaseConnections.organizationId, organizationId))
       .orderBy(desc(organizationDatabaseConnections.createdAt));
+    return rows.map(decryptConnectionFields);
   }
 
   async getDatabaseConnectionById(id: string): Promise<OrganizationDatabaseConnection | undefined> {
     const result = await db.select().from(organizationDatabaseConnections)
       .where(eq(organizationDatabaseConnections.id, id))
       .limit(1);
-    return result[0];
+    return result[0] ? decryptConnectionFields(result[0]) : undefined;
   }
 
   async getDefaultDatabaseConnection(organizationId: string): Promise<OrganizationDatabaseConnection | undefined> {
@@ -644,7 +726,7 @@ export class DbStorage implements IStorage {
         eq(organizationDatabaseConnections.isDefault, true)
       ))
       .limit(1);
-    return result[0];
+    return result[0] ? decryptConnectionFields(result[0]) : undefined;
   }
 
   async createDatabaseConnection(connection: InsertOrganizationDatabaseConnection): Promise<OrganizationDatabaseConnection> {
@@ -653,8 +735,10 @@ export class DbStorage implements IStorage {
         .set({ isDefault: false })
         .where(eq(organizationDatabaseConnections.organizationId, connection.organizationId));
     }
-    const result = await db.insert(organizationDatabaseConnections).values(connection).returning();
-    return result[0];
+    const result = await db.insert(organizationDatabaseConnections)
+      .values(encryptConnectionFields(connection) as InsertOrganizationDatabaseConnection)
+      .returning();
+    return decryptConnectionFields(result[0]);
   }
 
   async updateDatabaseConnection(id: string, connection: Partial<InsertOrganizationDatabaseConnection>): Promise<OrganizationDatabaseConnection | undefined> {
@@ -667,10 +751,10 @@ export class DbStorage implements IStorage {
       }
     }
     const result = await db.update(organizationDatabaseConnections)
-      .set({ ...connection, updatedAt: new Date() })
+      .set({ ...encryptConnectionFields(connection), updatedAt: new Date() })
       .where(eq(organizationDatabaseConnections.id, id))
       .returning();
-    return result[0];
+    return result[0] ? decryptConnectionFields(result[0]) : undefined;
   }
 
   async deleteDatabaseConnection(id: string): Promise<boolean> {

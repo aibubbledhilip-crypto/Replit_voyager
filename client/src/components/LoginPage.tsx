@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -24,7 +24,7 @@ export default function LoginPage() {
     try {
       await apiRequest('/api/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email: email.toLowerCase().trim(), password }),
       });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
     } catch (error: any) {
@@ -67,15 +67,15 @@ export default function LoginPage() {
         <CardContent className="pt-2">
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="username"
-                type="text"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                data-testid="input-username"
+                data-testid="input-email"
                 disabled={isLoading}
               />
             </div>
@@ -97,7 +97,7 @@ export default function LoginPage() {
             <Button 
               type="submit"
               className="w-full"
-              disabled={!username || !password || isLoading}
+              disabled={!email || !password || isLoading}
               data-testid="button-login"
             >
               {isLoading ? 'Signing in...' : 'Sign In'}

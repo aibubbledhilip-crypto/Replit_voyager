@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, uniqueIndex, index, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -10,14 +10,16 @@ import { z } from "zod";
 export const organizations = pgTable("organizations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
-  slug: text("slug").notNull().unique(),
+  slug: text("slug").notNull(),
   status: text("status").notNull().default('active'),
   stripeCustomerId: text("stripe_customer_id"),
-  stripeSubscriptionId: text("stripe_subscription_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"), // cache — source of truth is organization_subscriptions
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   deletedAt: timestamp("deleted_at"),
-});
+}, (table) => ({
+  slugKey: uniqueIndex("organizations_slug_key").on(table.slug),
+}));
 
 export const insertOrganizationSchema = createInsertSchema(organizations).omit({
   id: true,
@@ -35,7 +37,7 @@ export type Organization = typeof organizations.$inferSelect;
 export const subscriptionPlans = pgTable("subscription_plans", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
-  slug: text("slug").notNull().unique(),
+  slug: text("slug").notNull(),
   description: text("description"),
   priceMonthly: integer("price_monthly").notNull(),
   priceYearly: integer("price_yearly"),
@@ -49,7 +51,9 @@ export const subscriptionPlans = pgTable("subscription_plans", {
   isActive: boolean("is_active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  slugKey: uniqueIndex("subscription_plans_slug_key").on(table.slug),
+}));
 
 export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans).omit({
   id: true,
@@ -61,6 +65,7 @@ export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
 
 // ============================================================
 // ORGANIZATION SUBSCRIPTIONS
+// One subscription per organization (enforced by unique index)
 // ============================================================
 
 export const organizationSubscriptions = pgTable("organization_subscriptions", {
@@ -74,7 +79,9 @@ export const organizationSubscriptions = pgTable("organization_subscriptions", {
   cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  uniqueOrgSubscription: uniqueIndex("unique_org_subscription").on(table.organizationId),
+}));
 
 export const insertOrganizationSubscriptionSchema = createInsertSchema(organizationSubscriptions).omit({
   id: true,
@@ -86,12 +93,14 @@ export type InsertOrganizationSubscription = z.infer<typeof insertOrganizationSu
 export type OrganizationSubscription = typeof organizationSubscriptions.$inferSelect;
 
 // ============================================================
-// USERS (Updated for multi-tenancy)
+// USERS
+// email is the login identifier (globally unique)
+// username is a display name only — not globally unique
 // ============================================================
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: text("email").notNull().unique(),
+  email: text("email").notNull(),
   username: text("username").notNull(),
   password: text("password").notNull(),
   role: text("role").notNull().default('user'),
@@ -103,7 +112,10 @@ export const users = pgTable("users", {
   deletedAt: timestamp("deleted_at"),
   emailVerificationToken: text("email_verification_token"),
   emailVerificationExpires: timestamp("email_verification_expires"),
-});
+}, (table) => ({
+  // Partial unique index — allows same email for soft-deleted users
+  emailUnique: uniqueIndex("users_email_unique").on(table.email).where(sql`${table.deletedAt} IS NULL`),
+}));
 
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -127,6 +139,8 @@ export const organizationMembers = pgTable("organization_members", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({
   uniqueMember: uniqueIndex("unique_org_member").on(table.organizationId, table.userId),
+  idxOrgMemOrg: index("idx_org_members_org").on(table.organizationId),
+  idxOrgMemUser: index("idx_org_members_user").on(table.userId),
 }));
 
 export const insertOrganizationMemberSchema = createInsertSchema(organizationMembers).omit({
@@ -146,12 +160,16 @@ export const organizationInvitations = pgTable("organization_invitations", {
   organizationId: varchar("organization_id").notNull().references(() => organizations.id, { onDelete: 'cascade' }),
   email: text("email").notNull(),
   role: text("role").notNull().default('member'),
-  token: text("token").notNull().unique(),
+  token: text("token").notNull(),
   invitedBy: varchar("invited_by").notNull().references(() => users.id),
   expiresAt: timestamp("expires_at").notNull(),
   acceptedAt: timestamp("accepted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  tokenKey: uniqueIndex("organization_invitations_token_key").on(table.token),
+  idxInvitationsOrg: index("idx_invitations_org").on(table.organizationId),
+  idxInvitationsEmail: index("idx_invitations_email").on(table.email),
+}));
 
 export const insertOrganizationInvitationSchema = createInsertSchema(organizationInvitations).omit({
   id: true,
@@ -162,19 +180,23 @@ export type InsertOrganizationInvitation = z.infer<typeof insertOrganizationInvi
 export type OrganizationInvitation = typeof organizationInvitations.$inferSelect;
 
 // ============================================================
-// ORGANIZATION AWS CONFIGURATIONS (Legacy - kept for backward compat)
+// ORGANIZATION AWS CONFIGURATIONS (Legacy — Athena access via Admin > Configurations > AWS)
+// New Athena connections should be added via organization_database_connections (type='athena')
+// This table is kept for backward compatibility with existing config UI
 // ============================================================
 
 export const organizationAwsConfigs = pgTable("organization_aws_configs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  organizationId: varchar("organization_id").notNull().references(() => organizations.id, { onDelete: 'cascade' }).unique(),
+  organizationId: varchar("organization_id").notNull().references(() => organizations.id, { onDelete: 'cascade' }),
   awsAccessKeyId: text("aws_access_key_id"),
-  awsSecretAccessKey: text("aws_secret_access_key"),
+  awsSecretAccessKey: text("aws_secret_access_key"), // encrypted at rest
   awsRegion: text("aws_region").notNull().default('us-east-1'),
   s3OutputLocation: text("s3_output_location"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  orgIdKey: uniqueIndex("organization_aws_configs_organization_id_key").on(table.organizationId),
+}));
 
 export const insertOrganizationAwsConfigSchema = createInsertSchema(organizationAwsConfigs).omit({
   id: true,
@@ -187,6 +209,7 @@ export type OrganizationAwsConfig = typeof organizationAwsConfigs.$inferSelect;
 
 // ============================================================
 // ORGANIZATION DATABASE CONNECTIONS (Multi-database support)
+// Credentials (password, awsSecretAccessKey, credentialsJson) are encrypted at rest
 // ============================================================
 
 export const DATABASE_TYPES = [
@@ -204,14 +227,14 @@ export const organizationDatabaseConnections = pgTable("organization_database_co
   port: integer("port"),
   database: text("database"),
   username: text("username"),
-  password: text("password"),
+  password: text("password"), // encrypted at rest
   ssl: boolean("ssl").notNull().default(false),
   awsAccessKeyId: text("aws_access_key_id"),
-  awsSecretAccessKey: text("aws_secret_access_key"),
+  awsSecretAccessKey: text("aws_secret_access_key"), // encrypted at rest
   awsRegion: text("aws_region"),
   s3OutputLocation: text("s3_output_location"),
   projectId: text("project_id"),
-  credentialsJson: text("credentials_json"),
+  credentialsJson: text("credentials_json"), // encrypted at rest
   dataset: text("dataset"),
   account: text("account"),
   warehouse: text("warehouse"),
@@ -221,7 +244,9 @@ export const organizationDatabaseConnections = pgTable("organization_database_co
   status: text("status").notNull().default('active'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  idxDbConnOrg: index("idx_db_connections_org").on(table.organizationId),
+}));
 
 export const insertOrganizationDatabaseConnectionSchema = createInsertSchema(organizationDatabaseConnections).omit({
   id: true,
@@ -234,21 +259,24 @@ export type OrganizationDatabaseConnection = typeof organizationDatabaseConnecti
 
 // ============================================================
 // ORGANIZATION AI CONFIGURATIONS
+// API keys are encrypted at rest
 // ============================================================
 
 export const organizationAiConfigs = pgTable("organization_ai_configs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  organizationId: varchar("organization_id").notNull().references(() => organizations.id, { onDelete: 'cascade' }).unique(),
+  organizationId: varchar("organization_id").notNull().references(() => organizations.id, { onDelete: 'cascade' }),
   aiProvider: text("ai_provider").notNull().default('openai'),
   aiModel: text("ai_model").notNull().default('gpt-4o'),
-  openaiApiKey: text("openai_api_key"),
-  anthropicApiKey: text("anthropic_api_key"),
-  geminiApiKey: text("gemini_api_key"),
+  openaiApiKey: text("openai_api_key"), // encrypted at rest
+  anthropicApiKey: text("anthropic_api_key"), // encrypted at rest
+  geminiApiKey: text("gemini_api_key"), // encrypted at rest
   ollamaEndpoint: text("ollama_endpoint"),
   customPrompt: text("custom_prompt"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  orgIdKey: uniqueIndex("organization_ai_configs_organization_id_key").on(table.organizationId),
+}));
 
 export const insertOrganizationAiConfigSchema = createInsertSchema(organizationAiConfigs).omit({
   id: true,
@@ -260,7 +288,7 @@ export type InsertOrganizationAiConfig = z.infer<typeof insertOrganizationAiConf
 export type OrganizationAiConfig = typeof organizationAiConfigs.$inferSelect;
 
 // ============================================================
-// QUERY LOGS (Updated with organization scope)
+// QUERY LOGS (Updated with organization scope + connectionId)
 // ============================================================
 
 export const queryLogs = pgTable("query_logs", {
@@ -272,8 +300,12 @@ export const queryLogs = pgTable("query_logs", {
   rowsReturned: integer("rows_returned").notNull(),
   executionTime: integer("execution_time").notNull(),
   status: text("status").notNull(),
+  connectionId: varchar("connection_id").references(() => organizationDatabaseConnections.id, { onDelete: 'set null' }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  idxQueryLogsOrg: index("idx_query_logs_org").on(table.organizationId),
+  idxQueryLogsUser: index("idx_query_logs_user").on(table.userId),
+}));
 
 export const insertQueryLogSchema = createInsertSchema(queryLogs).omit({
   id: true,
@@ -284,7 +316,7 @@ export type InsertQueryLog = z.infer<typeof insertQueryLogSchema>;
 export type QueryLog = typeof queryLogs.$inferSelect;
 
 // ============================================================
-// SETTINGS (Updated with organization scope - global settings have null orgId)
+// SETTINGS (Organization-scoped; key unique per org)
 // ============================================================
 
 export const settings = pgTable("settings", {
@@ -293,7 +325,10 @@ export const settings = pgTable("settings", {
   key: text("key").notNull(),
   value: text("value").notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  uniqueOrgKey: uniqueIndex("unique_org_setting_key").on(table.organizationId, table.key),
+  idxSettingsOrg: index("idx_settings_org").on(table.organizationId),
+}));
 
 export const insertSettingSchema = createInsertSchema(settings).omit({
   id: true,
@@ -322,7 +357,10 @@ export const exportJobs = pgTable("export_jobs", {
   errorMessage: text("error_message"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   completedAt: timestamp("completed_at"),
-});
+}, (table) => ({
+  idxExportJobsOrg: index("idx_export_jobs_org").on(table.organizationId),
+  idxExportJobsUser: index("idx_export_jobs_user").on(table.userId),
+}));
 
 export const insertExportJobSchema = createInsertSchema(exportJobs).omit({
   id: true,
@@ -335,6 +373,7 @@ export type ExportJob = typeof exportJobs.$inferSelect;
 
 // ============================================================
 // SFTP CONFIGS (Updated with organization scope)
+// password, privateKey, passphrase are encrypted at rest
 // ============================================================
 
 export const sftpConfigs = pgTable("sftp_configs", {
@@ -344,16 +383,18 @@ export const sftpConfigs = pgTable("sftp_configs", {
   host: text("host").notNull(),
   port: integer("port").notNull().default(22),
   username: text("username").notNull(),
-  password: text("password"),
-  privateKey: text("private_key"),
-  passphrase: text("passphrase"),
+  password: text("password"), // encrypted at rest
+  privateKey: text("private_key"), // encrypted at rest
+  passphrase: text("passphrase"), // encrypted at rest
   authType: text("auth_type").notNull().default('password'),
   remotePaths: text("remote_paths").array().notNull().default(sql`ARRAY['/']::text[]`),
   filePatterns: jsonb("file_patterns").default(sql`'{}'::jsonb`),
   status: text("status").notNull().default('active'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  idxSftpOrg: index("idx_sftp_configs_org").on(table.organizationId),
+}));
 
 export const insertSftpConfigSchema = createInsertSchema(sftpConfigs).omit({
   id: true,
@@ -365,7 +406,7 @@ export type InsertSftpConfig = z.infer<typeof insertSftpConfigSchema>;
 export type SftpConfig = typeof sftpConfigs.$inferSelect;
 
 // ============================================================
-// SAVED QUERIES (Updated with organization scope)
+// SAVED QUERIES (Updated with organization scope + connectionId)
 // ============================================================
 
 export const savedQueries = pgTable("saved_queries", {
@@ -374,8 +415,12 @@ export const savedQueries = pgTable("saved_queries", {
   userId: varchar("user_id").notNull().references(() => users.id),
   name: text("name").notNull(),
   query: text("query").notNull(),
+  connectionId: varchar("connection_id").references(() => organizationDatabaseConnections.id, { onDelete: 'set null' }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  idxSavedQueriesOrg: index("idx_saved_queries_org").on(table.organizationId),
+  idxSavedQueriesUser: index("idx_saved_queries_user").on(table.userId),
+}));
 
 export const insertSavedQuerySchema = createInsertSchema(savedQueries).omit({
   id: true,
@@ -387,21 +432,25 @@ export type SavedQuery = typeof savedQueries.$inferSelect;
 
 // ============================================================
 // DASHBOARD CHARTS
+// organizationId is required (NOT NULL) for tenant isolation
+// connectionId FK enforced — set null on connection delete
 // ============================================================
 
 export const dashboardCharts = pgTable("dashboard_charts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  organizationId: varchar("organization_id").references(() => organizations.id, { onDelete: 'cascade' }),
+  organizationId: varchar("organization_id").notNull().references(() => organizations.id, { onDelete: 'cascade' }),
   name: text("name").notNull(),
   description: text("description"),
   sqlQuery: text("sql_query").notNull(),
   chartType: text("chart_type").notNull().default('bar'),
   xAxisColumn: text("x_axis_column").notNull(),
   yAxisColumns: text("y_axis_columns").array().notNull().default(sql`ARRAY[]::text[]`),
-  connectionId: varchar("connection_id"),
+  connectionId: varchar("connection_id").references(() => organizationDatabaseConnections.id, { onDelete: 'set null' }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  idxDashboardChartsOrg: index("idx_dashboard_charts_org").on(table.organizationId),
+}));
 
 export const insertDashboardChartSchema = createInsertSchema(dashboardCharts).omit({
   id: true,
@@ -426,7 +475,10 @@ export const auditLogs = pgTable("audit_logs", {
   details: text("details"),
   ipAddress: text("ip_address"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  idxAuditLogsOrg: index("idx_audit_logs_org").on(table.organizationId),
+  idxAuditLogsUser: index("idx_audit_logs_user").on(table.userId),
+}));
 
 export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
   id: true,

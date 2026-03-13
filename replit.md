@@ -10,6 +10,12 @@ The user wants me to act as a coding agent.
 - When introducing database schema changes, always update `sql/fresh-database-setup.sql` with the corresponding SQL statements.
 
 ## Recent Changes (March 2026)
+- **Credential encryption**: `server/encryption.ts` — AES-256-GCM encryption for DB connection passwords, SFTP credentials, AWS secret keys, and AI API keys. Backward-compatible (gracefully reads unencrypted legacy values). `ENCRYPTION_KEY` env var required (set as shared env var).
+- **Login switched to email**: `POST /api/auth/login` accepts `email` instead of `username`; `LoginPage.tsx` updated.
+- **Schema hardening**: Unique indexes on `settings(organization_id, key)` and `organization_subscriptions(organization_id)`; `dashboard_charts.organization_id` made NOT NULL with FK enforced; `connection_id` FK added to `query_logs` and `saved_queries`; `users_email_unique` is now a partial unique index (allows same email for soft-deleted users); `users_username_unique` constraint dropped (username is display-only).
+- **Performance indexes**: Added `idx_*` indexes across all FK columns (organization_members, invitations, query_logs, settings, export_jobs, sftp_configs, saved_queries, dashboard_charts, audit_logs).
+- **N+1 queries fixed**: `getUsersByOrganization` and `getUserOrganizations` now use single JOIN queries.
+- **`sql/fresh-database-setup.sql`**: Updated to reflect full current schema including all new constraints, indexes, and columns.
 - **Depiction** (`/depiction`): New chart visualization feature — write SQL, preview results, configure X/Y axes, and save bar/line/area charts. Charts auto-execute on the dashboard grid. Backed by `dashboard_charts` table; supports any named DB connection or Athena.
 - Explorer lookup field made fully configurable: label, placeholder, and validation mode (`digits_only`/`alphanumeric`/`any`) via Admin > Explorer Config
 - SFTP health: if filename contains a date pattern, only that date is used for health status (mtime fallback removed for date-pattern filenames)

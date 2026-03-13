@@ -45,3 +45,4 @@ integrations = ["javascript_log_in_with_replit:1.0.0", "javascript_database:1.0.
 
 [userenv.shared]
 RESEND_API_KEY = "re_P44s8ACR_73g2neR8JrVng2apYC135hZP"
+ENCRYPTION_KEY = "b2d81ebb693c86e61f2c57e2ad9bb555e58a919552e7b29c827d68994e3112fa"
