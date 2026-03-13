@@ -294,9 +294,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = await storage.createUser(userData);
-
-      // Admin-created users are auto-verified (admin vouches for them)
-      await storage.markEmailVerified(user.id);
       
       // Add user to the admin's organization
       await storage.addOrganizationMember({
@@ -304,9 +301,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: user.id,
         role: 'member',
       });
+
+      // Send verification email so the new user can activate their account
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await storage.setEmailVerificationToken(user.id, verificationToken, verificationExpires);
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      try {
+        await sendVerificationEmail(user.email, user.username, verificationToken, baseUrl);
+      } catch (emailError) {
+        console.error("Failed to send verification email to admin-created user:", emailError);
+      }
       
       // Audit log: user created
-      await logAuditEvent(req, 'user_created', 'user', user.id, `User "${user.username}" created`);
+      await logAuditEvent(req, 'user_created', 'user', user.id, `User "${user.username}" created by admin — verification email sent to ${user.email}`);
       
       const { password, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
