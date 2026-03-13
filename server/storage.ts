@@ -72,6 +72,7 @@ export interface IStorage {
   getOrganizationBySlug(slug: string): Promise<Organization | undefined>;
   createOrganization(org: InsertOrganization): Promise<Organization>;
   updateOrganization(id: string, org: Partial<InsertOrganization>): Promise<Organization | undefined>;
+  deleteOrganization(id: string): Promise<boolean>;
   getAllOrganizations(): Promise<Organization[]>;
   
   getSubscriptionPlan(id: string): Promise<SubscriptionPlan | undefined>;
@@ -417,6 +418,11 @@ export class DbStorage implements IStorage {
       .where(eq(organizations.id, id))
       .returning();
     return result[0];
+  }
+
+  async deleteOrganization(id: string): Promise<boolean> {
+    const result = await db.delete(organizations).where(eq(organizations.id, id)).returning();
+    return result.length > 0;
   }
 
   async getAllOrganizations(): Promise<Organization[]> {

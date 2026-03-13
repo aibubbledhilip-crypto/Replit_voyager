@@ -7,8 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Users, Activity, Shield, ArrowRight, Eye, XCircle } from "lucide-react";
+import { Building2, Users, Activity, Shield, Eye, Trash2, KeyRound, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 interface PlatformStats {
@@ -49,6 +53,8 @@ interface UserWithDetails {
 export default function SuperAdminPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
+  const [resetPasswordUser, setResetPasswordUser] = useState<UserWithDetails | null>(null);
+  const [newPassword, setNewPassword] = useState("");
 
   const { data: stats, isLoading: statsLoading } = useQuery<PlatformStats>({
     queryKey: ["/api/super-admin/stats"],
@@ -75,6 +81,34 @@ export default function SuperAdminPage() {
     },
   });
 
+  const deleteOrgMutation = useMutation({
+    mutationFn: async (orgId: string) => {
+      return apiRequest("DELETE", `/api/super-admin/organizations/${orgId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/super-admin/organizations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/super-admin/stats"] });
+      toast({ title: "Organization deleted", description: "The organization and all its data have been removed." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ userId, password }: { userId: string; password: string }) => {
+      return apiRequest("POST", `/api/super-admin/users/${userId}/reset-password`, { newPassword: password });
+    },
+    onSuccess: () => {
+      setResetPasswordUser(null);
+      setNewPassword("");
+      toast({ title: "Password reset", description: "The user's password has been updated." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   const toggleSuperAdminMutation = useMutation({
     mutationFn: async ({ userId, isSuperAdmin }: { userId: string; isSuperAdmin: boolean }) => {
       return apiRequest("PATCH", `/api/super-admin/users/${userId}/super-admin`, { isSuperAdmin });
@@ -88,6 +122,11 @@ export default function SuperAdminPage() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
+
+  const handleResetPasswordSubmit = () => {
+    if (!resetPasswordUser || !newPassword) return;
+    resetPasswordMutation.mutate({ userId: resetPasswordUser.id, password: newPassword });
+  };
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
@@ -118,9 +157,7 @@ export default function SuperAdminPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold" data-testid="text-total-orgs">{stats.totalOrganizations}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {stats.activeOrganizations} active
-                  </p>
+                  <p className="text-xs text-muted-foreground">{stats.activeOrganizations} active</p>
                 </CardContent>
               </Card>
 
@@ -144,9 +181,7 @@ export default function SuperAdminPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold" data-testid="text-total-queries">{stats.totalQueries}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {stats.queriesLast7Days} in last 7 days
-                  </p>
+                  <p className="text-xs text-muted-foreground">{stats.queriesLast7Days} in last 7 days</p>
                 </CardContent>
               </Card>
 
@@ -157,9 +192,7 @@ export default function SuperAdminPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold" data-testid="text-super-admins">{stats.superAdmins}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Platform administrators
-                  </p>
+                  <p className="text-xs text-muted-foreground">Platform administrators</p>
                 </CardContent>
               </Card>
             </div>
@@ -207,20 +240,53 @@ export default function SuperAdminPage() {
                             {org.status}
                           </Badge>
                         </TableCell>
+                        <TableCell>{format(new Date(org.createdAt), "MMM d, yyyy")}</TableCell>
                         <TableCell>
-                          {format(new Date(org.createdAt), "MMM d, yyyy")}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => impersonateMutation.mutate(org.id)}
-                            disabled={impersonateMutation.isPending}
-                            data-testid={`button-impersonate-${org.id}`}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View As
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => impersonateMutation.mutate(org.id)}
+                              disabled={impersonateMutation.isPending}
+                              data-testid={`button-impersonate-${org.id}`}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View As
+                            </Button>
+                            {org.id !== 'default-org' && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-destructive"
+                                    data-testid={`button-delete-org-${org.id}`}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    Delete
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Organization</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This will permanently delete <strong>{org.name}</strong> and all its data — users, queries, settings, connections, and charts. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      className="bg-destructive text-destructive-foreground"
+                                      onClick={() => deleteOrgMutation.mutate(org.id)}
+                                      data-testid={`button-confirm-delete-org-${org.id}`}
+                                    >
+                                      Delete Organization
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -252,6 +318,7 @@ export default function SuperAdminPage() {
                       <TableHead>Status</TableHead>
                       <TableHead>Super Admin</TableHead>
                       <TableHead>Last Active</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -304,6 +371,17 @@ export default function SuperAdminPage() {
                             ? format(new Date(user.lastActive), "MMM d, yyyy HH:mm")
                             : "Never"}
                         </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => { setResetPasswordUser(user); setNewPassword(""); }}
+                            data-testid={`button-reset-password-${user.id}`}
+                          >
+                            <KeyRound className="h-4 w-4 mr-1" />
+                            Reset PW
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -315,6 +393,47 @@ export default function SuperAdminPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={!!resetPasswordUser} onOpenChange={(open) => { if (!open) { setResetPasswordUser(null); setNewPassword(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 space-y-4">
+            {resetPasswordUser && (
+              <p className="text-sm text-muted-foreground">
+                Setting a new password for <strong>{resetPasswordUser.username}</strong> ({resetPasswordUser.email})
+              </p>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                placeholder="Minimum 8 characters"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleResetPasswordSubmit()}
+                data-testid="input-new-password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setResetPasswordUser(null); setNewPassword(""); }}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleResetPasswordSubmit}
+              disabled={newPassword.length < 8 || resetPasswordMutation.isPending}
+              data-testid="button-confirm-reset-password"
+            >
+              {resetPasswordMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Reset Password
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

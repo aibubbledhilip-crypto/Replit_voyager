@@ -2699,6 +2699,50 @@ Be concise and focus on the most important insights. Use clear headings and bull
     }
   });
 
+  // Delete organization (super admin only - cascades all related data)
+  app.delete("/api/super-admin/organizations/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const org = await storage.getOrganization(id);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      if (id === 'default-org') {
+        return res.status(400).json({ message: "Cannot delete the default organization" });
+      }
+      await logAuditEvent(req, 'organization_deleted', 'organization', id,
+        `Super admin deleted organization "${org.name}" (${org.slug})`);
+      const deleted = await storage.deleteOrganization(id);
+      if (!deleted) {
+        return res.status(500).json({ message: "Failed to delete organization" });
+      }
+      res.json({ message: "Organization deleted successfully" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Reset user password (super admin only)
+  app.post("/api/super-admin/users/:id/reset-password", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { newPassword } = req.body;
+      if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters" });
+      }
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      await storage.updateUserPassword(id, newPassword);
+      await logAuditEvent(req, 'password_reset_by_super_admin', 'user', id,
+        `Super admin reset password for user "${user.username}" (${user.email})`);
+      res.json({ message: "Password reset successfully" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Platform statistics (super admin only)
   app.get("/api/super-admin/stats", requireAuth, requireSuperAdmin, async (req, res) => {
     try {
