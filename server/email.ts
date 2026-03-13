@@ -2,7 +2,7 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = "onboarding-voyager@prodapt.com";
+const FROM_EMAIL = "onboarding@voyager.com";
 const APP_NAME = "Voyager";
 
 export async function sendVerificationEmail(
