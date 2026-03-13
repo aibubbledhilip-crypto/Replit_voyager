@@ -33,12 +33,15 @@ const nexusGatewayItems: MenuItem[] = [
   },
 ];
 
-const toolsItems: MenuItem[] = [
+const watchTowerItems: MenuItem[] = [
   {
     title: "Depiction",
     url: "/depiction",
     icon: BarChart2,
   },
+];
+
+const toolsItems: MenuItem[] = [
   {
     title: "File Comparison",
     url: "/file-comparison",
@@ -120,6 +123,11 @@ export function AppSidebar({ userRole = 'user', isSuperAdmin = false }: AppSideb
     {
       label: "Nexus Gateway",
       items: nexusGatewayItems,
+      defaultOpen: false,
+    },
+    {
+      label: "Watch Tower",
+      items: watchTowerItems,
       defaultOpen: false,
     },
     {
