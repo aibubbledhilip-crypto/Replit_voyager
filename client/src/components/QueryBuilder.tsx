@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import LinedTextarea from "@/components/LinedTextarea";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Play, Trash2, Database, Table, Columns, Save, FolderOpen, X, Loader2 } from "lucide-react";
@@ -311,10 +311,10 @@ export default function QueryBuilder({
         </Collapsible>
 
         <div className="relative">
-          <Textarea
+          <LinedTextarea
             ref={textareaRef}
             placeholder="SELECT * FROM your_table LIMIT 100; (Ctrl+Enter to execute)"
-            className="min-h-64 font-mono text-sm resize-none"
+            className="min-h-64"
             value={query}
             onChange={handleChange}
             onClick={handleClick}
