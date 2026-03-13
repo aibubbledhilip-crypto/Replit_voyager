@@ -27,15 +27,32 @@ import DatabaseConnectionsPage from "@/pages/DatabaseConnectionsPage";
 import BillingPage from "@/pages/BillingPage";
 import SuperAdminPage from "@/pages/SuperAdminPage";
 import ChartDashboardPage from "@/pages/ChartDashboardPage";
+import RolePermissionsPage from "@/pages/RolePermissionsPage";
 import NotFound from "@/pages/not-found";
 import { apiRequest } from "@/lib/api";
 
-interface AuthUser {
+export interface AuthUser {
   id: string;
+  email: string;
   username: string;
   role: 'admin' | 'user';
+  orgRole?: 'owner' | 'admin' | 'member' | 'viewer' | null;
+  organizationId?: string;
   isSuperAdmin?: boolean;
   impersonating?: { organizationId: string; organizationName: string } | null;
+  permissions?: string[];
+}
+
+function hasPermission(user: AuthUser | undefined, feature: string): boolean {
+  if (!user) return false;
+  if (user.isSuperAdmin) return true;
+  return user.permissions?.includes(feature) ?? false;
+}
+
+function isOrgAdmin(user: AuthUser | undefined): boolean {
+  if (!user) return false;
+  if (user.isSuperAdmin) return true;
+  return ['owner', 'admin'].includes(user.orgRole ?? '');
 }
 
 function AuthenticatedApp() {
@@ -46,14 +63,11 @@ function AuthenticatedApp() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
   
-  // Public routes that don't require authentication
   const publicRoutes = ['/login', '/signup', '/invite', '/verify-email-sent', '/verify-email'];
   const isPublicRoute = publicRoutes.some(route => location.startsWith(route));
   
-  // Query Execution and Explorer pages use full width
   const isFullWidthPage = location === "/" || location === "/explorer";
 
-  // Redirect logged-in users away from login/signup pages (not verify pages)
   useEffect(() => {
     if (user && (location === '/login' || location === '/signup')) {
       setLocation('/');
@@ -78,9 +92,7 @@ function AuthenticatedApp() {
     );
   }
 
-  // Handle public routes
   if (isPublicRoute) {
-    // Wait for redirect effect to run
     if (user && (location === '/login' || location === '/signup')) {
       return (
         <div className="min-h-screen flex items-center justify-center">
@@ -88,7 +100,6 @@ function AuthenticatedApp() {
         </div>
       );
     }
-    
     return (
       <Switch>
         <Route path="/login" component={LoginPage} />
@@ -103,6 +114,35 @@ function AuthenticatedApp() {
   if (!user) {
     return <LoginPage />;
   }
+
+  // Permission-gated page wrapper
+  const PermissionGate = ({ feature, children }: { feature: string; children: JSX.Element }) => {
+    if (!hasPermission(user, feature)) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64 gap-3">
+          <div className="text-muted-foreground text-center">
+            <p className="font-medium">Access Restricted</p>
+            <p className="text-sm mt-1">You don't have permission to access this feature.</p>
+          </div>
+        </div>
+      );
+    }
+    return children;
+  };
+
+  const AdminGate = ({ children }: { children: JSX.Element }) => {
+    if (!isOrgAdmin(user)) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64 gap-3">
+          <div className="text-muted-foreground text-center">
+            <p className="font-medium">Admin Access Required</p>
+            <p className="text-sm mt-1">Only organization admins can access this page.</p>
+          </div>
+        </div>
+      );
+    }
+    return children;
+  };
 
   return (
     <SidebarToggleContext.Provider value={{ isOpen: sidebarOpen, toggle: toggleSidebar }}>
@@ -121,26 +161,62 @@ function AuthenticatedApp() {
             data-testid="sidebar-wrapper"
           >
             <div className="w-[250px] h-full">
-              <AppSidebar userRole={user.role} isSuperAdmin={user.isSuperAdmin} />
+              <AppSidebar
+                userRole={user.role}
+                isSuperAdmin={user.isSuperAdmin}
+                permissions={user.permissions ?? []}
+                orgRole={user.orgRole}
+              />
             </div>
           </div>
           <main className="flex-1 overflow-auto min-w-0">
             <div className={`p-6 ${isFullWidthPage ? 'h-full' : 'max-w-7xl mx-auto'}`}>
               <Switch>
-                <Route path="/" component={QueryExecutionPage} />
-                <Route path="/explorer" component={ExplorerPage} />
-                <Route path="/file-comparison" component={FileComparisonPage} />
-                <Route path="/file-aggregate" component={FileAggregatePage} />
-                <Route path="/admin" component={AdminDashboardPage} />
-                <Route path="/admin/users" component={UserManagementPage} />
-                <Route path="/admin/logs" component={UsageLogsPage} />
-                <Route path="/admin/sftp-config" component={SftpConfigPage} />
-                <Route path="/admin/explorer-config" component={ExplorerConfigPage} />
-                <Route path="/admin/ai-config" component={AIConfigPage} />
-                <Route path="/admin/aws-config" component={AwsConfigPage} />
-                <Route path="/admin/db-connections" component={DatabaseConnectionsPage} />
-                <Route path="/depiction" component={ChartDashboardPage} />
-                <Route path="/sftp-monitor" component={SftpMonitorPage} />
+                <Route path="/">
+                  <PermissionGate feature="execute_queries"><QueryExecutionPage /></PermissionGate>
+                </Route>
+                <Route path="/explorer">
+                  <PermissionGate feature="explorer"><ExplorerPage /></PermissionGate>
+                </Route>
+                <Route path="/file-comparison">
+                  <PermissionGate feature="file_compare"><FileComparisonPage /></PermissionGate>
+                </Route>
+                <Route path="/file-aggregate">
+                  <PermissionGate feature="file_aggregate"><FileAggregatePage /></PermissionGate>
+                </Route>
+                <Route path="/depiction">
+                  <PermissionGate feature="depiction"><ChartDashboardPage /></PermissionGate>
+                </Route>
+                <Route path="/sftp-monitor">
+                  <PermissionGate feature="sftp_monitor"><SftpMonitorPage /></PermissionGate>
+                </Route>
+                <Route path="/admin">
+                  <AdminGate><AdminDashboardPage /></AdminGate>
+                </Route>
+                <Route path="/admin/users">
+                  <AdminGate><UserManagementPage /></AdminGate>
+                </Route>
+                <Route path="/admin/logs">
+                  <AdminGate><UsageLogsPage /></AdminGate>
+                </Route>
+                <Route path="/admin/sftp-config">
+                  <AdminGate><SftpConfigPage /></AdminGate>
+                </Route>
+                <Route path="/admin/explorer-config">
+                  <AdminGate><ExplorerConfigPage /></AdminGate>
+                </Route>
+                <Route path="/admin/ai-config">
+                  <AdminGate><AIConfigPage /></AdminGate>
+                </Route>
+                <Route path="/admin/aws-config">
+                  <AdminGate><AwsConfigPage /></AdminGate>
+                </Route>
+                <Route path="/admin/db-connections">
+                  <AdminGate><DatabaseConnectionsPage /></AdminGate>
+                </Route>
+                <Route path="/admin/role-permissions">
+                  <AdminGate><RolePermissionsPage /></AdminGate>
+                </Route>
                 <Route path="/billing" component={BillingPage} />
                 <Route path="/super-admin" component={SuperAdminPage} />
                 <Route component={NotFound} />

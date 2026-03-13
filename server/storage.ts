@@ -4,7 +4,8 @@ import {
   organizations, subscriptionPlans, organizationSubscriptions, 
   organizationMembers, organizationInvitations, organizationAwsConfigs,
   organizationAiConfigs, organizationDatabaseConnections, auditLogs,
-  dashboardCharts,
+  dashboardCharts, organizationRolePermissions,
+  RBAC_FEATURES, DEFAULT_PERMISSIONS,
   type User, type InsertUser, type QueryLog, type InsertQueryLog, 
   type Setting, type InsertSetting, type ExportJob, type InsertExportJob, 
   type SftpConfig, type InsertSftpConfig, type SavedQuery, type InsertSavedQuery,
@@ -17,6 +18,7 @@ import {
   type OrganizationDatabaseConnection, type InsertOrganizationDatabaseConnection,
   type AuditLog, type InsertAuditLog,
   type DashboardChart, type InsertDashboardChart,
+  type OrganizationRolePermission, type RbacFeature, type OrgRole,
 } from "@shared/schema";
 import { eq, desc, and, or, isNull } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -101,7 +103,7 @@ export interface IStorage {
   updateUserLastActive(userId: string): Promise<void>;
   updateUserSuperAdmin(userId: string, isSuperAdmin: boolean): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
-  getUsersByOrganization(organizationId: string): Promise<User[]>;
+  getUsersByOrganization(organizationId: string): Promise<(User & { orgRole: string })[]>;
   setEmailVerificationToken(userId: string, token: string, expires: Date): Promise<void>;
   getUserByVerificationToken(token: string): Promise<User | undefined>;
   markEmailVerified(userId: string): Promise<void>;
@@ -187,6 +189,12 @@ export interface IStorage {
   createDashboardChart(chart: InsertDashboardChart): Promise<DashboardChart>;
   updateDashboardChart(id: string, chart: Partial<InsertDashboardChart>): Promise<DashboardChart | undefined>;
   deleteDashboardChart(id: string): Promise<void>;
+
+  // RBAC: per-org, per-role feature permissions
+  getOrgRolePermissions(organizationId: string): Promise<OrganizationRolePermission[]>;
+  getUserPermissions(userId: string, organizationId: string): Promise<RbacFeature[]>;
+  setRolePermission(organizationId: string, role: OrgRole, feature: RbacFeature, enabled: boolean): Promise<void>;
+  seedOrgPermissions(organizationId: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -267,19 +275,21 @@ export class DbStorage implements IStorage {
     return await db.select().from(users).where(isNull(users.deletedAt));
   }
 
-  async getUsersByOrganization(organizationId: string): Promise<User[]> {
-    // Single JOIN query — no N+1
-    return await db
+  async getUsersByOrganization(organizationId: string): Promise<(User & { orgRole: string })[]> {
+    // Single JOIN query — no N+1; includes orgRole from organization_members
+    const rows = await db
       .select({
         id: users.id, email: users.email, username: users.username, password: users.password,
         role: users.role, status: users.status, emailVerified: users.emailVerified,
         isSuperAdmin: users.isSuperAdmin, createdAt: users.createdAt, lastActive: users.lastActive,
         deletedAt: users.deletedAt, emailVerificationToken: users.emailVerificationToken,
         emailVerificationExpires: users.emailVerificationExpires,
+        orgRole: organizationMembers.role,
       })
       .from(users)
       .innerJoin(organizationMembers, eq(users.id, organizationMembers.userId))
-      .where(and(eq(organizationMembers.organizationId, organizationId), isNull(users.deletedAt))) as User[];
+      .where(and(eq(organizationMembers.organizationId, organizationId), isNull(users.deletedAt)));
+    return rows as (User & { orgRole: string })[];
   }
 
   async setEmailVerificationToken(userId: string, token: string, expires: Date): Promise<void> {
@@ -810,6 +820,85 @@ export class DbStorage implements IStorage {
 
   async deleteDashboardChart(id: string): Promise<void> {
     await db.delete(dashboardCharts).where(eq(dashboardCharts.id, id));
+  }
+
+  // ---- RBAC ----------------------------------------------------------------
+
+  async getOrgRolePermissions(organizationId: string): Promise<OrganizationRolePermission[]> {
+    return await db.select().from(organizationRolePermissions)
+      .where(eq(organizationRolePermissions.organizationId, organizationId));
+  }
+
+  async getUserPermissions(userId: string, organizationId: string): Promise<RbacFeature[]> {
+    // Get the user's role in the org
+    const member = await this.getOrganizationMember(organizationId, userId);
+    if (!member) return [];
+
+    const role = member.role as OrgRole;
+
+    // Get permissions for this role in this org
+    const rows = await db.select().from(organizationRolePermissions)
+      .where(and(
+        eq(organizationRolePermissions.organizationId, organizationId),
+        eq(organizationRolePermissions.role, role)
+      ));
+
+    if (rows.length === 0) {
+      // Fall back to defaults if not yet seeded
+      const defaults = DEFAULT_PERMISSIONS[role] ?? {};
+      return (Object.entries(defaults) as [RbacFeature, boolean][])
+        .filter(([, enabled]) => enabled)
+        .map(([feature]) => feature);
+    }
+
+    return rows.filter(r => r.enabled).map(r => r.feature as RbacFeature);
+  }
+
+  async setRolePermission(organizationId: string, role: OrgRole, feature: RbacFeature, enabled: boolean): Promise<void> {
+    const existing = await db.select().from(organizationRolePermissions)
+      .where(and(
+        eq(organizationRolePermissions.organizationId, organizationId),
+        eq(organizationRolePermissions.role, role),
+        eq(organizationRolePermissions.feature, feature)
+      ))
+      .limit(1);
+
+    if (existing[0]) {
+      await db.update(organizationRolePermissions)
+        .set({ enabled, updatedAt: new Date() })
+        .where(eq(organizationRolePermissions.id, existing[0].id));
+    } else {
+      await db.insert(organizationRolePermissions).values({
+        organizationId, role, feature, enabled,
+      });
+    }
+  }
+
+  async seedOrgPermissions(organizationId: string): Promise<void> {
+    const rows: { organizationId: string; role: string; feature: string; enabled: boolean }[] = [];
+    for (const role of Object.keys(DEFAULT_PERMISSIONS) as OrgRole[]) {
+      for (const feature of RBAC_FEATURES) {
+        rows.push({
+          organizationId,
+          role,
+          feature,
+          enabled: DEFAULT_PERMISSIONS[role][feature],
+        });
+      }
+    }
+    // Insert all defaults, skip conflicts (existing customizations preserved)
+    for (const row of rows) {
+      const existing = await db.select().from(organizationRolePermissions)
+        .where(and(
+          eq(organizationRolePermissions.organizationId, row.organizationId),
+          eq(organizationRolePermissions.role, row.role),
+          eq(organizationRolePermissions.feature, row.feature)
+        ))
+        .limit(1);
+      if (!existing[0]) {
+        await db.insert(organizationRolePermissions).values(row);
+      }
+    }
   }
 }
 

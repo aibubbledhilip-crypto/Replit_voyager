@@ -487,3 +487,51 @@ export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
 
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 export type AuditLog = typeof auditLogs.$inferSelect;
+
+// ============================================================
+// ORGANIZATION ROLE PERMISSIONS
+// Per-org, per-role feature toggles (GUI-configurable by org admins)
+// ============================================================
+
+export const RBAC_FEATURES = [
+  'execute_queries',
+  'explorer',
+  'depiction',
+  'file_compare',
+  'file_aggregate',
+  'sftp_monitor',
+  'msisdn_lookup',
+  'export_data',
+] as const;
+
+export type RbacFeature = typeof RBAC_FEATURES[number];
+
+export const ORG_ROLES = ['owner', 'admin', 'member', 'viewer'] as const;
+export type OrgRole = typeof ORG_ROLES[number];
+
+export const DEFAULT_PERMISSIONS: Record<OrgRole, Record<RbacFeature, boolean>> = {
+  owner:  { execute_queries: true,  explorer: true,  depiction: true,  file_compare: true,  file_aggregate: true,  sftp_monitor: true,  msisdn_lookup: true,  export_data: true  },
+  admin:  { execute_queries: true,  explorer: true,  depiction: true,  file_compare: true,  file_aggregate: true,  sftp_monitor: true,  msisdn_lookup: true,  export_data: true  },
+  member: { execute_queries: true,  explorer: true,  depiction: true,  file_compare: true,  file_aggregate: true,  sftp_monitor: true,  msisdn_lookup: false, export_data: true  },
+  viewer: { execute_queries: false, explorer: false, depiction: false, file_compare: false, file_aggregate: false, sftp_monitor: true,  msisdn_lookup: false, export_data: false },
+};
+
+export const organizationRolePermissions = pgTable("organization_role_permissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  role: text("role").notNull(),
+  feature: text("feature").notNull(),
+  enabled: boolean("enabled").notNull().default(true),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueOrgRoleFeature: uniqueIndex("unique_org_role_feature").on(table.organizationId, table.role, table.feature),
+  idxRolePermOrg: index("idx_role_permissions_org").on(table.organizationId),
+}));
+
+export const insertOrganizationRolePermissionSchema = createInsertSchema(organizationRolePermissions).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertOrganizationRolePermission = z.infer<typeof insertOrganizationRolePermissionSchema>;
+export type OrganizationRolePermission = typeof organizationRolePermissions.$inferSelect;

@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import crypto from "crypto";
-import { insertUserSchema, insertQueryLogSchema } from "@shared/schema";
+import { insertUserSchema, insertQueryLogSchema, RBAC_FEATURES, ORG_ROLES, DEFAULT_PERMISSIONS, type RbacFeature, type OrgRole } from "@shared/schema";
 import { AthenaClient, StartQueryExecutionCommand, GetQueryExecutionCommand, GetQueryResultsCommand } from "@aws-sdk/client-athena";
 import { ensureCsrfToken, verifyCsrfToken, getCsrfToken } from "./csrf";
 import multer from "multer";
@@ -103,6 +103,50 @@ function requireSuperAdmin(req: Request, res: Response, next: Function) {
     return res.status(403).json({ message: "Forbidden - Super Admin access required" });
   }
   next();
+}
+
+// Middleware factory to check if user has a specific feature permission in their org
+function requirePermission(feature: RbacFeature) {
+  return async (req: Request, res: Response, next: Function) => {
+    // Super admins bypass feature permission checks
+    if (req.session.isSuperAdmin) return next();
+
+    const userId = req.session.userId;
+    const organizationId = req.session.organizationId;
+
+    if (!userId || !organizationId) {
+      return res.status(403).json({ message: "Organization context required" });
+    }
+
+    try {
+      const permissions = await storage.getUserPermissions(userId, organizationId);
+      if (!permissions.includes(feature)) {
+        return res.status(403).json({ message: `Forbidden - you don't have access to ${feature}` });
+      }
+      next();
+    } catch (error: any) {
+      res.status(500).json({ message: "Permission check failed" });
+    }
+  };
+}
+
+// Middleware: org admin (by org member role, not session role)
+async function requireOrgAdmin(req: Request, res: Response, next: Function) {
+  if (req.session.isSuperAdmin) return next();
+  const userId = req.session.userId;
+  const organizationId = req.session.organizationId;
+  if (!userId || !organizationId) {
+    return res.status(403).json({ message: "Organization context required" });
+  }
+  try {
+    const member = await storage.getOrganizationMember(organizationId, userId);
+    if (!member || !['owner', 'admin'].includes(member.role)) {
+      return res.status(403).json({ message: "Forbidden - Admin access required" });
+    }
+    next();
+  } catch (error: any) {
+    res.status(500).json({ message: "Authorization check failed" });
+  }
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -233,25 +277,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if super admin is impersonating an organization
       let impersonating = null;
       if (user.isSuperAdmin && req.session.organizationId) {
-        // Check if super admin is a member of this org
         const membership = await storage.getOrganizationMember(req.session.organizationId, user.id);
         if (!membership) {
-          // Super admin is impersonating (not a natural member)
           const org = await storage.getOrganization(req.session.organizationId);
           if (org) {
             impersonating = { organizationId: org.id, organizationName: org.name };
           }
         }
       }
+
+      // Resolve org-member role and feature permissions
+      let orgRole: string | null = null;
+      let permissions: string[] = [];
+      const organizationId = req.session.organizationId;
+      if (organizationId && !user.isSuperAdmin) {
+        const member = await storage.getOrganizationMember(organizationId, user.id);
+        orgRole = member?.role ?? null;
+        if (member) {
+          permissions = await storage.getUserPermissions(user.id, organizationId);
+        }
+      } else if (user.isSuperAdmin) {
+        // Super admins have all permissions
+        permissions = [...RBAC_FEATURES];
+      }
       
       res.json({
         id: user.id,
+        email: user.email,
         username: user.username,
         role: user.role,
-        organizationId: req.session.organizationId,
+        orgRole,
+        organizationId,
         isSuperAdmin: user.isSuperAdmin || false,
         impersonating,
+        permissions,
       });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // RBAC: Get current user's resolved permissions
+  app.get("/api/permissions/my-permissions", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const organizationId = req.session.organizationId;
+      if (req.session.isSuperAdmin) {
+        return res.json({ permissions: [...RBAC_FEATURES], orgRole: 'super_admin' });
+      }
+      if (!organizationId) {
+        return res.json({ permissions: [], orgRole: null });
+      }
+      const member = await storage.getOrganizationMember(organizationId, userId);
+      const permissions = await storage.getUserPermissions(userId, organizationId);
+      res.json({ permissions, orgRole: member?.role ?? null });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // RBAC Admin: Get the full role-permission matrix for this org
+  app.get("/api/admin/role-permissions", requireAuth, requireOrgAdmin, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId!;
+      const rows = await storage.getOrgRolePermissions(organizationId);
+      
+      // Return as nested object: { role: { feature: boolean } }
+      const matrix: Record<string, Record<string, boolean>> = {};
+      for (const role of ORG_ROLES) {
+        matrix[role] = {};
+        for (const feature of RBAC_FEATURES) {
+          matrix[role][feature] = DEFAULT_PERMISSIONS[role as OrgRole][feature as RbacFeature];
+        }
+      }
+      for (const row of rows) {
+        if (!matrix[row.role]) matrix[row.role] = {};
+        matrix[row.role][row.feature] = row.enabled;
+      }
+      
+      res.json({ matrix, roles: ORG_ROLES, features: RBAC_FEATURES });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // RBAC Admin: Update a single role-feature permission
+  app.put("/api/admin/role-permissions", requireAuth, requireOrgAdmin, async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId!;
+      const { role, feature, enabled } = req.body;
+      
+      if (!ORG_ROLES.includes(role)) {
+        return res.status(400).json({ message: `Invalid role: ${role}` });
+      }
+      if (!RBAC_FEATURES.includes(feature)) {
+        return res.status(400).json({ message: `Invalid feature: ${feature}` });
+      }
+      if (typeof enabled !== 'boolean') {
+        return res.status(400).json({ message: "enabled must be boolean" });
+      }
+      // Owners always retain all permissions — cannot be disabled
+      if (role === 'owner') {
+        return res.status(400).json({ message: "Owner permissions cannot be modified" });
+      }
+      
+      await storage.setRolePermission(organizationId, role as OrgRole, feature as RbacFeature, enabled);
+      await logAuditEvent(req, 'update_role_permission', 'rbac', `${role}:${feature}`, JSON.stringify({ enabled }));
+      res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -352,6 +484,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { password, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Update a user's organization role (owner/admin/member/viewer)
+  app.patch("/api/users/:id/org-role", requireAuth, requireOrgAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { role } = req.body;
+      const organizationId = req.session.organizationId;
+
+      if (!['admin', 'member', 'viewer'].includes(role)) {
+        return res.status(400).json({ message: "Invalid org role. Must be admin, member, or viewer." });
+      }
+
+      if (!organizationId) {
+        return res.status(403).json({ message: "Organization context required" });
+      }
+
+      // Prevent demoting the org owner
+      const targetMember = await storage.getOrganizationMember(organizationId, id);
+      if (!targetMember) {
+        return res.status(403).json({ message: "User not in your organization" });
+      }
+      if (targetMember.role === 'owner') {
+        return res.status(400).json({ message: "Cannot change the owner's role" });
+      }
+
+      const updated = await storage.updateMemberRole(organizationId, id, role);
+      if (!updated) {
+        return res.status(404).json({ message: "Member not found" });
+      }
+
+      await logAuditEvent(req, 'user_role_changed', 'user', id, `Org role changed to ${role}`);
+
+      res.json(updated);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -1248,7 +1417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Query execution route (supports multi-database connections)
-  app.post("/api/query/execute", requireAuth, async (req, res) => {
+  app.post("/api/query/execute", requireAuth, requirePermission("execute_queries"), async (req, res) => {
     try {
       const { query, connectionId } = req.body;
       if (!query) {
@@ -1324,7 +1493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // MSISDN Lookup route - executes multiple queries in parallel
-  app.post("/api/query/msisdn-lookup", requireAuth, async (req, res) => {
+  app.post("/api/query/msisdn-lookup", requireAuth, requirePermission("msisdn_lookup"), async (req, res) => {
     try {
       const { msisdn } = req.body;
       if (!msisdn) {
@@ -1555,7 +1724,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // File Comparison routes
-  app.post("/api/compare/execute", requireAuth, upload.fields([
+  app.post("/api/compare/execute", requireAuth, requirePermission("file_compare"), upload.fields([
     { name: 'file1', maxCount: 1 },
     { name: 'file2', maxCount: 1 }
   ]), async (req, res) => {
@@ -1682,7 +1851,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // File Aggregate Routes
-  app.post("/api/aggregate/execute", requireAuth, upload.array('files', 50), async (req, res) => {
+  app.post("/api/aggregate/execute", requireAuth, requirePermission("file_aggregate"), upload.array('files', 50), async (req, res) => {
     try {
       const files = req.files as Express.Multer.File[];
       if (!files || files.length < 2) {
@@ -1912,7 +2081,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/sftp/monitor", requireAuth, async (req, res) => {
+  app.get("/api/sftp/monitor", requireAuth, requirePermission("sftp_monitor"), async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
       if (!organizationId) {
@@ -1950,7 +2119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/sftp/monitor/:id", requireAuth, async (req, res) => {
+  app.get("/api/sftp/monitor/:id", requireAuth, requirePermission("sftp_monitor"), async (req, res) => {
     try {
       const { id } = req.params;
       const organizationId = req.session.organizationId;
@@ -2157,6 +2326,9 @@ Be concise and focus on the most important insights. Use clear headings and bull
           billingCycle: 'monthly',
         });
       }
+
+      // Seed default RBAC permissions for the new organization
+      await storage.seedOrgPermissions(organization.id);
 
       // Create audit log
       await storage.createAuditLog({
@@ -2870,7 +3042,7 @@ Be concise and focus on the most important insights. Use clear headings and bull
   // DASHBOARD CHARTS
   // ============================================================
 
-  app.get("/api/dashboard/charts", requireAuth, async (req, res) => {
+  app.get("/api/dashboard/charts", requireAuth, requirePermission("depiction"), async (req, res) => {
     try {
       const organizationId = req.session.organizationId!;
       const charts = await storage.getDashboardCharts(organizationId);
@@ -2880,7 +3052,7 @@ Be concise and focus on the most important insights. Use clear headings and bull
     }
   });
 
-  app.post("/api/dashboard/charts", requireAuth, async (req, res) => {
+  app.post("/api/dashboard/charts", requireAuth, requirePermission("depiction"), async (req, res) => {
     try {
       const organizationId = req.session.organizationId!;
       const { name, description, sqlQuery, chartType, xAxisColumn, yAxisColumns, connectionId } = req.body;
