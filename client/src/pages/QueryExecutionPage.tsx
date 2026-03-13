@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Database, Table, ChevronRight, ChevronDown, Search, RefreshCw, Loader2, Columns, AlertCircle, Link2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { queryClient } from "@/lib/queryClient";
 import {
   Select,
@@ -266,27 +267,34 @@ export default function QueryExecutionPage() {
                     open={expandedTables.has(table.name)}
                     onOpenChange={() => toggleTable(table.name)}
                   >
-                    <CollapsibleTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-start h-8 px-2 font-normal"
-                        data-testid={`button-table-${table.name}`}
-                      >
-                        {expandedTables.has(table.name) ? (
-                          <ChevronDown className="h-3 w-3 mr-1 flex-shrink-0" />
-                        ) : (
-                          <ChevronRight className="h-3 w-3 mr-1 flex-shrink-0" />
-                        )}
-                        <Table className="h-3.5 w-3.5 mr-1.5 flex-shrink-0 text-blue-500" />
-                        <span className="truncate text-xs">{table.name}</span>
-                        {getTableColumns(table.name).length > 0 && (
-                          <Badge variant="secondary" className="ml-auto text-[10px] h-5">
-                            {getTableColumns(table.name).length}
-                          </Badge>
-                        )}
-                      </Button>
-                    </CollapsibleTrigger>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <CollapsibleTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start h-8 px-2 font-normal"
+                            data-testid={`button-table-${table.name}`}
+                          >
+                            {expandedTables.has(table.name) ? (
+                              <ChevronDown className="h-3 w-3 mr-1 flex-shrink-0" />
+                            ) : (
+                              <ChevronRight className="h-3 w-3 mr-1 flex-shrink-0" />
+                            )}
+                            <Table className="h-3.5 w-3.5 mr-1.5 flex-shrink-0 text-blue-500" />
+                            <span className="truncate text-xs">{table.name}</span>
+                            {getTableColumns(table.name).length > 0 && (
+                              <Badge variant="secondary" className="ml-auto text-[10px] h-5">
+                                {getTableColumns(table.name).length}
+                              </Badge>
+                            )}
+                          </Button>
+                        </CollapsibleTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="font-mono text-xs max-w-xs break-all">
+                        {table.name}
+                      </TooltipContent>
+                    </Tooltip>
                     <CollapsibleContent>
                       <div className="ml-6 pl-2 border-l space-y-0.5 py-1">
                         {loadingColumns.has(table.name) ? (
