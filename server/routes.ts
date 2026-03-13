@@ -168,9 +168,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email and password are required" });
       }
 
-      const user = await storage.getUserByEmail(email.toLowerCase().trim());
+      const identifier = email.trim();
+      // Accept email OR username — try email lookup first, then fall back to username
+      let user = await storage.getUserByEmail(identifier.toLowerCase());
       if (!user) {
-        await logAuditEvent(req, 'login_failed', 'auth', undefined, `Failed login attempt for email: ${email} (user not found)`);
+        user = await storage.getUserByUsername(identifier) ?? null;
+      }
+      if (!user) {
+        await logAuditEvent(req, 'login_failed', 'auth', undefined, `Failed login attempt for: ${identifier} (user not found)`);
         return res.status(401).json({ message: "Invalid credentials" });
       }
 

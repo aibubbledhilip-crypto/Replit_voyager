@@ -24,7 +24,7 @@ export default function LoginPage() {
     try {
       await apiRequest('/api/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email: email.toLowerCase().trim(), password }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
     } catch (error: any) {
@@ -67,11 +67,11 @@ export default function LoginPage() {
         <CardContent className="pt-2">
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email or Username</Label>
               <Input
                 id="email"
-                type="email"
-                placeholder="Enter your email"
+                type="text"
+                placeholder="Enter your email or username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
