@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "CLa7O1F3WfRb3zzhEiUpj"
+uri = "file://CLAUDE.md"
+type = "text"
+title = "Voyager — Full Architecture & Functional Documentation"
