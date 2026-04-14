@@ -9,7 +9,13 @@ The user wants me to act as a coding agent.
 - I want to be asked before making major changes.
 - When introducing database schema changes, always update `sql/fresh-database-setup.sql` with the corresponding SQL statements.
 
-## Recent Changes (March 2026)
+## Recent Changes (April 2026)
+- **API Keys** (`/settings/api-keys`): Users can generate personal access tokens (format: `vgr_<48 hex chars>`) scoped to `execute_queries` and/or `explorer`. Keys are SHA-256 hashed in the DB (never stored raw). Shown once on creation. Backed by `api_keys` table.
+- **Public API v1 endpoints**: `POST /api/v1/execute` (SQL query) and `POST /api/v1/explorer/lookup` both accept `Authorization: Bearer vgr_...` or session cookie. Scope-gated + RBAC permission-checked.
+- `resolveApiKeyAuth` middleware injects userId/organizationId into session from API key, letting existing `requireAuth`/`requirePermission` work transparently.
+- Sidebar: new "Settings > API Keys" link visible to all authenticated users.
+
+## Previous Changes (March 2026)
 - **Credential encryption**: `server/encryption.ts` — AES-256-GCM encryption for DB connection passwords, SFTP credentials, AWS secret keys, and AI API keys. Backward-compatible (gracefully reads unencrypted legacy values). `ENCRYPTION_KEY` env var required (set as shared env var).
 - **Login switched to email**: `POST /api/auth/login` accepts `email` instead of `username`; `LoginPage.tsx` updated.
 - **Schema hardening**: Unique indexes on `settings(organization_id, key)` and `organization_subscriptions(organization_id)`; `dashboard_charts.organization_id` made NOT NULL with FK enforced; `connection_id` FK added to `query_logs` and `saved_queries`; `users_email_unique` is now a partial unique index (allows same email for soft-deleted users); `users_username_unique` constraint dropped (username is display-only).

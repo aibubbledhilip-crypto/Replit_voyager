@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Database, FileText, Search, GitCompare, Layers, Server, Activity, LayoutDashboard, ChevronDown, Brain, CreditCard, Users, Settings, Shield, Cloud, Link2, BarChart2, KeyRound } from "lucide-react";
+import { Database, FileText, Search, GitCompare, Layers, Server, Activity, LayoutDashboard, ChevronDown, Brain, CreditCard, Users, Settings, Shield, Cloud, Link2, BarChart2, KeyRound, Key } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -91,6 +91,7 @@ export function AppSidebar({
   const visibleTools = toolsItems.filter(i => !i.permission || hasPerm(i.permission));
   if (visibleTools.length > 0) categories.push({ label: "Tools", items: visibleTools });
 
+  categories.push({ label: "Settings", items: [{ title: "API Keys", url: "/settings/api-keys", icon: Key }] });
   if (isAdmin) categories.push({ label: "Administration", items: adminItems });
   if (isSuperAdmin) categories.push({ label: "Platform", items: platformItems });
 

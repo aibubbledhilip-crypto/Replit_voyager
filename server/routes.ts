@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import crypto from "crypto";
-import { insertUserSchema, insertQueryLogSchema, RBAC_FEATURES, ORG_ROLES, DEFAULT_PERMISSIONS, type RbacFeature, type OrgRole } from "@shared/schema";
+import { insertUserSchema, insertQueryLogSchema, RBAC_FEATURES, ORG_ROLES, DEFAULT_PERMISSIONS, API_KEY_SCOPES, type RbacFeature, type OrgRole, type ApiKeyScope } from "@shared/schema";
 import { AthenaClient, StartQueryExecutionCommand, GetQueryExecutionCommand, GetQueryResultsCommand } from "@aws-sdk/client-athena";
 import { ensureCsrfToken, verifyCsrfToken, getCsrfToken } from "./csrf";
 import multer from "multer";
@@ -147,6 +147,68 @@ async function requireOrgAdmin(req: Request, res: Response, next: Function) {
   } catch (error: any) {
     res.status(500).json({ message: "Authorization check failed" });
   }
+}
+
+// ─── API Key Auth Helper ──────────────────────────────────────────────────────
+// Reads Authorization: Bearer vgr_... header and populates session-like context
+// on res.locals so downstream requireAuth / requirePermission still work.
+// Returns true if the request was authenticated via API key.
+async function resolveApiKeyAuth(req: Request, res: Response): Promise<boolean> {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer vgr_')) return false;
+
+  const rawKey = authHeader.slice('Bearer '.length).trim();
+  const keyHash = crypto.createHash('sha256').update(rawKey).digest('hex');
+
+  try {
+    const apiKey = await storage.getApiKeyByHash(keyHash);
+    if (!apiKey) return false;
+    if (apiKey.expiresAt && apiKey.expiresAt < new Date()) return false;
+
+    // Inject into session so existing auth middleware works transparently
+    req.session.userId = apiKey.userId;
+    req.session.organizationId = apiKey.organizationId;
+    req.session.isSuperAdmin = false;
+
+    // Store key metadata for scope checks and touch
+    res.locals.apiKeyId = apiKey.id;
+    res.locals.apiKeyScopes = apiKey.scopes as string[];
+
+    // Touch async (non-blocking)
+    storage.touchApiKey(apiKey.id).catch(() => {});
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Middleware: allow API key OR session (for Executor / Explorer public API routes)
+function requireApiKeyOrSession(req: Request, res: Response, next: Function) {
+  resolveApiKeyAuth(req, res).then(authenticatedViaKey => {
+    if (authenticatedViaKey) return next();
+    // Fall back to normal session auth
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized — provide a session cookie or Authorization: Bearer <api_key>" });
+    }
+    if (!req.session.isSuperAdmin && !req.session.organizationId) {
+      return res.status(403).json({ message: "Organization context required" });
+    }
+    next();
+  }).catch(() => res.status(500).json({ message: "Auth check failed" }));
+}
+
+// Middleware: check that an API-key request has the required scope (if using API key)
+function requireApiKeyScope(scope: ApiKeyScope) {
+  return (req: Request, res: Response, next: Function) => {
+    // If authenticated via API key, enforce scope
+    if (res.locals.apiKeyId) {
+      const scopes: string[] = res.locals.apiKeyScopes || [];
+      if (!scopes.includes(scope)) {
+        return res.status(403).json({ message: `This API key does not have the '${scope}' scope` });
+      }
+    }
+    next();
+  };
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -3137,6 +3199,166 @@ Be concise and focus on the most important insights. Use clear headings and bull
       }
 
       res.json({ columns, rows: data });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ─── API Key Management ───────────────────────────────────────────────────────
+
+  // List API keys for current user (never return key_hash)
+  app.get("/api/user/api-keys", requireAuth, async (req, res) => {
+    try {
+      const keys = await storage.getApiKeysByUser(req.session.userId!, req.session.organizationId!);
+      res.json(keys.map(k => ({ ...k, keyHash: undefined })));
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Create a new API key — returns the raw key ONCE
+  app.post("/api/user/api-keys", requireAuth, async (req, res) => {
+    try {
+      const { name, scopes, expiresAt } = req.body;
+      if (!name || typeof name !== 'string' || !name.trim()) {
+        return res.status(400).json({ message: "Key name is required" });
+      }
+      if (!scopes || !Array.isArray(scopes) || scopes.length === 0) {
+        return res.status(400).json({ message: "At least one scope is required" });
+      }
+      const invalidScopes = scopes.filter((s: string) => !(API_KEY_SCOPES as readonly string[]).includes(s));
+      if (invalidScopes.length > 0) {
+        return res.status(400).json({ message: `Invalid scopes: ${invalidScopes.join(', ')}` });
+      }
+
+      const rawKey = 'vgr_' + crypto.randomBytes(24).toString('hex');
+      const keyHash = crypto.createHash('sha256').update(rawKey).digest('hex');
+      const keyPrefix = rawKey.slice(0, 10); // "vgr_" + first 6 chars
+
+      const apiKey = await storage.createApiKey({
+        organizationId: req.session.organizationId!,
+        userId: req.session.userId!,
+        name: name.trim(),
+        keyPrefix,
+        keyHash,
+        scopes,
+        revoked: false,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+      });
+
+      res.json({ ...apiKey, keyHash: undefined, rawKey });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Revoke an API key
+  app.delete("/api/user/api-keys/:id", requireAuth, async (req, res) => {
+    try {
+      const revoked = await storage.revokeApiKey(req.params.id, req.session.userId!);
+      if (!revoked) return res.status(404).json({ message: "Key not found or not yours" });
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ─── Public API v1 — Executor ─────────────────────────────────────────────────
+  // Accepts: Authorization: Bearer vgr_... OR session cookie
+
+  app.post("/api/v1/execute", requireApiKeyOrSession, requireApiKeyScope('execute_queries'), requirePermission('execute_queries'), async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId!;
+      const userId = req.session.userId!;
+      const { query, connectionId } = req.body;
+
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ message: "query (string) is required" });
+      }
+
+      const exportLimitSetting = await storage.getSetting('row_limit', organizationId);
+      const rowLimit = exportLimitSetting ? parseInt(exportLimitSetting.value) : 10000;
+
+      let columns: string[];
+      let rows: Record<string, any>[];
+      let executionTime: number;
+
+      if (connectionId) {
+        const connection = await storage.getDatabaseConnectionById(connectionId);
+        if (!connection || connection.organizationId !== organizationId) {
+          return res.status(404).json({ message: "Database connection not found" });
+        }
+        const driver = getDriver(connection.type);
+        const result = await driver.executeQuery(connection, query, rowLimit);
+        columns = result.columns;
+        rows = result.rows;
+        executionTime = result.executionTimeMs;
+      } else {
+        const { client: athenaClient, s3OutputLocation } = await getOrgAthenaClient(organizationId);
+        const startTime = Date.now();
+        const result = await executeAthenaQueryWithPagination(athenaClient, query, s3OutputLocation, rowLimit);
+        columns = result.columns;
+        rows = result.data;
+        executionTime = Date.now() - startTime;
+      }
+
+      const apiUser = await storage.getUser(userId);
+      await storage.createQueryLog({
+        userId,
+        organizationId,
+        username: apiUser?.username ?? 'api',
+        query,
+        status: 'success',
+        rowsReturned: rows.length,
+        executionTime,
+        connectionId: connectionId || null,
+      });
+
+      res.json({ columns, rows, rowCount: rows.length, executionTime });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ─── Public API v1 — Explorer lookup ─────────────────────────────────────────
+
+  app.post("/api/v1/explorer/lookup", requireApiKeyOrSession, requireApiKeyScope('explorer'), requirePermission('explorer'), async (req, res) => {
+    try {
+      const organizationId = req.session.organizationId!;
+      const { value } = req.body;
+      if (!value || typeof value !== 'string') {
+        return res.status(400).json({ message: "value (string) is required" });
+      }
+
+      // Re-use msisdn-lookup internal logic by forwarding to the internal handler
+      // We read the org settings and run queries against configured explorer tables
+      const orgSettings = await storage.getSettingsByOrganization(organizationId);
+      const getSetting = (key: string) => orgSettings.find(s => s.key === key)?.value;
+
+      const tableKeys = orgSettings.filter(s => s.key.startsWith('explorer_table_')).map(s => s.key.replace('explorer_table_', ''));
+
+      if (tableKeys.length === 0) {
+        return res.json({ results: [], message: "No explorer sources configured for this organization" });
+      }
+
+      const { client: athenaClient, s3OutputLocation } = await getOrgAthenaClient(organizationId);
+
+      const results = await Promise.allSettled(tableKeys.map(async (sourceKey) => {
+        const table = getSetting(`explorer_table_${sourceKey}`);
+        const column = getSetting(`explorer_column_${sourceKey}`) || getSetting(`explorer_lookup_column_${sourceKey}`);
+        const label = getSetting(`explorer_label_${sourceKey}`) || sourceKey;
+        if (!table || !column) return { source: label, status: 'skipped', rows: [] };
+
+        const safeValue = value.replace(/'/g, "''");
+        const sql = `SELECT * FROM ${table} WHERE ${column} = '${safeValue}' LIMIT 100`;
+        const result = await executeAthenaQueryWithPagination(athenaClient, sql, s3OutputLocation, 100);
+        return { source: label, columns: result.columns, rows: result.data, rowCount: result.data.length };
+      }));
+
+      res.json({
+        lookupValue: value,
+        results: results.map((r, i) => r.status === 'fulfilled' ? r.value : { source: tableKeys[i], status: 'error', error: (r as PromiseRejectedResult).reason?.message }),
+      });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

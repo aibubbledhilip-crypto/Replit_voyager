@@ -380,6 +380,29 @@ INSERT INTO settings (organization_id, key, value) VALUES
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
+-- API KEYS
+-- Personal access tokens for programmatic Executor/Explorer access
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS api_keys (
+  id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id VARCHAR NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  user_id VARCHAR NOT NULL,
+  name TEXT NOT NULL,
+  key_prefix VARCHAR(12) NOT NULL,
+  key_hash TEXT NOT NULL,
+  scopes TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+  last_used_at TIMESTAMP,
+  expires_at TIMESTAMP,
+  revoked BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_api_keys_org ON api_keys(organization_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash);
+
+-- ============================================================
 -- DONE!
 -- After running this script:
 -- 1. Create your first admin user through the signup flow

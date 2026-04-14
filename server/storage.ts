@@ -4,7 +4,7 @@ import {
   organizations, subscriptionPlans, organizationSubscriptions, 
   organizationMembers, organizationInvitations, organizationAwsConfigs,
   organizationAiConfigs, organizationDatabaseConnections, auditLogs,
-  dashboardCharts, organizationRolePermissions,
+  dashboardCharts, organizationRolePermissions, apiKeys,
   RBAC_FEATURES, DEFAULT_PERMISSIONS,
   type User, type InsertUser, type QueryLog, type InsertQueryLog, 
   type Setting, type InsertSetting, type ExportJob, type InsertExportJob, 
@@ -19,6 +19,7 @@ import {
   type AuditLog, type InsertAuditLog,
   type DashboardChart, type InsertDashboardChart,
   type OrganizationRolePermission, type RbacFeature, type OrgRole,
+  type ApiKey, type InsertApiKey,
 } from "@shared/schema";
 import { eq, desc, and, or, isNull } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -195,6 +196,13 @@ export interface IStorage {
   getUserPermissions(userId: string, organizationId: string): Promise<RbacFeature[]>;
   setRolePermission(organizationId: string, role: OrgRole, feature: RbacFeature, enabled: boolean): Promise<void>;
   seedOrgPermissions(organizationId: string): Promise<void>;
+
+  // API Keys
+  createApiKey(key: InsertApiKey): Promise<ApiKey>;
+  getApiKeysByUser(userId: string, organizationId: string): Promise<ApiKey[]>;
+  getApiKeyByHash(keyHash: string): Promise<ApiKey | undefined>;
+  revokeApiKey(id: string, userId: string): Promise<boolean>;
+  touchApiKey(id: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -899,6 +907,45 @@ export class DbStorage implements IStorage {
         await db.insert(organizationRolePermissions).values(row);
       }
     }
+  }
+
+  // ─── API Keys ────────────────────────────────────────────────────────────────
+
+  async createApiKey(key: InsertApiKey): Promise<ApiKey> {
+    const result = await db.insert(apiKeys).values(key).returning();
+    return result[0];
+  }
+
+  async getApiKeysByUser(userId: string, organizationId: string): Promise<ApiKey[]> {
+    return db.select().from(apiKeys)
+      .where(and(
+        eq(apiKeys.userId, userId),
+        eq(apiKeys.organizationId, organizationId),
+        eq(apiKeys.revoked, false),
+      ))
+      .orderBy(desc(apiKeys.createdAt));
+  }
+
+  async getApiKeyByHash(keyHash: string): Promise<ApiKey | undefined> {
+    const result = await db.select().from(apiKeys)
+      .where(and(
+        eq(apiKeys.keyHash, keyHash),
+        eq(apiKeys.revoked, false),
+      ))
+      .limit(1);
+    return result[0];
+  }
+
+  async revokeApiKey(id: string, userId: string): Promise<boolean> {
+    const result = await db.update(apiKeys)
+      .set({ revoked: true })
+      .where(and(eq(apiKeys.id, id), eq(apiKeys.userId, userId)))
+      .returning();
+    return result.length > 0;
+  }
+
+  async touchApiKey(id: string): Promise<void> {
+    await db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, id));
   }
 }
 

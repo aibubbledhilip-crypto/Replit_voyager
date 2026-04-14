@@ -535,3 +535,39 @@ export const insertOrganizationRolePermissionSchema = createInsertSchema(organiz
 
 export type InsertOrganizationRolePermission = z.infer<typeof insertOrganizationRolePermissionSchema>;
 export type OrganizationRolePermission = typeof organizationRolePermissions.$inferSelect;
+
+// ============================================================
+// API KEYS
+// Scoped personal access tokens for programmatic access to
+// Executor and Explorer endpoints (per org, per user)
+// ============================================================
+
+export const API_KEY_SCOPES = ['execute_queries', 'explorer'] as const;
+export type ApiKeyScope = typeof API_KEY_SCOPES[number];
+
+export const apiKeys = pgTable("api_keys", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  keyPrefix: varchar("key_prefix", { length: 12 }).notNull(),
+  keyHash: text("key_hash").notNull(),
+  scopes: text("scopes").array().notNull().default(sql`ARRAY[]::text[]`),
+  lastUsedAt: timestamp("last_used_at"),
+  expiresAt: timestamp("expires_at"),
+  revoked: boolean("revoked").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  idxApiKeysOrg: index("idx_api_keys_org").on(table.organizationId),
+  idxApiKeysUser: index("idx_api_keys_user").on(table.userId),
+  idxApiKeysHash: index("idx_api_keys_hash").on(table.keyHash),
+}));
+
+export const insertApiKeySchema = createInsertSchema(apiKeys).omit({
+  id: true,
+  createdAt: true,
+  lastUsedAt: true,
+});
+
+export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
+export type ApiKey = typeof apiKeys.$inferSelect;
