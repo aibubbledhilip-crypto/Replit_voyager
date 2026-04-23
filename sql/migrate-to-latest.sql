@@ -308,7 +308,20 @@ BEGIN
   END IF;
 END $$;
 
--- Drop old non-partial unique index if it exists (conflicts with the partial ones below)
+-- Drop OLD single-tenant unique constraint on just (key) — existed before multi-tenancy
+-- This is named settings_key_unique in the original single-tenant schema
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid = 'settings'::regclass AND conname = 'settings_key_unique'
+  ) THEN
+    ALTER TABLE settings DROP CONSTRAINT settings_key_unique;
+  END IF;
+END $$;
+
+-- Drop any old non-partial unique indexes on (key) alone or (organization_id, key)
+DROP INDEX IF EXISTS settings_key_key;
 DROP INDEX IF EXISTS settings_organization_id_key_key;
 
 -- Partial unique indexes: one for org-scoped keys, one for global keys
