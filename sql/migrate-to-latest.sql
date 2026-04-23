@@ -288,11 +288,30 @@ BEGIN
 END $$;
 
 -- ============================================================
--- 12. SETTINGS — unique index hardening (March 2026)
+-- 12. SETTINGS — column additions + unique index hardening (March 2026)
 -- ============================================================
 
--- Partial unique indexes replace the old non-partial one
--- Create the partial indexes first; drop old conflicting one if possible
+-- Add organization_id to settings if it doesn't exist yet
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS organization_id VARCHAR;
+
+-- Add FK constraint only if not already present
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
+    WHERE tc.table_name = 'settings' AND tc.constraint_type = 'FOREIGN KEY'
+      AND kcu.column_name = 'organization_id'
+  ) THEN
+    ALTER TABLE settings ADD CONSTRAINT settings_organization_id_fkey
+      FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE;
+  END IF;
+END $$;
+
+-- Drop old non-partial unique index if it exists (conflicts with the partial ones below)
+DROP INDEX IF EXISTS settings_organization_id_key_key;
+
+-- Partial unique indexes: one for org-scoped keys, one for global keys
 CREATE UNIQUE INDEX IF NOT EXISTS settings_org_key_unique
   ON settings (organization_id, key)
   WHERE organization_id IS NOT NULL;

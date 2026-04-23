@@ -1,0 +1,77 @@
+bitnami@ip-172-26-10-121:~/htdocs/VoyagerAthena$ psql postgresql://postgres:Secure123@localhost:5432/voyagerdb -f sql/migrate-to-latest.sql
+
+
+
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+UPDATE 16
+DO
+psql:sql/migrate-to-latest.sql:113: NOTICE:  index "users_email_key" does not exist, skipping
+DROP INDEX
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+DO
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+DO
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+DO
+psql:sql/migrate-to-latest.sql:298: ERROR:  column "organization_id" does not exist
+LINE 3:   WHERE organization_id IS NOT NULL;
+                ^
+psql:sql/migrate-to-latest.sql:302: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:308: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:309: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:310: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:311: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:312: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:313: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:314: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:315: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:316: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:317: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:318: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:319: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:332: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:335: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:338: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:370: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:388: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:390: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:391: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:392: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:405: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:409: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:414: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+psql:sql/migrate-to-latest.sql:421: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+ROLLBACK
+                       status                       
+----------------------------------------------------
+ Migration complete — database is fully up to date.
+(1 row)
+
+bitnami@ip-172-26-10-121:~/htdocs/VoyagerAthena$ 
