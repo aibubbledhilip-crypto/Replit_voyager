@@ -1,0 +1,126 @@
+bitnami@ip-172-26-10-121:~/htdocs/VoyagerAthena$ psql postgresql://postgres:Secure123@localhost:5432/voyagerdb << 'EOF'
+
+
+
+-- Active users
+
+SELECT '=== USERS ===' AS section, NULL AS b, NULL AS c, NULL AS d, NULL AS e;
+
+SELECT id, username, email, role, status FROM users WHERE deleted_at IS NULL ORDER BY created_at;
+
+
+
+-- All organizations
+
+SELECT '=== ORGANIZATIONS ===' AS section, NULL AS b, NULL AS c, NULL AS d, NULL AS e;
+
+SELECT id, name, slug, status FROM organizations ORDER BY name;
+
+
+
+-- Current org memberships (only for active users)
+
+SELECT '=== MEMBERSHIPS ===' AS section, NULL AS b, NULL AS c, NULL AS d, NULL AS e;
+
+SELECT u.username, u.email, om.role AS org_role, o.name AS org_name, o.id AS org_id
+
+FROM organization_members om
+
+JOIN users u ON u.id = om.user_id
+
+JOIN organizations o ON o.id = om.organization_id
+
+WHERE u.deleted_at IS NULL
+
+EOFUP BY u.username; = sq.user_idved_query_countAS b, NULL AS c, NULL AS d, NULL AS e;;tatus
+    section    | b | c | d | e 
+---------------+---+---+---+---
+ === USERS === |   |   |   | 
+(1 row)
+
+                  id                  |           username            |                      email                      | role  | status 
+--------------------------------------+-------------------------------+-------------------------------------------------+-------+--------
+ 28147057-1ce1-4008-be6a-16ce448b7975 | admin                         | admin@placeholder.local                         | admin | active
+ 5fb1b2a3-99bd-40ec-94ac-4549ed120834 | dhilipkumar.g                 | dhilipkumar.g@placeholder.local                 | user  | active
+ 46b26e8b-0395-402a-a076-9b9689ca90b5 | jambukeshwaran.j              | jambukeshwaran.j@placeholder.local              | user  | active
+ 5eadd36c-a544-4e09-aa0f-b6941ef2a2e0 | venkat.narayanswamy           | venkat.narayanswamy@placeholder.local           | admin | active
+ 39c3ffc1-5909-4ab7-9da5-39f4ab242ac0 | nethaji.mp                    | nethaji.mp@placeholder.local                    | user  | active
+ 84afa7ad-365e-4db9-84d4-37a108db46e7 | mallikarjun.h                 | mallikarjun.h@placeholder.local                 | user  | active
+ fe0352ee-a834-4a76-a930-d5f428e621ed | akshyanand.p                  | akshyanand.p@placeholder.local                  | user  | active
+ da732b45-a15a-4c40-bec5-63be048ab2a0 | madeshkumar.r                 | madeshkumar.r@placeholder.local                 | user  | active
+ f400e4d4-4f16-442a-8b50-9af85306bec7 | lingeshwaran.v                | lingeshwaran.v@placeholder.local                | user  | active
+ a23f617b-1f9c-49a3-b415-a69738e12708 | srimathi.b                    | srimathi.b@placeholder.local                    | user  | active
+ 2f22ea9d-0cc3-4c54-97e9-cd093bd9c6cf | madhusmita.patra              | madhusmita.patra@placeholder.local              | user  | active
+ fcf94e72-d932-4577-938d-f4dabc3d8bb3 | wasifakram.i                  | wasifakram.i@placeholder.local                  | user  | active
+ b7980df9-b178-4fc5-b7cf-787c2c60f0bf | Venkatesh.Banginwar@dvsum.com | Venkatesh.Banginwar@dvsum.com@placeholder.local | user  | active
+ cec7e4e7-3407-461d-b222-f20ac5a9c8af | varshith.p                    | varshith.p@placeholder.local                    | user  | active
+ e3df86a5-4bd7-4849-9964-ae28bace9764 | meenakshi.b                   | meenakshi.b@placeholder.local                   | user  | active
+ e09a81b7-b01c-43a6-8b08-39992c2435a7 | sathish.sc                    | sathish.sc@placeholder.local                    | user  | active
+(16 rows)
+
+        section        | b | c | d | e 
+-----------------------+---+---+---+---
+ === ORGANIZATIONS === |   |   |   | 
+(1 row)
+
+       id       |         name         |    slug     | status 
+----------------+----------------------+-------------+--------
+ default-org-id | Default Organization | default-org | active
+(1 row)
+
+       section       | b | c | d | e 
+---------------------+---+---+---+---
+ === MEMBERSHIPS === |   |   |   | 
+(1 row)
+
+ username | email | org_role | org_name | org_id 
+----------+-------+----------+----------+--------
+(0 rows)
+
+       section       | b | c | d | e 
+---------------------+---+---+---+---
+ === AWS CONFIGS === |   |   |   | 
+(1 row)
+
+ org_name | aws_region | s3_output_location | key_status 
+----------+------------+--------------------+------------
+(0 rows)
+
+        section         | b | c | d | e 
+------------------------+---+---+---+---
+ === DB CONNECTIONS === |   |   |   | 
+(1 row)
+
+ org_name | name | type | status 
+----------+------+------+--------
+(0 rows)
+
+       section        | b | c | d | e 
+----------------------+---+---+---+---
+ === SFTP CONFIGS === |   |   |   | 
+(1 row)
+
+ org_name |          name          |                            host                             | status 
+----------+------------------------+-------------------------------------------------------------+--------
+          | AriaExtractDaily       | s-ba28495e31c2409c8.server.transfer.us-east-1.amazonaws.com | active
+          | DVSUM_AriaExtractedCsv | s-d372c50753f245f3a.server.transfer.us-east-1.amazonaws.com | active
+          | DVSUM_SoxFile          | s-d372c50753f245f3a.server.transfer.us-east-1.amazonaws.com | active
+          | AriaSFTP_Source        | s-ba28495e31c2409c8.server.transfer.us-east-1.amazonaws.com | active
+          | DVSUM_dvsumsalesforce  | s-d372c50753f245f3a.server.transfer.us-east-1.amazonaws.com | active
+(5 rows)
+
+        section        | b | c | d | e 
+-----------------------+---+---+---+---
+ === SAVED QUERIES === |   |   |   | 
+(1 row)
+
+     username     | saved_query_count 
+------------------+-------------------
+ nethaji.mp       |                 4
+ madeshkumar.r    |                 1
+ admin            |                10
+ madhusmita.patra |                14
+ jambukeshwaran.j |                 7
+(5 rows)
+
+bitnami@ip-172-26-10-121:~/htdocs/VoyagerAthena$ 
