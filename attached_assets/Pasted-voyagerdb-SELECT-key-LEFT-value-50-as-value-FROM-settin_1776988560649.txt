@@ -1,0 +1,58 @@
+voyagerdb=# SELECT key, LEFT(value, 50) as value 
+
+FROM settings 
+
+WHERE organization_id = 'liberty-org' 
+
+ORDER BY key;
+             key             |                  value                  
+-----------------------------+-----------------------------------------
+ ai_analysis_prompt          | SYSTEM ROLE:                           +
+                             | You are a Telecom Data Quality Audito
+ ai_model                    | gemini-2.0-flash
+ ai_provider                 | gemini
+ athena_database             | dvsum-s3-glue-prod
+ defaultCatalog              | AwsDataCatalog
+ defaultDatabase             | default
+ display_limit               | 150000
+ explorer_column_aria        | msisdn
+ explorer_column_matrixx     | msisdn
+ explorer_column_network     | msisdn_hlr
+ explorer_column_nokia       | msisdn
+ explorer_column_sf          | msisdn
+ explorer_column_trufinder   | msisdn
+ explorer_desc_aria          | 
+ explorer_desc_matrixx       | 
+ explorer_desc_network       | 
+ explorer_desc_nokia         | 
+ explorer_desc_sf            | 
+ explorer_desc_trufinder     | 
+ explorer_label_aria         | ARIA
+ explorer_label_matrixx      | MATRIXX
+ explorer_label_network      | Network
+ explorer_label_nokia        | NOKIA
+ explorer_label_sf           | SF
+ explorer_label_trufinder    | TRUFINDER
+ explorer_lookup_label       | MSISDN
+ explorer_lookup_placeholder | Enter MSISDN (e.g., 18322458086)
+ explorer_lookup_validation  | digits_only
+ explorer_table_aria         | vw_aria_hierarchy_all_status_reverse
+ explorer_table_matrixx      | vw_matrixx_plan_w_addon
+ explorer_table_network      | sox_network
+ explorer_table_nokia        | vw_nokia_raw
+ explorer_table_sf           | vw_sf_all_segment_hierarchy
+ explorer_table_trufinder    | vw_true_finder_raw
+ gemini_api_key              | AIzaSyDvUKefl18ydhTlNh9mid5WFSha4jPLK9k
+ maxRowsDisplay              | 1000
+ maxRowsExport               | 10000
+ row_limit                   | 150000
+(38 rows)
+
+voyagerdb=# SELECT u.username, u.max_rows_display, u.max_rows_export 
+
+FROM users u 
+
+WHERE u.username = 'dhilipkumar.g';
+ERROR:  column u.max_rows_display does not exist
+LINE 1: SELECT u.username, u.max_rows_display, u.max_rows_export 
+                           ^
