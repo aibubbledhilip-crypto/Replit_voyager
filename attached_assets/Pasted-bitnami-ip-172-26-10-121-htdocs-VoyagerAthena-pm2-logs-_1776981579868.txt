@@ -1,0 +1,76 @@
+bitnami@ip-172-26-10-121:~/htdocs/VoyagerAthena$ pm2 logs 0 --lines 20
+[TAILING] Tailing last 20 lines for [0] process (change the value with --lines option)
+/home/bitnami/.pm2/logs/voyager-out-0.log last 20 lines:
+0|voyager  | 8:49:58 PM [express] GET /api/csrf-token 200 in 1ms :: {"csrfToken":"3fa561e8c7a93b54033d51c40a0a26f…
+0|voyager  | 8:49:58 PM [express] POST /api/auth/login 200 in 76ms :: {"id":"2f22ea9d-0cc3-4c54-97e9-cd093bd9c6cf…
+0|voyager  | 8:49:58 PM [express] GET /api/auth/me 304 in 2ms :: {"id":"2f22ea9d-0cc3-4c54-97e9-cd093bd9c6cf","us…
+0|voyager  | 8:49:58 PM [express] GET /api/saved-queries 200 in 7ms :: [{"id":"b4b06e9f-dd9e-41a9-a977-b1458aa80d…
+0|voyager  | 8:50:00 PM [express] GET /api/query/schema 304 in 1785ms :: {"database":"dvsum-s3-glue-prod","tables…
+0|voyager  | 8:50:11 PM [express] POST /api/query/execute 200 in 6427ms :: {"columns":["invoice_number","given_ba…
+0|voyager  | 8:50:46 PM [express] POST /api/query/execute 200 in 15318ms :: {"columns":["bancan","object_id","ext…
+0|voyager  | 8:52:05 PM [express] POST /api/query/execute 500 in 78ms :: {"message":"1 validation error detected:…
+0|voyager  | 8:52:49 PM [express] POST /api/query/execute 200 in 15853ms :: {"columns":["bancan","object_id","ext…
+0|voyager  | 8:53:19 PM [express] GET /api/auth/me 304 in 11ms :: {"id":"2f22ea9d-0cc3-4c54-97e9-cd093bd9c6cf","u…
+0|voyager  | 8:53:41 PM [express] GET /api/csrf-token 200 in 1ms :: {"csrfToken":"aabef2c2e6c5683620c454fe090f93c…
+0|voyager  | 8:53:42 PM [express] POST /api/compare/execute 200 in 120ms :: {"summary":{"file1Name":"Invoices imp…
+0|voyager  | 8:53:59 PM [express] POST /api/compare/execute 200 in 34ms :: {"summary":{"file1Name":"Invoices impa…
+0|voyager  | 8:54:04 PM [express] POST /api/query/execute 200 in 11025ms :: {"columns":["bancan","object_id","ext…
+0|voyager  | 8:54:18 PM [express] POST /api/compare/execute 200 in 166ms :: {"summary":{"file1Name":"Exceptions_D…
+0|voyager  | 9:01:41 PM [express] POST /api/query/execute 200 in 2410ms :: {"columns":["object_id","external_id",…
+0|voyager  | 9:07:51 PM [express] POST /api/query/execute 200 in 4864ms :: {"columns":["object_id","external_id",…
+0|voyager  | 9:09:18 PM [express] POST /api/query/execute 200 in 2431ms :: {"columns":["object_id","external_id",…
+0|voyager  | 9:15:43 PM [express] POST /api/query/execute 200 in 5344ms :: {"columns":["ACCESS_NUMBER","L_L_A_CUS…
+0|voyager  | 9:16:23 PM [express] POST /api/query/execute 200 in 6483ms :: {"columns":["ACCESS_NUMBER","L_L_A_CUS…
+
+/home/bitnami/.pm2/logs/voyager-error-0.log last 20 lines:
+0|voyager  |     at new Resend (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/resend/dist/index.mjs:903:25)
+0|voyager  |     at <anonymous> (/opt/bitnami/apache/htdocs/VoyagerAthena/server/email.ts:3:16)
+0|voyager  |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+0|voyager  |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+0|voyager  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|voyager  | 
+0|voyager  | Node.js v22.18.0
+0|voyager  | /opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/resend/dist/index.mjs:903
+0|voyager  |                    if (!this.key) throw new Error("Missing API key. Pass it to the constructor `new Resend(\"re_123\")`");
+0|voyager  |                                         ^
+0|voyager  | 
+0|voyager  | 
+0|voyager  | Error: Missing API key. Pass it to the constructor `new Resend("re_123")`
+0|voyager  |     at new Resend (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/resend/dist/index.mjs:903:25)
+0|voyager  |     at <anonymous> (/opt/bitnami/apache/htdocs/VoyagerAthena/server/email.ts:3:16)
+0|voyager  |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+0|voyager  |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+0|voyager  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|voyager  | 
+0|voyager  | Node.js v22.18.0
+
+0|voyager  | /opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/resend/dist/index.mjs:903
+0|voyager  |                    if (!this.key) throw new Error("Missing API key. Pass it to the constructor `new Resend(\"re_123\")`");
+0|voyager  |                                         ^
+0|voyager  | Error: Missing API key. Pass it to the constructor `new Resend("re_123")`
+0|voyager  |     at new Resend (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/resend/dist/index.mjs:903:25)
+0|voyager  |     at <anonymous> (/opt/bitnami/apache/htdocs/VoyagerAthena/server/email.ts:3:16)
+0|voyager  |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+0|voyager  |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+0|voyager  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|voyager  | Node.js v22.18.0
+0|voyager  | /opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/resend/dist/index.mjs:903
+0|voyager  |                    if (!this.key) throw new Error("Missing API key. Pass it to the constructor `new Resend(\"re_123\")`");
+0|voyager  |                                         ^
+0|voyager  | Error: Missing API key. Pass it to the constructor `new Resend("re_123")`
+0|voyager  |     at new Resend (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/resend/dist/index.mjs:903:25)
+0|voyager  |     at <anonymous> (/opt/bitnami/apache/htdocs/VoyagerAthena/server/email.ts:3:16)
+0|voyager  |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+0|voyager  |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+0|voyager  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|voyager  | Node.js v22.18.0
+0|voyager  | /opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/resend/dist/index.mjs:903
+0|voyager  |                    if (!this.key) throw new Error("Missing API key. Pass it to the constructor `new Resend(\"re_123\")`");
+0|voyager  |                                         ^
+0|voyager  | Error: Missing API key. Pass it to the constructor `new Resend("re_123")`
+0|voyager  |     at new Resend (/opt/bitnami/apache/htdocs/VoyagerAthena/node_modules/resend/dist/index.mjs:903:25)
+0|voyager  |     at <anonymous> (/opt/bitnami/apache/htdocs/VoyagerAthena/server/email.ts:3:16)
+0|voyager  |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+0|voyager  |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+0|voyager  |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|voyager  | Node.js v22.18.0
