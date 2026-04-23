@@ -81,7 +81,15 @@ SET organization_id = 'liberty-org'
 WHERE organization_id IS NULL OR organization_id = 'default-org-id';
 
 -- ============================================================
--- 7. Migrate export jobs to Liberty
+-- 7. Migrate dashboard charts to Liberty
+-- ============================================================
+
+UPDATE dashboard_charts
+SET organization_id = 'liberty-org'
+WHERE organization_id IS NULL OR organization_id != 'liberty-org';
+
+-- ============================================================
+-- 8. Migrate export jobs to Liberty
 -- ============================================================
 
 UPDATE export_jobs
