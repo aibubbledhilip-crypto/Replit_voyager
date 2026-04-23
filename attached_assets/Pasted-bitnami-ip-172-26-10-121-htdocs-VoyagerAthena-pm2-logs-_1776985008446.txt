@@ -1,0 +1,45 @@
+bitnami@ip-172-26-10-121:~/htdocs/VoyagerAthena$ pm2 logs 0 --lines 20
+[TAILING] Tailing last 20 lines for [0] process (change the value with --lines option)
+/home/bitnami/.pm2/logs/voyager-error-0.log last 20 lines:
+0|voyager  |     at async DbStorage.createQueryLog (/opt/bitnami/apache/htdocs/VoyagerAthena/server/storage.ts:323:20)
+0|voyager  |     at async <anonymous> (/opt/bitnami/apache/htdocs/VoyagerAthena/server/routes.ts:1547:9) {
+0|voyager  |   length: 304,
+0|voyager  |   severity: 'ERROR',
+0|voyager  |   code: '23503',
+0|voyager  |   detail: 'Key (organization_id)=(default-org) is not present in table "organizations".',
+0|voyager  |   hint: undefined,
+0|voyager  |   position: undefined,
+0|voyager  |   internalPosition: undefined,
+0|voyager  |   internalQuery: undefined,
+0|voyager  |   where: undefined,
+0|voyager  |   schema: 'public',
+0|voyager  |   table: 'query_logs',
+0|voyager  |   column: undefined,
+0|voyager  |   dataType: undefined,
+0|voyager  |   constraint: 'query_logs_organization_id_fkey',
+0|voyager  |   file: 'ri_triggers.c',
+0|voyager  |   line: '2596',
+0|voyager  |   routine: 'ri_ReportViolation'
+0|voyager  | }
+
+/home/bitnami/.pm2/logs/voyager-out-0.log last 20 lines:
+0|voyager  | 10:51:38 PM [express] GET /api/settings/gemini_api_key 200 in 2ms :: {"key":"gemini_api_key","value":…
+0|voyager  | 10:51:38 PM [express] GET /api/settings/ai_analysis_prompt 404 in 2ms :: {"message":"Setting not foun…
+0|voyager  | 10:51:38 PM [express] GET /api/settings/openai_api_key 200 in 3ms :: {"key":"openai_api_key","value":…
+0|voyager  | 10:51:38 PM [express] GET /api/settings/anthropic_api_key 200 in 2ms :: {"key":"anthropic_api_key","v…
+0|voyager  | 10:51:38 PM [express] GET /api/settings/ollama_url 404 in 2ms :: {"message":"Setting not found"}
+0|voyager  | 10:52:41 PM [express] GET /api/auth/me 304 in 7ms :: {"id":"28147057-1ce1-4008-be6a-16ce448b7975","em…
+0|voyager  | 10:52:41 PM [express] GET /api/users 200 in 3ms :: [{"id":"a23f617b-1f9c-49a3-b415-a69738e12708","ema…
+0|voyager  | 10:52:49 PM [express] GET /api/auth/me 304 in 4ms :: {"id":"28147057-1ce1-4008-be6a-16ce448b7975","em…
+0|voyager  | 10:52:49 PM [express] GET /api/settings 304 in 2ms :: [{"id":"87aeb96e-ecd1-4ff8-aec9-a89fb67447e5","…
+0|voyager  | 10:52:57 PM [express] GET /api/auth/me 304 in 4ms :: {"id":"28147057-1ce1-4008-be6a-16ce448b7975","em…
+0|voyager  | 10:52:57 PM [express] GET /api/aws-config 304 in 3ms :: {"organizationId":"liberty-org","awsAccessKey…
+0|voyager  | 10:53:00 PM [express] GET /api/auth/me 304 in 4ms :: {"id":"28147057-1ce1-4008-be6a-16ce448b7975","em…
+0|voyager  | 10:53:00 PM [express] GET /api/settings/athena_database 404 in 2ms :: {"message":"Setting not found"}
+0|voyager  | 10:53:00 PM [express] GET /api/settings 304 in 1ms :: [{"id":"87aeb96e-ecd1-4ff8-aec9-a89fb67447e5","…
+0|voyager  | 10:55:58 PM [express] Environment variables validated: SESSION_SECRET, DATABASE_URL
+0|voyager  | 10:55:58 PM [express] serving on port 5000
+0|voyager  | 10:56:01 PM [express] GET /api/auth/me 401 in 2ms :: {"message":"Unauthorized"}
+0|voyager  | 10:56:03 PM [express] GET /api/csrf-token 200 in 1ms :: {"csrfToken":"3fdcebdfa317d360583830e05835ef2…
+0|voyager  | 10:56:03 PM [express] POST /api/auth/login 401 in 136ms :: {"message":"Invalid credentials"}
+0|voyager  | 10:56:06 PM [express] POST /api/auth/login 401 in 68ms :: {"message":"Invalid credentials"}
