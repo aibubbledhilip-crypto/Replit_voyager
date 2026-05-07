@@ -484,10 +484,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Organization context required" });
       }
       
-      const userData = insertUserSchema.parse(req.body);
+      // Allow email to be omitted — auto-generate from username if not provided
+      const rawBody = req.body;
+      if (!rawBody.email && rawBody.username) {
+        rawBody.email = `${rawBody.username.toLowerCase().replace(/[^a-z0-9]/g, '.')}@placeholder.local`;
+      }
+      const userData = insertUserSchema.parse(rawBody);
       const existingUser = await storage.getUserByUsername(userData.username);
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
+      }
+
+      // If email already exists (placeholder collision), make it unique
+      const existingEmail = await storage.getUserByEmail(userData.email);
+      if (existingEmail) {
+        userData.email = `${userData.username.toLowerCase().replace(/[^a-z0-9]/g, '.')}.${Date.now()}@placeholder.local`;
       }
 
       const user = await storage.createUser(userData);
