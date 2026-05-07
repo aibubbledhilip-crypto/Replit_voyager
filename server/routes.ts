@@ -457,7 +457,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User management routes (admin only)
-  app.get("/api/users", requireAuth, requireAdmin, async (req, res) => {
+  app.get("/api/users", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
       
@@ -475,7 +475,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/users", requireAuth, requireAdmin, async (req, res) => {
+  app.post("/api/users", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
       
@@ -522,7 +522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/users/:id/role", requireAuth, requireAdmin, async (req, res) => {
+  app.patch("/api/users/:id/role", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const { role } = req.body;
@@ -593,7 +593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/users/:id/status", requireAuth, requireAdmin, async (req, res) => {
+  app.patch("/api/users/:id/status", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const { status } = req.body;
@@ -627,7 +627,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/users/:id/password", requireAuth, requireAdmin, async (req, res) => {
+  app.patch("/api/users/:id/password", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const { password } = req.body;
@@ -722,7 +722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/settings", requireAuth, requireAdmin, async (req, res) => {
+  app.put("/api/settings", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const { key, value } = req.body;
       const organizationId = req.session.organizationId;
@@ -738,7 +738,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/settings/:key", requireAuth, requireAdmin, async (req, res) => {
+  app.delete("/api/settings/:key", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const { key } = req.params;
       const organizationId = req.session.organizationId;
@@ -755,7 +755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AWS Configuration routes (admin only, per-organization)
-  app.get("/api/aws-config", requireAuth, requireAdmin, async (req, res) => {
+  app.get("/api/aws-config", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
       if (!organizationId) {
@@ -783,7 +783,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/aws-config", requireAuth, requireAdmin, async (req, res) => {
+  app.put("/api/aws-config", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
       if (!organizationId) {
@@ -842,7 +842,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/aws-config/test", requireAuth, requireAdmin, async (req, res) => {
+  app.post("/api/aws-config/test", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
       if (!organizationId) {
@@ -944,7 +944,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/db-connections", requireAuth, requireAdmin, async (req, res) => {
+  app.post("/api/db-connections", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
       if (!organizationId) {
@@ -970,7 +970,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/db-connections/:id", requireAuth, requireAdmin, async (req, res) => {
+  app.put("/api/db-connections/:id", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
       if (!organizationId) {
@@ -1012,7 +1012,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/db-connections/:id", requireAuth, requireAdmin, async (req, res) => {
+  app.delete("/api/db-connections/:id", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
       if (!organizationId) {
@@ -1033,7 +1033,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/db-connections/test-inline", requireAuth, requireAdmin, async (req, res) => {
+  app.post("/api/db-connections/test-inline", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
       if (!organizationId) {
@@ -1078,7 +1078,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/db-connections/:id/test", requireAuth, requireAdmin, async (req, res) => {
+  app.post("/api/db-connections/:id/test", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
       if (!organizationId) {
@@ -1096,7 +1096,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/db-connections/:id/set-default", requireAuth, requireAdmin, async (req, res) => {
+  app.post("/api/db-connections/:id/set-default", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
       if (!organizationId) {
@@ -2012,7 +2012,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // SFTP Configuration Routes (Admin only, organization-scoped)
-  app.get("/api/sftp/configs", requireAdmin, async (req, res) => {
+  app.get("/api/sftp/configs", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
       if (!organizationId) {
@@ -2025,7 +2025,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/sftp/configs", requireAdmin, async (req, res) => {
+  app.post("/api/sftp/configs", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const organizationId = req.session.organizationId;
       if (!organizationId) {
@@ -2049,7 +2049,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/sftp/configs/:id", requireAdmin, async (req, res) => {
+  app.put("/api/sftp/configs/:id", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const organizationId = req.session.organizationId;
@@ -2105,7 +2105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/sftp/configs/:id", requireAdmin, async (req, res) => {
+  app.delete("/api/sftp/configs/:id", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const organizationId = req.session.organizationId;
@@ -2139,7 +2139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/sftp/test", requireAdmin, async (req, res) => {
+  app.post("/api/sftp/test", requireAuth, requireOrgAdmin, async (req, res) => {
     try {
       const result = await testSftpConnection(req.body);
       res.json(result);
@@ -2584,7 +2584,7 @@ Be concise and focus on the most important insights. Use clear headings and bull
       const { email, role } = req.body;
       
       const member = await storage.getOrganizationMember(id, req.session.userId!);
-      if (!member || member.role !== 'admin') {
+      if (!member || !['owner', 'admin'].includes(member.role)) {
         return res.status(403).json({ message: "Admin access required" });
       }
 

@@ -380,6 +380,26 @@ INSERT INTO settings (organization_id, key, value) VALUES
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
+-- ORGANIZATION ROLE PERMISSIONS
+-- Per-org, per-role feature toggles (GUI-configurable by org admins)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS organization_role_permissions (
+  id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id VARCHAR NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  role TEXT NOT NULL,
+  feature TEXT NOT NULL,
+  enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS unique_org_role_feature
+  ON organization_role_permissions (organization_id, role, feature);
+
+CREATE INDEX IF NOT EXISTS idx_role_permissions_org
+  ON organization_role_permissions (organization_id);
+
+-- ============================================================
 -- API KEYS
 -- Personal access tokens for programmatic Executor/Explorer access
 -- ============================================================

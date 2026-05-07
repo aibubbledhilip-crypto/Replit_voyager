@@ -9,6 +9,24 @@ The user wants me to act as a coding agent.
 - I want to be asked before making major changes.
 - When introducing database schema changes, always update `sql/fresh-database-setup.sql` with the corresponding SQL statements.
 
+## Recent Changes (May 2026)
+- **Fine-grained RBAC** (T001–T005 complete):
+  - `organization_role_permissions` table — per-org, per-role, per-feature toggles; unique index on `(org, role, feature)`.
+  - 4 org roles: `owner > admin > member > viewer`. Default matrix: owner/admin/member get all except `msisdn_lookup` (member) and `viewer` gets only `sftp_monitor`.
+  - `requirePermission(feature)` middleware guards all feature routes (execute_queries, explorer, depiction, file_compare, file_aggregate, sftp_monitor, msisdn_lookup, export_data).
+  - `requireOrgAdmin` middleware (org member role DB check) now used on ALL org-scoped admin routes — replacing the old global `requireAdmin` (session.role check). Org owners with `role='user'` globally can now access admin features.
+  - Invitation endpoint now allows org `owner` to send invites (was admin-only).
+  - SFTP config routes now have `requireAuth` (were missing it).
+  - `/api/auth/me` returns `orgRole` + `permissions[]` — used by frontend for sidebar filtering and route guards.
+  - `AppSidebar` filters menu items by `permissions[]`.
+  - `PermissionGate` wraps all feature routes in App.tsx.
+  - `RolePermissionsPage` (`/admin/role-permissions`) — toggle matrix UI for org admins; owner row is read-only.
+  - `UserManagementTable` — org-role dropdown includes `viewer`, colored badges for all 4 roles.
+  - `seedOrgPermissions()` called on new org creation; falls back to `DEFAULT_PERMISSIONS` if table not yet seeded.
+  - `sql/fresh-database-setup.sql` updated with RBAC table CREATE.
+- **User creation error feedback**: field-level Zod errors now shown in toast (not just "Invalid user data").
+- **Lightsail fix**: `npm run build` required after `git pull` (serves compiled bundle, not live Vite dev server).
+
 ## Recent Changes (April 2026)
 - **API Keys** (`/settings/api-keys`): Users can generate personal access tokens (format: `vgr_<48 hex chars>`) scoped to `execute_queries` and/or `explorer`. Keys are SHA-256 hashed in the DB (never stored raw). Shown once on creation. Backed by `api_keys` table.
 - **Public API v1 endpoints**: `POST /api/v1/execute` (SQL query) and `POST /api/v1/explorer/lookup` both accept `Authorization: Bearer vgr_...` or session cookie. Scope-gated + RBAC permission-checked.
