@@ -109,7 +109,8 @@ export default function UserManagementTable({ users = [] }: UserManagementTableP
       toast({ title: "Success", description: "User created successfully" });
     },
     onError: (error: any) => {
-      toast({ title: "Error", description: error.message || "Failed to create user", variant: "destructive" });
+      const fieldErrors = error.errors?.map((e: any) => `${e.path?.join('.') || 'field'}: ${e.message}`).join('; ');
+      toast({ title: "Error", description: fieldErrors || error.message || "Failed to create user", variant: "destructive" });
     },
   });
 
