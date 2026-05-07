@@ -21,20 +21,21 @@ import {
 import { UserPlus } from "lucide-react";
 
 interface CreateUserDialogProps {
-  onCreateUser?: (user: { username: string; password: string; role: 'admin' | 'user' }) => void;
+  onCreateUser?: (user: { username: string; email: string; password: string; role: 'admin' | 'user' }) => void;
 }
 
 export default function CreateUserDialog({ onCreateUser }: CreateUserDialogProps) {
   const [open, setOpen] = useState(false);
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<'admin' | 'user'>('user');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Creating user:', { username, role });
-    onCreateUser?.({ username, password, role });
+    onCreateUser?.({ username, email, password, role });
     setUsername("");
+    setEmail("");
     setPassword("");
     setRole('user');
     setOpen(false);
@@ -53,7 +54,7 @@ export default function CreateUserDialog({ onCreateUser }: CreateUserDialogProps
           <DialogHeader>
             <DialogTitle>Create New User</DialogTitle>
             <DialogDescription>
-              Add a new user to the system with username and password credentials.
+              Add a new user to the organization with their login credentials.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -66,6 +67,18 @@ export default function CreateUserDialog({ onCreateUser }: CreateUserDialogProps
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 data-testid="input-new-username"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-email">Email</Label>
+              <Input
+                id="new-email"
+                type="email"
+                placeholder="Enter email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                data-testid="input-new-email"
               />
             </div>
             <div className="space-y-2">
@@ -102,9 +115,9 @@ export default function CreateUserDialog({ onCreateUser }: CreateUserDialogProps
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              disabled={!username || !password}
+            <Button
+              type="submit"
+              disabled={!username || !email || !password}
               data-testid="button-submit-create-user"
             >
               Create User

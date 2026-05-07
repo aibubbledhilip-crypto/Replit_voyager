@@ -99,7 +99,7 @@ export default function UserManagementTable({ users = [] }: UserManagementTableP
   });
 
   const createUserMutation = useMutation({
-    mutationFn: (newUser: { username: string; password: string; role: 'admin' | 'user' }) =>
+    mutationFn: (newUser: { username: string; email: string; password: string; role: 'admin' | 'user' }) =>
       apiRequest('/api/users', {
         method: 'POST',
         body: JSON.stringify(newUser),
