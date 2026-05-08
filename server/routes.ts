@@ -2818,11 +2818,12 @@ Be concise and focus on the most important insights. Use clear headings and bull
       const { id } = req.params;
       
       const member = await storage.getOrganizationMember(id, req.session.userId!);
-      if (!member || member.role !== 'admin') {
+      if (!member || !['owner', 'admin'].includes(member.role)) {
         return res.status(403).json({ message: "Admin access required" });
       }
 
-      const logs = await storage.getAuditLogsByOrganization(id);
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 500;
+      const logs = await storage.getAuditLogsByOrganization(id, limit);
       res.json(logs);
     } catch (error: any) {
       res.status(500).json({ message: error.message });

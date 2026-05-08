@@ -28,6 +28,7 @@ import BillingPage from "@/pages/BillingPage";
 import SuperAdminPage from "@/pages/SuperAdminPage";
 import ChartDashboardPage from "@/pages/ChartDashboardPage";
 import RolePermissionsPage from "@/pages/RolePermissionsPage";
+import AuditLogsPage from "@/pages/AuditLogsPage";
 import ApiKeysPage from "@/pages/ApiKeysPage";
 import NotFound from "@/pages/not-found";
 import { apiRequest } from "@/lib/api";
@@ -217,6 +218,9 @@ function AuthenticatedApp() {
                 </Route>
                 <Route path="/admin/role-permissions">
                   <AdminGate><RolePermissionsPage /></AdminGate>
+                </Route>
+                <Route path="/admin/audit-logs">
+                  <AdminGate><AuditLogsPage /></AdminGate>
                 </Route>
                 <Route path="/settings/api-keys" component={ApiKeysPage} />
                 <Route path="/billing" component={BillingPage} />

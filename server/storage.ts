@@ -796,10 +796,11 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async getAuditLogsByOrganization(organizationId: string): Promise<AuditLog[]> {
+  async getAuditLogsByOrganization(organizationId: string, limit = 500): Promise<AuditLog[]> {
     return await db.select().from(auditLogs)
       .where(eq(auditLogs.organizationId, organizationId))
-      .orderBy(desc(auditLogs.createdAt));
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(limit);
   }
 
   async getDashboardCharts(organizationId: string): Promise<DashboardChart[]> {

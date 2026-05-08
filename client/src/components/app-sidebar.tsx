@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Database, FileText, Search, GitCompare, Layers, Server, Activity, LayoutDashboard, ChevronDown, Brain, CreditCard, Users, Settings, Shield, Cloud, Link2, BarChart2, KeyRound, Key } from "lucide-react";
+import { Database, FileText, Search, GitCompare, Layers, Server, Activity, LayoutDashboard, ChevronDown, Brain, CreditCard, Users, Settings, Shield, Cloud, Link2, BarChart2, KeyRound, Key, ScrollText } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -73,6 +73,7 @@ export function AppSidebar({
       ],
     },
     { title: "Usage Logs", url: "/admin/logs", icon: FileText },
+    { title: "Audit Logs", url: "/admin/audit-logs", icon: ScrollText },
     { title: "Billing", url: "/billing", icon: CreditCard },
   ];
 
