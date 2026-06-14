@@ -6,3 +6,9 @@ id = "CLa7O1F3WfRb3zzhEiUpj"
 uri = "file://CLAUDE.md"
 type = "text"
 title = "Voyager — Full Architecture & Functional Documentation"
+
+[[outputs]]
+id = "3Bf8cCAT_M_nyi5U3IpRA"
+uri = "file://Voyager_CXO_Brief.pptx"
+type = "slides"
+title = "Voyager — CXO One-Slide Brief"
