@@ -13,7 +13,7 @@ import {
   BarChart, Bar, LineChart, Line, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
-import { Plus, Trash2, Pencil, Play, BarChart2, BarChartHorizontal, TrendingUp, Activity, Loader2 } from "lucide-react";
+import { Plus, Trash2, Pencil, Play, BarChart2, BarChartHorizontal, TrendingUp, Activity, Loader2, RefreshCw } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -152,15 +152,28 @@ function renderChart(chartType: string, data: Record<string, any>[], xCol: strin
   );
 }
 
+const CHART_DATA_STALE_MS = 10 * 60 * 1000; // 10 minutes
+
 function ChartCard({ chart, onEdit, onDelete }: { chart: DashboardChart; onEdit: () => void; onDelete: () => void }) {
-  const { data, isLoading, isError } = useQuery<PreviewResult>({
+  const { data, isLoading, isError, dataUpdatedAt } = useQuery<PreviewResult>({
     queryKey: ['/api/dashboard/execute', chart.id, chart.sqlQuery],
     queryFn: () => apiRequest('/api/dashboard/execute', {
       method: 'POST',
       body: JSON.stringify({ sql: chart.sqlQuery, connectionId: chart.connectionId, limit: 500 }),
     }),
+    staleTime: CHART_DATA_STALE_MS,
     retry: false,
   });
+
+  const lastFetched = dataUpdatedAt
+    ? (() => {
+        const diffMs = Date.now() - dataUpdatedAt;
+        const diffMins = Math.floor(diffMs / 60000);
+        if (diffMins < 1) return "just now";
+        if (diffMins === 1) return "1 min ago";
+        return `${diffMins} mins ago`;
+      })()
+    : null;
 
   const availableCols = data?.columns ?? [];
   const missingY = data ? chart.yAxisColumns.filter(c => !availableCols.includes(c)) : [];
@@ -246,7 +259,10 @@ function ChartCard({ chart, onEdit, onDelete }: { chart: DashboardChart; onEdit:
             <div className="mt-2 flex items-center gap-2 flex-wrap">
               <Badge variant="secondary" className="text-xs">{data.rows.length} rows</Badge>
               <Badge variant="outline" className="text-xs capitalize">{chart.chartType}</Badge>
-              <span className="text-xs text-muted-foreground ml-auto">X: {chart.xAxisColumn} · Y: {chart.yAxisColumns.join(', ')}</span>
+              <span className="text-xs text-muted-foreground ml-auto">
+                X: {chart.xAxisColumn} · Y: {chart.yAxisColumns.join(', ')}
+                {lastFetched && <> · fetched {lastFetched}</>}
+              </span>
             </div>
           </div>
         )}
@@ -266,7 +282,13 @@ export default function ChartDashboardPage() {
   const { data: charts = [], isLoading } = useQuery<DashboardChart[]>({
     queryKey: ['/api/dashboard/charts'],
     queryFn: () => apiRequest('/api/dashboard/charts'),
+    staleTime: 5 * 60 * 1000,
   });
+
+  const handleRefreshAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/dashboard/execute'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/dashboard/charts'] });
+  };
 
   const { data: connections = [] } = useQuery<any[]>({
     queryKey: ['/api/db-connections'],
@@ -394,10 +416,18 @@ export default function ChartDashboardPage() {
           <h1 className="text-3xl font-semibold" data-testid="text-depiction-title">Depiction</h1>
           <p className="text-muted-foreground mt-1">Visualize query results as bar, line, or area charts</p>
         </div>
-        <Button onClick={openAdd} data-testid="button-add-chart">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Chart
-        </Button>
+        <div className="flex items-center gap-2">
+          {charts.length > 0 && (
+            <Button variant="outline" onClick={handleRefreshAll} data-testid="button-refresh-charts">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          )}
+          <Button onClick={openAdd} data-testid="button-add-chart">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Chart
+          </Button>
+        </div>
       </div>
 
       {isLoading && (
