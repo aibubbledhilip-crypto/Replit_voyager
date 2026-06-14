@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   BarChart, Bar, LineChart, Line, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
-import { Plus, Trash2, Pencil, Play, BarChart2, BarChartHorizontal, TrendingUp, Activity, Loader2, RefreshCw } from "lucide-react";
+import { Plus, Trash2, Pencil, Play, BarChart2, BarChartHorizontal, TrendingUp, Activity, Loader2, RefreshCw, Copy, Download, MoreHorizontal, Check } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -154,7 +155,95 @@ function renderChart(chartType: string, data: Record<string, any>[], xCol: strin
 
 const CHART_DATA_STALE_MS = 10 * 60 * 1000; // 10 minutes
 
+async function captureChartToBlob(containerEl: HTMLDivElement, chartName: string): Promise<Blob> {
+  const svg = containerEl.querySelector('svg');
+  if (!svg) throw new Error('No chart SVG found');
+
+  const rect = svg.getBoundingClientRect();
+  const svgW = rect.width || 600;
+  const svgH = rect.height || 280;
+  const pad = 20;
+  const titleH = 36;
+  const totalW = svgW + pad * 2;
+  const totalH = svgH + titleH + pad * 2;
+
+  const cloned = svg.cloneNode(true) as SVGElement;
+  cloned.setAttribute('width', String(svgW));
+  cloned.setAttribute('height', String(svgH));
+
+  // Resolve stroke-border CSS class to a concrete color
+  const rawBorder = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+  const borderColor = rawBorder ? `hsl(${rawBorder})` : '#e2e8f0';
+  cloned.querySelectorAll('.stroke-border').forEach(el => {
+    (el as SVGElement).setAttribute('stroke', borderColor);
+    (el as SVGElement).removeAttribute('class');
+  });
+
+  const serialized = new XMLSerializer().serializeToString(cloned);
+  const svgBlob = new Blob([serialized], { type: 'image/svg+xml;charset=utf-8' });
+  const svgUrl = URL.createObjectURL(svgBlob);
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = totalW * scale;
+      canvas.height = totalH * scale;
+      const ctx = canvas.getContext('2d')!;
+      ctx.scale(scale, scale);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, totalW, totalH);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 15px Inter, system-ui, sans-serif';
+      ctx.fillText(chartName, pad, pad + 16, totalW - pad * 2);
+
+      ctx.drawImage(img, pad, titleH + pad, svgW, svgH);
+      URL.revokeObjectURL(svgUrl);
+
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('Canvas export failed')), 'image/png');
+    };
+    img.onerror = () => { URL.revokeObjectURL(svgUrl); reject(new Error('Failed to render chart')); };
+    img.src = svgUrl;
+  });
+}
+
 function ChartCard({ chart, onEdit, onDelete }: { chart: DashboardChart; onEdit: () => void; onDelete: () => void }) {
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const [copyState, setCopyState] = useState<'idle' | 'copying' | 'done'>('idle');
+  const { toast } = useToast();
+
+  const handleCopyImage = async () => {
+    if (!chartContainerRef.current) return;
+    setCopyState('copying');
+    try {
+      const blob = await captureChartToBlob(chartContainerRef.current, chart.name);
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      setCopyState('done');
+      setTimeout(() => setCopyState('idle'), 2000);
+    } catch (e: any) {
+      setCopyState('idle');
+      toast({ title: 'Copy failed', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const handleDownloadPng = async () => {
+    if (!chartContainerRef.current) return;
+    try {
+      const blob = await captureChartToBlob(chartContainerRef.current, chart.name);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${chart.name.replace(/\s+/g, '_')}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      toast({ title: 'Download failed', description: e.message, variant: 'destructive' });
+    }
+  };
+
   const { data, isLoading, isError, dataUpdatedAt } = useQuery<PreviewResult>({
     queryKey: ['/api/dashboard/execute', chart.id, chart.sqlQuery],
     queryFn: () => apiRequest('/api/dashboard/execute', {
@@ -196,12 +285,39 @@ function ChartCard({ chart, onEdit, onDelete }: { chart: DashboardChart; onEdit:
             )}
           </div>
           <div className="flex gap-1 shrink-0">
-            <Button size="icon" variant="ghost" onClick={onEdit} data-testid={`button-edit-chart-${chart.id}`}>
+            <Button size="icon" variant="ghost" onClick={onEdit} data-testid={`button-edit-chart-${chart.id}`} title="Edit chart">
               <Pencil className="h-4 w-4" />
             </Button>
+
+            {data && data.rows.length > 0 && !hasMismatch && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="ghost" data-testid={`button-export-chart-${chart.id}`} title="Export chart">
+                    {copyState === 'copying' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : copyState === 'done' ? (
+                      <Check className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <MoreHorizontal className="h-4 w-4" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleCopyImage} data-testid={`menu-copy-image-${chart.id}`}>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy as image
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDownloadPng} data-testid={`menu-download-png-${chart.id}`}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download PNG
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button size="icon" variant="ghost" className="text-destructive" data-testid={`button-delete-chart-${chart.id}`}>
+                <Button size="icon" variant="ghost" className="text-destructive" data-testid={`button-delete-chart-${chart.id}`} title="Delete chart">
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </AlertDialogTrigger>
@@ -253,9 +369,11 @@ function ChartCard({ chart, onEdit, onDelete }: { chart: DashboardChart; onEdit:
         )}
         {data && data.rows.length > 0 && !hasMismatch && (
           <div>
-            <ResponsiveContainer width="100%" height={240}>
-              {renderChart(chart.chartType, data.rows, chart.xAxisColumn, chart.yAxisColumns) || <div />}
-            </ResponsiveContainer>
+            <div ref={chartContainerRef}>
+              <ResponsiveContainer width="100%" height={240}>
+                {renderChart(chart.chartType, data.rows, chart.xAxisColumn, chart.yAxisColumns) || <div />}
+              </ResponsiveContainer>
+            </div>
             <div className="mt-2 flex items-center gap-2 flex-wrap">
               <Badge variant="secondary" className="text-xs">{data.rows.length} rows</Badge>
               <Badge variant="outline" className="text-xs capitalize">{chart.chartType}</Badge>
