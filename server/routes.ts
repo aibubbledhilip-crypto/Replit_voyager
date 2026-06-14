@@ -1539,6 +1539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.createQueryLog({
         userId: req.session.userId!,
+        organizationId: req.session.organizationId || null,
         username: req.session.username!,
         query,
         rowsReturned: data.length,
@@ -1557,6 +1558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         await storage.createQueryLog({
           userId: req.session.userId!,
+          organizationId: req.session.organizationId || null,
           username: req.session.username!,
           query: req.body.query || '',
           rowsReturned: 0,
@@ -1760,6 +1762,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await storage.createQueryLog({
         userId: req.session.userId!,
+        organizationId: req.session.organizationId || null,
         username: req.session.username!,
         query: `MSISDN Lookup: ${sanitizedMsisdn}`,
         rowsReturned: totalRows,
@@ -1785,14 +1788,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let logs;
       const organizationId = req.session.organizationId;
       
-      if (organizationId && req.session.role === 'admin') {
-        // Admin sees all logs for their organization
+      // Check org-level role (owner/admin see all org logs; member/viewer see own only)
+      const isOrgAdmin = organizationId
+        ? await storage.getOrganizationMember(organizationId, req.session.userId!).then(m => ['owner', 'admin'].includes(m?.role ?? ''))
+        : req.session.role === 'admin';
+
+      if (organizationId && isOrgAdmin) {
+        // Org owners/admins see all logs for their organization
         logs = await storage.getQueryLogsByOrganization(organizationId);
-      } else if (organizationId) {
-        // Regular users see their own logs within the organization
-        logs = await storage.getQueryLogsByUser(req.session.userId!);
       } else {
-        // Fallback for legacy users without organization
+        // Members/viewers see only their own logs
         logs = await storage.getQueryLogsByUser(req.session.userId!);
       }
       res.json(logs);
@@ -1872,6 +1877,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const mappingDesc = parsedMappings.map(m => `${m.file1Column}→${m.file2Column}`).join(', ');
         await storage.createQueryLog({
           userId: req.session.userId!,
+          organizationId: req.session.organizationId || null,
           username: req.session.username!,
           query: `File Comparison: ${file1.originalname} vs ${file2.originalname} (Mappings: ${mappingDesc})`,
           rowsReturned: comparisonResult.uniqueToFile1.length + comparisonResult.uniqueToFile2.length + comparisonResult.matchingKeys.length,
@@ -1973,6 +1979,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const colLabel = columnNames.length === 1 ? `column "${columnNames[0]}"` : `columns "${columnNames.join('", "')}"`;
         await storage.createQueryLog({
           userId: req.session.userId!,
+          organizationId: req.session.organizationId || null,
           username: req.session.username!,
           query: `File Aggregate: ${files.length} files, ${colLabel} (${matchType || 'exact'} match)`,
           rowsReturned: result.columnarRows.length,
