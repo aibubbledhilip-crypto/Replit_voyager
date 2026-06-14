@@ -122,27 +122,27 @@ export function AppSidebar({
 
   return (
     <nav className="flex flex-col h-full overflow-hidden">
-      <div className="flex items-center justify-end gap-1 px-3 py-1.5 border-b shrink-0">
+      <div className="group/controls flex items-center justify-end gap-1 px-2 py-1 border-b shrink-0 h-7">
         <button
           onClick={expandAll}
           disabled={allExpanded}
-          className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-foreground rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          className="invisible group-hover/controls:visible flex items-center gap-1 px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           data-testid="button-expand-all"
-          title="Expand all sections"
+          title="Expand all"
         >
           <ChevronsUpDown className="h-3 w-3" />
-          Expand
+          Expand all
         </button>
-        <div className="w-px h-3 bg-border" />
+        <div className="invisible group-hover/controls:visible w-px h-3 bg-border" />
         <button
           onClick={collapseAll}
           disabled={allCollapsed}
-          className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-foreground rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          className="invisible group-hover/controls:visible flex items-center gap-1 px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           data-testid="button-collapse-all"
-          title="Collapse all sections"
+          title="Collapse all"
         >
           <ChevronsDownUp className="h-3 w-3" />
-          Collapse
+          Collapse all
         </button>
       </div>
 
