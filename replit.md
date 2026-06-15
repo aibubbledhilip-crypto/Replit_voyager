@@ -25,7 +25,7 @@ The user wants me to act as a coding agent.
   - `seedOrgPermissions()` called on new org creation; falls back to `DEFAULT_PERMISSIONS` if table not yet seeded.
   - `sql/fresh-database-setup.sql` updated with RBAC table CREATE.
 - **User creation error feedback**: field-level Zod errors now shown in toast (not just "Invalid user data").
-- **Lightsail fix**: `npm run build` required after `git pull` (serves compiled bundle, not live Vite dev server).
+- **Lightsail deploy**: Apache serves static files from `server/public/` directly (not through Express). Full deploy command: `git pull origin main && NODE_OPTIONS="--max-old-space-size=1024" npm run build && cp -r dist/public/* server/public/ && pm2 restart 0`. Missing the `cp` step means the old frontend stays live even after a successful build.
 
 ## Recent Changes (April 2026)
 - **API Keys** (`/settings/api-keys`): Users can generate personal access tokens (format: `vgr_<48 hex chars>`) scoped to `execute_queries` and/or `explorer`. Keys are SHA-256 hashed in the DB (never stored raw). Shown once on creation. Backed by `api_keys` table.

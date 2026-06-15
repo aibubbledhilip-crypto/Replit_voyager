@@ -1,0 +1,1 @@
+- [Lightsail Deploy Process](lightsail-deploy.md) — Apache serves frontend from `server/public/`, not `dist/public/`; `cp -r dist/public/* server/public/` is required after every build.
