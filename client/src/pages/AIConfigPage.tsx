@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Brain, Key, Server, CheckCircle2 } from "lucide-react";
+import { Save, Brain, Key, Server, CheckCircle2, Plus, Trash2, RotateCcw } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -21,21 +21,21 @@ const AI_PROVIDERS = [
   { value: 'ollama' as const, label: 'Ollama (Local)', keyName: 'Ollama URL', keyPrefix: 'http' },
 ];
 
-const PROVIDER_MODELS: Record<AIProvider, { value: string; label: string }[]> = {
+const DEFAULT_PROVIDER_MODELS: Record<AIProvider, { value: string; label: string }[]> = {
   openai: [
-    { value: "gpt-4o", label: "GPT-4o (Recommended)" },
-    { value: "gpt-4o-mini", label: "GPT-4o Mini (Faster)" },
+    { value: "gpt-4o", label: "GPT-4o" },
+    { value: "gpt-4o-mini", label: "GPT-4o Mini" },
     { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
-    { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo (Cheapest)" },
+    { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
   ],
   anthropic: [
-    { value: "claude-sonnet-4-20250514", label: "Claude Sonnet 4 (Recommended)" },
+    { value: "claude-sonnet-4-20250514", label: "Claude Sonnet 4" },
     { value: "claude-3-5-sonnet-20241022", label: "Claude 3.5 Sonnet" },
-    { value: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku (Faster)" },
+    { value: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku" },
     { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
   ],
   gemini: [
-    { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash (Recommended)" },
+    { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
     { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash" },
     { value: "gemini-1.5-pro-latest", label: "Gemini 1.5 Pro" },
   ],
@@ -95,10 +95,27 @@ export default function AIConfigPage() {
     queryFn: () => apiRequest('/api/settings/ollama_url'),
   });
 
+  const { data: openaiModelsSetting } = useQuery({
+    queryKey: ['/api/settings', 'ai_models_openai'],
+    queryFn: () => apiRequest('/api/settings/ai_models_openai'),
+  });
+  const { data: anthropicModelsSetting } = useQuery({
+    queryKey: ['/api/settings', 'ai_models_anthropic'],
+    queryFn: () => apiRequest('/api/settings/ai_models_anthropic'),
+  });
+  const { data: geminiModelsSetting } = useQuery({
+    queryKey: ['/api/settings', 'ai_models_gemini'],
+    queryFn: () => apiRequest('/api/settings/ai_models_gemini'),
+  });
+  const { data: ollamaModelsSetting } = useQuery({
+    queryKey: ['/api/settings', 'ai_models_ollama'],
+    queryFn: () => apiRequest('/api/settings/ai_models_ollama'),
+  });
+
   const [provider, setProvider] = useState<AIProvider>('openai');
   const [model, setModel] = useState("gpt-4o");
   const [prompt, setPrompt] = useState(defaultPrompt);
-  
+
   const [openaiKey, setOpenaiKey] = useState("");
   const [anthropicKey, setAnthropicKey] = useState("");
   const [geminiKey, setGeminiKey] = useState("");
@@ -107,56 +124,40 @@ export default function AIConfigPage() {
   const [configuredKeys, setConfiguredKeys] = useState<Record<string, { configured: boolean; masked: string }>>({});
   const [isChangingProvider, setIsChangingProvider] = useState(false);
 
-  useEffect(() => {
-    if (providerSetting?.value) {
-      setProvider(providerSetting.value as AIProvider);
-    }
-  }, [providerSetting]);
+  const [customModels, setCustomModels] = useState<Record<AIProvider, { value: string; label: string }[]>>({
+    openai: [],
+    anthropic: [],
+    gemini: [],
+    ollama: [],
+  });
+  const [newModelId, setNewModelId] = useState("");
+  const [newModelLabel, setNewModelLabel] = useState("");
+
+  const parseModels = (setting: any, provider: AIProvider): { value: string; label: string }[] => {
+    if (!setting?.value) return DEFAULT_PROVIDER_MODELS[provider];
+    try {
+      const parsed = JSON.parse(setting.value);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch {}
+    return DEFAULT_PROVIDER_MODELS[provider];
+  };
 
   useEffect(() => {
-    if (modelSetting?.value) {
-      setModel(modelSetting.value);
-    }
-  }, [modelSetting]);
+    setCustomModels({
+      openai: parseModels(openaiModelsSetting, 'openai'),
+      anthropic: parseModels(anthropicModelsSetting, 'anthropic'),
+      gemini: parseModels(geminiModelsSetting, 'gemini'),
+      ollama: parseModels(ollamaModelsSetting, 'ollama'),
+    });
+  }, [openaiModelsSetting, anthropicModelsSetting, geminiModelsSetting, ollamaModelsSetting]);
 
-  useEffect(() => {
-    if (promptSetting?.value) {
-      setPrompt(promptSetting.value);
-    }
-  }, [promptSetting]);
-
-  useEffect(() => {
-    if (openaiKeySetting) {
-      setConfiguredKeys(prev => ({
-        ...prev,
-        openai: { configured: openaiKeySetting.configured || false, masked: openaiKeySetting.value || '' }
-      }));
-    }
-  }, [openaiKeySetting]);
-
-  useEffect(() => {
-    if (anthropicKeySetting) {
-      setConfiguredKeys(prev => ({
-        ...prev,
-        anthropic: { configured: anthropicKeySetting.configured || false, masked: anthropicKeySetting.value || '' }
-      }));
-    }
-  }, [anthropicKeySetting]);
-
-  useEffect(() => {
-    if (geminiKeySetting) {
-      setConfiguredKeys(prev => ({
-        ...prev,
-        gemini: { configured: geminiKeySetting.configured || false, masked: geminiKeySetting.value || '' }
-      }));
-    }
-  }, [geminiKeySetting]);
-
-  useEffect(() => {
-    if (ollamaUrlSetting?.value) {
-      setOllamaUrl(ollamaUrlSetting.value);
-    }
-  }, [ollamaUrlSetting]);
+  useEffect(() => { if (providerSetting?.value) setProvider(providerSetting.value as AIProvider); }, [providerSetting]);
+  useEffect(() => { if (modelSetting?.value) setModel(modelSetting.value); }, [modelSetting]);
+  useEffect(() => { if (promptSetting?.value) setPrompt(promptSetting.value); }, [promptSetting]);
+  useEffect(() => { if (openaiKeySetting) setConfiguredKeys(prev => ({ ...prev, openai: { configured: openaiKeySetting.configured || false, masked: openaiKeySetting.value || '' } })); }, [openaiKeySetting]);
+  useEffect(() => { if (anthropicKeySetting) setConfiguredKeys(prev => ({ ...prev, anthropic: { configured: anthropicKeySetting.configured || false, masked: anthropicKeySetting.value || '' } })); }, [anthropicKeySetting]);
+  useEffect(() => { if (geminiKeySetting) setConfiguredKeys(prev => ({ ...prev, gemini: { configured: geminiKeySetting.configured || false, masked: geminiKeySetting.value || '' } })); }, [geminiKeySetting]);
+  useEffect(() => { if (ollamaUrlSetting?.value) setOllamaUrl(ollamaUrlSetting.value); }, [ollamaUrlSetting]);
 
   const saveSettingMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
@@ -169,46 +170,24 @@ export default function AIConfigPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save setting",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message || "Failed to save setting", variant: "destructive" });
     },
   });
 
   const handleProviderChange = async (newProvider: AIProvider) => {
     if (isChangingProvider) return;
-    
-    const defaultModel = PROVIDER_MODELS[newProvider]?.[0]?.value || '';
+    const models = customModels[newProvider];
+    const defaultModel = models[0]?.value || '';
     setIsChangingProvider(true);
-    
     try {
-      await apiRequest('/api/settings', {
-        method: 'PUT',
-        body: JSON.stringify({ key: 'ai_provider', value: newProvider }),
-      });
-      
-      await apiRequest('/api/settings', {
-        method: 'PUT',
-        body: JSON.stringify({ key: 'ai_model', value: defaultModel }),
-      });
-      
+      await apiRequest('/api/settings', { method: 'PUT', body: JSON.stringify({ key: 'ai_provider', value: newProvider }) });
+      await apiRequest('/api/settings', { method: 'PUT', body: JSON.stringify({ key: 'ai_model', value: defaultModel }) });
       setProvider(newProvider);
       setModel(defaultModel);
-      
       await queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
-      
-      toast({
-        title: "Provider Changed",
-        description: `Switched to ${AI_PROVIDERS.find(p => p.value === newProvider)?.label}`,
-      });
+      toast({ title: "Provider Changed", description: `Switched to ${AI_PROVIDERS.find(p => p.value === newProvider)?.label}` });
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to change provider",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message || "Failed to change provider", variant: "destructive" });
     } finally {
       setIsChangingProvider(false);
     }
@@ -221,68 +200,76 @@ export default function AIConfigPage() {
       gemini: { settingKey: 'gemini_api_key', value: geminiKey, setter: setGeminiKey },
       ollama: { settingKey: 'ollama_url', value: ollamaUrl, setter: setOllamaUrl },
     };
-
     const config = keyMap[providerKey];
     if (!config.value) return;
-
-    saveSettingMutation.mutate(
-      { key: config.settingKey, value: config.value },
-      {
-        onSuccess: () => {
-          if (providerKey !== 'ollama') {
-            config.setter("");
-            setConfiguredKeys(prev => ({
-              ...prev,
-              [providerKey]: { configured: true, masked: `${config.value.slice(0, 7)}...${config.value.slice(-4)}` }
-            }));
-          }
-          toast({
-            title: "Success",
-            description: `${AI_PROVIDERS.find(p => p.value === providerKey)?.keyName} saved successfully`,
-          });
-        },
-      }
-    );
+    saveSettingMutation.mutate({ key: config.settingKey, value: config.value }, {
+      onSuccess: () => {
+        if (providerKey !== 'ollama') {
+          config.setter("");
+          setConfiguredKeys(prev => ({ ...prev, [providerKey]: { configured: true, masked: `${config.value.slice(0, 7)}...${config.value.slice(-4)}` } }));
+        }
+        toast({ title: "Success", description: `${AI_PROVIDERS.find(p => p.value === providerKey)?.keyName} saved successfully` });
+      },
+    });
   };
 
   const handleSaveModel = () => {
-    saveSettingMutation.mutate(
-      { key: 'ai_model', value: model },
-      {
-        onSuccess: () => {
-          toast({
-            title: "Success",
-            description: "Model preference saved successfully",
-          });
-        },
-      }
-    );
+    saveSettingMutation.mutate({ key: 'ai_model', value: model }, {
+      onSuccess: () => toast({ title: "Success", description: "Model preference saved successfully" }),
+    });
   };
 
   const handleSavePrompt = () => {
-    saveSettingMutation.mutate(
-      { key: 'ai_analysis_prompt', value: prompt },
-      {
-        onSuccess: () => {
-          toast({
-            title: "Success",
-            description: "Analysis prompt saved successfully",
-          });
-        },
-      }
-    );
+    saveSettingMutation.mutate({ key: 'ai_analysis_prompt', value: prompt }, {
+      onSuccess: () => toast({ title: "Success", description: "Analysis prompt saved successfully" }),
+    });
   };
 
   const handleResetPrompt = () => {
     setPrompt(defaultPrompt);
-    toast({
-      title: "Prompt Reset",
-      description: "Click Save to apply the default prompt",
+    toast({ title: "Prompt Reset", description: "Click Save to apply the default prompt" });
+  };
+
+  const saveModelList = (p: AIProvider, list: { value: string; label: string }[]) => {
+    saveSettingMutation.mutate({ key: `ai_models_${p}`, value: JSON.stringify(list) }, {
+      onSuccess: () => {
+        setCustomModels(prev => ({ ...prev, [p]: list }));
+        toast({ title: "Model list updated" });
+      },
     });
   };
 
+  const handleAddModel = () => {
+    const id = newModelId.trim();
+    const lbl = newModelLabel.trim() || id;
+    if (!id) return;
+    const current = customModels[provider];
+    if (current.some(m => m.value === id)) {
+      toast({ title: "Already exists", description: `Model "${id}" is already in the list`, variant: "destructive" });
+      return;
+    }
+    const updated = [...current, { value: id, label: lbl }];
+    saveModelList(provider, updated);
+    setNewModelId("");
+    setNewModelLabel("");
+  };
+
+  const handleRemoveModel = (modelValue: string) => {
+    const updated = customModels[provider].filter(m => m.value !== modelValue);
+    saveModelList(provider, updated);
+    if (model === modelValue && updated.length > 0) {
+      setModel(updated[0].value);
+      saveSettingMutation.mutate({ key: 'ai_model', value: updated[0].value });
+    }
+  };
+
+  const handleResetModelList = () => {
+    const defaults = DEFAULT_PROVIDER_MODELS[provider];
+    saveModelList(provider, defaults);
+  };
+
   const currentProviderInfo = AI_PROVIDERS.find(p => p.value === provider);
-  const availableModels = PROVIDER_MODELS[provider] || [];
+  const availableModels = customModels[provider] || DEFAULT_PROVIDER_MODELS[provider];
 
   return (
     <div className="space-y-6">
@@ -297,37 +284,33 @@ export default function AIConfigPage() {
             <Server className="h-5 w-5 text-muted-foreground" />
             <div>
               <CardTitle>AI Provider</CardTitle>
-              <CardDescription>
-                Select your preferred AI provider for data analysis
-              </CardDescription>
+              <CardDescription>Select your preferred AI provider for data analysis</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {AI_PROVIDERS.map((p) => {
-                const isConfigured = p.value === 'ollama' || configuredKeys[p.value]?.configured;
-                return (
-                  <Button
-                    key={p.value}
-                    variant={provider === p.value ? "default" : "outline"}
-                    className="h-auto py-4 flex flex-col gap-1 relative"
-                    onClick={() => handleProviderChange(p.value)}
-                    disabled={isChangingProvider}
-                    data-testid={`button-provider-${p.value}`}
-                  >
-                    <span className="font-medium">{p.label}</span>
-                    {isConfigured && (
-                      <Badge variant="secondary" className="text-xs">
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Ready
-                      </Badge>
-                    )}
-                  </Button>
-                );
-              })}
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {AI_PROVIDERS.map((p) => {
+              const isConfigured = p.value === 'ollama' || configuredKeys[p.value]?.configured;
+              return (
+                <Button
+                  key={p.value}
+                  variant={provider === p.value ? "default" : "outline"}
+                  className="h-auto py-4 flex flex-col gap-1"
+                  onClick={() => handleProviderChange(p.value)}
+                  disabled={isChangingProvider}
+                  data-testid={`button-provider-${p.value}`}
+                >
+                  <span className="font-medium">{p.label}</span>
+                  {isConfigured && (
+                    <Badge variant="secondary" className="text-xs">
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      Ready
+                    </Badge>
+                  )}
+                </Button>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
@@ -339,7 +322,7 @@ export default function AIConfigPage() {
             <div>
               <CardTitle>{currentProviderInfo?.keyName || 'API Key'}</CardTitle>
               <CardDescription>
-                {provider === 'ollama' 
+                {provider === 'ollama'
                   ? 'Configure the URL for your local Ollama instance'
                   : `Configure your ${currentProviderInfo?.label} API credentials`}
               </CardDescription>
@@ -352,118 +335,59 @@ export default function AIConfigPage() {
               <div className="space-y-4">
                 {configuredKeys.openai?.configured && (
                   <div className="p-3 bg-muted rounded-md">
-                    <p className="text-sm text-muted-foreground">
-                      Current key: <span className="font-mono">{configuredKeys.openai.masked}</span>
-                    </p>
+                    <p className="text-sm text-muted-foreground">Current key: <span className="font-mono">{configuredKeys.openai.masked}</span></p>
                   </div>
                 )}
                 <div className="space-y-2">
                   <Label>OpenAI API Key</Label>
                   <div className="flex gap-2">
-                    <Input
-                      type="password"
-                      value={openaiKey}
-                      onChange={(e) => setOpenaiKey(e.target.value)}
-                      placeholder={configuredKeys.openai?.configured ? "Enter new key to update..." : "sk-..."}
-                      data-testid="input-openai-key"
-                    />
-                    <Button
-                      onClick={() => handleSaveApiKey('openai')}
-                      disabled={saveSettingMutation.isPending || !openaiKey}
-                      data-testid="button-save-openai-key"
-                    >
-                      <Save className="h-4 w-4" />
-                    </Button>
+                    <Input type="password" value={openaiKey} onChange={(e) => setOpenaiKey(e.target.value)} placeholder={configuredKeys.openai?.configured ? "Enter new key to update..." : "sk-..."} data-testid="input-openai-key" />
+                    <Button onClick={() => handleSaveApiKey('openai')} disabled={saveSettingMutation.isPending || !openaiKey} data-testid="button-save-openai-key"><Save className="h-4 w-4" /></Button>
                   </div>
                 </div>
               </div>
             )}
-
             {provider === 'anthropic' && (
               <div className="space-y-4">
                 {configuredKeys.anthropic?.configured && (
                   <div className="p-3 bg-muted rounded-md">
-                    <p className="text-sm text-muted-foreground">
-                      Current key: <span className="font-mono">{configuredKeys.anthropic.masked}</span>
-                    </p>
+                    <p className="text-sm text-muted-foreground">Current key: <span className="font-mono">{configuredKeys.anthropic.masked}</span></p>
                   </div>
                 )}
                 <div className="space-y-2">
                   <Label>Anthropic API Key</Label>
                   <div className="flex gap-2">
-                    <Input
-                      type="password"
-                      value={anthropicKey}
-                      onChange={(e) => setAnthropicKey(e.target.value)}
-                      placeholder={configuredKeys.anthropic?.configured ? "Enter new key to update..." : "sk-ant-..."}
-                      data-testid="input-anthropic-key"
-                    />
-                    <Button
-                      onClick={() => handleSaveApiKey('anthropic')}
-                      disabled={saveSettingMutation.isPending || !anthropicKey}
-                      data-testid="button-save-anthropic-key"
-                    >
-                      <Save className="h-4 w-4" />
-                    </Button>
+                    <Input type="password" value={anthropicKey} onChange={(e) => setAnthropicKey(e.target.value)} placeholder={configuredKeys.anthropic?.configured ? "Enter new key to update..." : "sk-ant-..."} data-testid="input-anthropic-key" />
+                    <Button onClick={() => handleSaveApiKey('anthropic')} disabled={saveSettingMutation.isPending || !anthropicKey} data-testid="button-save-anthropic-key"><Save className="h-4 w-4" /></Button>
                   </div>
                 </div>
               </div>
             )}
-
             {provider === 'gemini' && (
               <div className="space-y-4">
                 {configuredKeys.gemini?.configured && (
                   <div className="p-3 bg-muted rounded-md">
-                    <p className="text-sm text-muted-foreground">
-                      Current key: <span className="font-mono">{configuredKeys.gemini.masked}</span>
-                    </p>
+                    <p className="text-sm text-muted-foreground">Current key: <span className="font-mono">{configuredKeys.gemini.masked}</span></p>
                   </div>
                 )}
                 <div className="space-y-2">
                   <Label>Google API Key</Label>
                   <div className="flex gap-2">
-                    <Input
-                      type="password"
-                      value={geminiKey}
-                      onChange={(e) => setGeminiKey(e.target.value)}
-                      placeholder={configuredKeys.gemini?.configured ? "Enter new key to update..." : "AI..."}
-                      data-testid="input-gemini-key"
-                    />
-                    <Button
-                      onClick={() => handleSaveApiKey('gemini')}
-                      disabled={saveSettingMutation.isPending || !geminiKey}
-                      data-testid="button-save-gemini-key"
-                    >
-                      <Save className="h-4 w-4" />
-                    </Button>
+                    <Input type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder={configuredKeys.gemini?.configured ? "Enter new key to update..." : "AI..."} data-testid="input-gemini-key" />
+                    <Button onClick={() => handleSaveApiKey('gemini')} disabled={saveSettingMutation.isPending || !geminiKey} data-testid="button-save-gemini-key"><Save className="h-4 w-4" /></Button>
                   </div>
                 </div>
               </div>
             )}
-
             {provider === 'ollama' && (
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Ollama Server URL</Label>
                   <div className="flex gap-2">
-                    <Input
-                      type="text"
-                      value={ollamaUrl}
-                      onChange={(e) => setOllamaUrl(e.target.value)}
-                      placeholder="http://localhost:11434"
-                      data-testid="input-ollama-url"
-                    />
-                    <Button
-                      onClick={() => handleSaveApiKey('ollama')}
-                      disabled={saveSettingMutation.isPending || !ollamaUrl}
-                      data-testid="button-save-ollama-url"
-                    >
-                      <Save className="h-4 w-4" />
-                    </Button>
+                    <Input type="text" value={ollamaUrl} onChange={(e) => setOllamaUrl(e.target.value)} placeholder="http://localhost:11434" data-testid="input-ollama-url" />
+                    <Button onClick={() => handleSaveApiKey('ollama')} disabled={saveSettingMutation.isPending || !ollamaUrl} data-testid="button-save-ollama-url"><Save className="h-4 w-4" /></Button>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Make sure Ollama is running locally with the desired model pulled
-                  </p>
+                  <p className="text-sm text-muted-foreground">Make sure Ollama is running locally with the desired model pulled</p>
                 </div>
               </div>
             )}
@@ -477,37 +401,105 @@ export default function AIConfigPage() {
             <Brain className="h-5 w-5 text-muted-foreground" />
             <div>
               <CardTitle>Model Selection</CardTitle>
-              <CardDescription>
-                Choose the model for {currentProviderInfo?.label}
-              </CardDescription>
+              <CardDescription>Choose the active model for {currentProviderInfo?.label}</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="model">Model</Label>
-              <Select value={model} onValueChange={setModel}>
-                <SelectTrigger data-testid="select-model">
-                  <SelectValue placeholder="Select a model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableModels.map((m) => (
-                    <SelectItem key={m.value} value={m.value}>
-                      {m.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="model">Active Model</Label>
+              <div className="flex gap-2">
+                <Select value={model} onValueChange={setModel}>
+                  <SelectTrigger data-testid="select-model" className="flex-1">
+                    <SelectValue placeholder="Select a model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableModels.map((m) => (
+                      <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleSaveModel} disabled={saveSettingMutation.isPending} data-testid="button-save-model">
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </Button>
+              </div>
             </div>
-            <Button
-              onClick={handleSaveModel}
-              disabled={saveSettingMutation.isPending}
-              data-testid="button-save-model"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Save Model
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <Server className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <CardTitle>Manage Models — {currentProviderInfo?.label}</CardTitle>
+                <CardDescription>Add or remove models from the selection list. Changes apply to all users in your org.</CardDescription>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleResetModelList} disabled={saveSettingMutation.isPending} data-testid="button-reset-models">
+              <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+              Reset to defaults
             </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              {availableModels.map((m) => (
+                <div key={m.value} className="flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-muted/50">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-sm font-medium truncate">{m.label}</span>
+                    <span className="text-xs text-muted-foreground font-mono shrink-0">{m.value}</span>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleRemoveModel(m.value)}
+                    disabled={saveSettingMutation.isPending || availableModels.length <= 1}
+                    data-testid={`button-remove-model-${m.value}`}
+                    title="Remove model"
+                  >
+                    <Trash2 className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t pt-4">
+              <p className="text-sm font-medium mb-3">Add a new model</p>
+              <div className="flex gap-2 flex-wrap">
+                <div className="flex-1 min-w-36 space-y-1">
+                  <Label className="text-xs text-muted-foreground">Model ID</Label>
+                  <Input
+                    value={newModelId}
+                    onChange={(e) => setNewModelId(e.target.value)}
+                    placeholder="e.g. gpt-5"
+                    data-testid="input-new-model-id"
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddModel()}
+                  />
+                </div>
+                <div className="flex-1 min-w-36 space-y-1">
+                  <Label className="text-xs text-muted-foreground">Display name (optional)</Label>
+                  <Input
+                    value={newModelLabel}
+                    onChange={(e) => setNewModelLabel(e.target.value)}
+                    placeholder="e.g. GPT-5"
+                    data-testid="input-new-model-label"
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddModel()}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button onClick={handleAddModel} disabled={saveSettingMutation.isPending || !newModelId.trim()} data-testid="button-add-model">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Model
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -518,9 +510,7 @@ export default function AIConfigPage() {
             <Brain className="h-5 w-5 text-muted-foreground" />
             <div>
               <CardTitle>Analysis Prompt</CardTitle>
-              <CardDescription>
-                Customize the prompt used for AI data analysis
-              </CardDescription>
+              <CardDescription>Customize the prompt used for AI data analysis</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -539,19 +529,11 @@ export default function AIConfigPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button
-                onClick={handleSavePrompt}
-                disabled={saveSettingMutation.isPending}
-                data-testid="button-save-prompt"
-              >
+              <Button onClick={handleSavePrompt} disabled={saveSettingMutation.isPending} data-testid="button-save-prompt">
                 <Save className="h-4 w-4 mr-2" />
                 Save Prompt
               </Button>
-              <Button
-                variant="outline"
-                onClick={handleResetPrompt}
-                data-testid="button-reset-prompt"
-              >
+              <Button variant="outline" onClick={handleResetPrompt} data-testid="button-reset-prompt">
                 Reset to Default
               </Button>
             </div>

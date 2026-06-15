@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Database, FileText, Search, GitCompare, Layers, Server, Activity, LayoutDashboard, ChevronDown, Brain, CreditCard, Users, Settings, Shield, Cloud, Link2, BarChart2, KeyRound, Key, ScrollText, ChevronsUpDown, ChevronsDownUp } from "lucide-react";
 import {
   Collapsible,
@@ -28,8 +29,15 @@ export function AppSidebar({
   permissions = [],
   orgRole,
 }: AppSidebarProps) {
+  const [location] = useLocation();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({});
+
+  const isActive = (url?: string) => {
+    if (!url) return false;
+    if (url === '/') return location === '/';
+    return location === url || location.startsWith(url + '/');
+  };
 
   const isAdmin = isSuperAdmin || ['owner', 'admin'].includes(orgRole ?? '');
   const hasPerm = (feature: string) => isSuperAdmin || permissions.includes(feature);
@@ -197,10 +205,15 @@ export function AppSidebar({
                                 <a
                                   key={child.title}
                                   href={child.url}
-                                  className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover-elevate transition-colors"
+                                  className={cn(
+                                    "flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover-elevate transition-colors",
+                                    isActive(child.url)
+                                      ? "bg-accent text-accent-foreground font-medium"
+                                      : "text-foreground/80"
+                                  )}
                                   data-testid={`link-${child.title.toLowerCase().replace(/\s+/g, '-')}-config`}
                                 >
-                                  <child.icon className="h-4 w-4" />
+                                  <child.icon className={cn("h-4 w-4", isActive(child.url) ? "text-accent-foreground" : "text-muted-foreground")} />
                                   <span>{child.title}</span>
                                 </a>
                               ))}
@@ -210,10 +223,15 @@ export function AppSidebar({
                       ) : (
                         <a
                           href={item.url}
-                          className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover-elevate transition-colors"
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover-elevate transition-colors",
+                            isActive(item.url)
+                              ? "bg-accent text-accent-foreground font-medium"
+                              : "text-foreground/80"
+                          )}
                           data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
                         >
-                          <item.icon className="h-4 w-4" />
+                          <item.icon className={cn("h-4 w-4", isActive(item.url) ? "text-accent-foreground" : "text-muted-foreground")} />
                           <span>{item.title}</span>
                         </a>
                       )}
