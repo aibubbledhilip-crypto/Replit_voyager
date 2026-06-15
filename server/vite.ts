@@ -76,10 +76,14 @@ export function serveStatic(app: Express) {
     );
   }
 
+  // Hashed assets (JS/CSS) can be cached forever — filenames change on each build
   app.use(express.static(distPath));
 
-  // fall through to index.html if the file doesn't exist
+  // index.html must never be cached so deployments take effect immediately
   app.use("*", (_req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
