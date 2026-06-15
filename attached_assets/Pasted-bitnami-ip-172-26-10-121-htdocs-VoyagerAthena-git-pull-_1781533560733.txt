@@ -1,0 +1,41 @@
+bitnami@ip-172-26-10-121:~/htdocs/VoyagerAthena$ git pull origin main
+
+NODE_OPTIONS="--max-old-space-size=1024" npm run build
+
+pm2 restart 0
+From https://github.com/aibubbledhilip-crypto/Replit_voyager
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.20 building for production...
+transforming (2) ../vite/modulepreload-polyfill.jsBrowserslist: browsers data (caniuse-lite) is 8 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+transforming (4) src/App.tsx
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+✓ 2888 modules transformed.
+../dist/public/index.html                                                            2.31 kB │ gzip:   0.90 kB
+../dist/public/assets/Data_visualization_login_background_22211783-3lAhJdIK.png  1,376.47 kB
+../dist/public/assets/index-DRwZwuN6.css                                           105.89 kB │ gzip:  16.41 kB
+../dist/public/assets/index-Cfw84NRu.js                                          1,566.90 kB │ gzip: 460.08 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 16.27s
+
+  dist/index.js  230.0kb
+
+⚡ Done in 56ms
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [0](ids: [ '0' ])
+[PM2] [voyager](0) ✓
+┌────┬────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name       │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ voyager    │ default     │ N/A     │ fork    │ 1121804  │ 0s     │ 7    │ online    │ 0%       │ 42.6mb   │ bitnami  │ disabled │
+└────┴────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
