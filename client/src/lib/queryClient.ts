@@ -60,6 +60,7 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: Infinity,
+      gcTime: 30 * 60 * 1000, // 30 min — keep cache when navigating between pages
       retry: false,
     },
     mutations: {

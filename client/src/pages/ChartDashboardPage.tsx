@@ -153,8 +153,7 @@ function renderChart(chartType: string, data: Record<string, any>[], xCol: strin
   );
 }
 
-const CHART_DATA_STALE_MS = 10 * 60 * 1000;  // data stays fresh for 10 min — no refetch
-const CHART_DATA_GC_MS    = 15 * 60 * 1000;  // keep in memory for 15 min even when off-page
+const CHART_DATA_GC_MS = 30 * 60 * 1000;  // keep Athena results in memory for 30 min when off-page
 
 async function captureChartToBlob(containerEl: HTMLDivElement, chartName: string): Promise<Blob> {
   const svg = containerEl.querySelector('svg');
@@ -251,7 +250,6 @@ function ChartCard({ chart, onEdit, onDelete }: { chart: DashboardChart; onEdit:
       method: 'POST',
       body: JSON.stringify({ sql: chart.sqlQuery, connectionId: chart.connectionId, limit: 500 }),
     }),
-    staleTime: CHART_DATA_STALE_MS,
     gcTime: CHART_DATA_GC_MS,
     retry: false,
   });
@@ -402,7 +400,6 @@ export default function ChartDashboardPage() {
   const { data: charts = [], isLoading } = useQuery<DashboardChart[]>({
     queryKey: ['/api/dashboard/charts'],
     queryFn: () => apiRequest('/api/dashboard/charts'),
-    staleTime: 5 * 60 * 1000,
   });
 
   const handleRefreshAll = () => {
