@@ -153,7 +153,8 @@ function renderChart(chartType: string, data: Record<string, any>[], xCol: strin
   );
 }
 
-const CHART_DATA_STALE_MS = 10 * 60 * 1000; // 10 minutes
+const CHART_DATA_STALE_MS = 10 * 60 * 1000;  // data stays fresh for 10 min — no refetch
+const CHART_DATA_GC_MS    = 15 * 60 * 1000;  // keep in memory for 15 min even when off-page
 
 async function captureChartToBlob(containerEl: HTMLDivElement, chartName: string): Promise<Blob> {
   const svg = containerEl.querySelector('svg');
@@ -251,6 +252,7 @@ function ChartCard({ chart, onEdit, onDelete }: { chart: DashboardChart; onEdit:
       body: JSON.stringify({ sql: chart.sqlQuery, connectionId: chart.connectionId, limit: 500 }),
     }),
     staleTime: CHART_DATA_STALE_MS,
+    gcTime: CHART_DATA_GC_MS,
     retry: false,
   });
 
